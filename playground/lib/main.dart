@@ -6,6 +6,7 @@ import 'controllers/chat_controller.dart';
 import 'controllers/vote_controller.dart';
 import 'models/vote_model.dart';
 import 'widgets/keyboard_aware_scaffold.dart';
+import 'widgets/png_background.dart';
 
 // 앱의 시작점입니다.
 void main() {
@@ -76,21 +77,16 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
             title: '실소재판소',
           ),
           resizeToAvoidBottomInset: true, // 키보드 겹침 방지 활성화
-          body: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Stack(
-              children: [
-                // 배경 이미지
-                Positioned.fill(
-                  child: Image.network(
-                    "https://placehold.co/800x1200/3F3329/white?text=Background",
-                    fit: BoxFit.cover,
-                    color: Colors.black.withValues(alpha: 0.3),
-                    colorBlendMode: BlendMode.darken,
-                  ),
-                ),
-
-                // 메시지 리스트 뷰
+          body: SafePngBackground(
+            imageAssetPath: 'assets/background/background.png',
+            fit: BoxFit.cover,
+            enableOverlay: true,
+            overlayColor: Colors.black.withValues(alpha: 0.3),
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Stack(
+                children: [
+                  // 메시지 리스트 뷰
                 MessageListView(
                   messages: chatController.messages,
                   keyboardHeight: keyboardHeight,
@@ -122,6 +118,7 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
                   ),
                 ),
               ],
+              ),
             ),
           ),
         );

@@ -93,7 +93,6 @@ void main() {
 
     testWidgets('Keyboard height calculation works correctly', (WidgetTester tester) async {
       const testKeyboardHeight = 250.0;
-      const minPadding = 20.0;
 
       await tester.pumpWidget(
         MaterialApp(
