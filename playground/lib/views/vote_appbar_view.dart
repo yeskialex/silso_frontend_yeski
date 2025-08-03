@@ -2,19 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/vote_model.dart';
 
-// Vote AppBar 메인 위젯
+// Vote AppBar 메인 위젯 - 3가지 Row 구성
 class VoteAppBarView extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final VoidCallback? onBackPressed;
+  final VoidCallback? onQuitPressed;
 
   const VoteAppBarView({
     super.key,
     required this.title,
     this.onBackPressed,
+    this.onQuitPressed,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(120.0); // AppBar + Vote bar 높이
+  Size get preferredSize => const Size.fromHeight(180.0); // 3개 Row를 위한 높이 증가
 
   @override
   Widget build(BuildContext context) {
@@ -34,36 +36,24 @@ class VoteAppBarView extends StatelessWidget implements PreferredSizeWidget {
           child: SafeArea(
             child: Column(
               children: [
-                // 기본 AppBar
+                // 1st Row: Quit Icon (right aligned)
                 Container(
                   height: 60,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      // 뒤로가기 버튼
+                      const Spacer(),
                       IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, color: Colors.white, size: 24),
+                        onPressed: onQuitPressed ?? () => Navigator.of(context).pop(),
                       ),
-                      // 제목
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      // 우측 여백 (뒤로가기 버튼과 균형)
-                      const SizedBox(width: 48),
                     ],
                   ),
                 ),
-                // 투표 바
-                VoteBarWidget(voteModel: voteModel),
+                // 2nd Row: Dynamic Scale Bar
+                DynamicScaleBarWidget(voteModel: voteModel),
+                // 3rd Row: 반대 Button / Title / 찬성 Button
+                VoteControlRowWidget(voteModel: voteModel, title: title),
               ],
             ),
           ),
@@ -73,11 +63,11 @@ class VoteAppBarView extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-// 투표 바 위젯
-class VoteBarWidget extends StatelessWidget {
+// 2nd Row: Dynamic Scale Bar Widget
+class DynamicScaleBarWidget extends StatelessWidget {
   final VoteModel voteModel;
 
-  const VoteBarWidget({
+  const DynamicScaleBarWidget({
     super.key,
     required this.voteModel,
   });
@@ -85,106 +75,163 @@ class VoteBarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final agreeRatio = voteModel.agreeRatio;
-    final disagreeRatio = 1.0 - agreeRatio;
+    final screenWidth = MediaQuery.of(context).size.width;
 
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Container(
+        height: 28,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+        ),
+        child: Stack(
+          children: [
+            // 배경 (반대 색상)
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF44336).withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            // 찬성 부분 (동적으로 변하는 영역)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: (screenWidth - 32) * agreeRatio,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+            // 중앙 표시기 (현재 비율 표시)
+            Positioned(
+              left: (screenWidth - 32) * agreeRatio - 20,
+              top: -8,
+              child: Container(
+                width: 40,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    '${(agreeRatio * 100).round()}%',
+                    style: const TextStyle(
+                      color: Color(0xFF3F3329),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 3rd Row: Vote Control Row Widget (반대 / Title / 찬성)
+class VoteControlRowWidget extends StatelessWidget {
+  final VoteModel voteModel;
+  final String title;
+
+  const VoteControlRowWidget({
+    super.key,
+    required this.voteModel,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // 찬성 버튼
-          Expanded(
-            child: GestureDetector(
-              onTap: () => voteModel.addVote(true),
-              child: Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 2,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    // 투표 비율 바
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: MediaQuery.of(context).size.width * 0.5 * agreeRatio,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF66BB6A),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                    // 텍스트
-                    Center(
-                      child: Text(
-                        '찬성 ${voteModel.agreeCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+          // 반대 버튼
+          GestureDetector(
+            onTap: () => voteModel.addVote(false),
+            child: Container(
+              width: 80,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF44336),
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  '반대',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          // 반대 버튼
+          // 중앙 제목 영역
           Expanded(
-            child: GestureDetector(
-              onTap: () => voteModel.addVote(false),
-              child: Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF44336),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 2,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
+            child: Center(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
-                child: Stack(
-                  children: [
-                    // 투표 비율 바
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: MediaQuery.of(context).size.width * 0.5 * disagreeRatio,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF5350),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                    // 텍스트
-                    Center(
-                      child: Text(
-                        '반대 ${voteModel.disagreeCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          // 찬성 버튼
+          GestureDetector(
+            onTap: () => voteModel.addVote(true),
+            child: Container(
+              width: 80,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50),
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  '찬성',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

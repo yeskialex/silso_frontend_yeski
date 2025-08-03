@@ -79,24 +79,25 @@ void main() {
       expect(find.text('Test Vote'), findsOneWidget);
       
       // Verify vote buttons exist
-      expect(find.text('찬성 0'), findsOneWidget);
-      expect(find.text('반대 0'), findsOneWidget);
+      expect(find.text('찬성'), findsOneWidget);
+      expect(find.text('반대'), findsOneWidget);
+
+      // Verify quit icon exists
+      expect(find.byIcon(Icons.close), findsOneWidget);
 
       // Test vote interaction
-      await tester.tap(find.text('찬성 0'));
-      await tester.pump();
+      await tester.tap(find.text('찬성'));
+      await tester.pumpAndSettle();
       
-      expect(find.text('찬성 1'), findsOneWidget);
       expect(voteModel.agreeCount, 1);
 
-      await tester.tap(find.text('반대 0'));
-      await tester.pump();
+      await tester.tap(find.text('반대'));
+      await tester.pumpAndSettle();
       
-      expect(find.text('반대 1'), findsOneWidget);
       expect(voteModel.disagreeCount, 1);
     });
 
-    testWidgets('Vote progress bar test', (WidgetTester tester) async {
+    testWidgets('Vote control row test', (WidgetTester tester) async {
       final voteModel = VoteModel();
       
       await tester.pumpWidget(
@@ -104,24 +105,27 @@ void main() {
           home: ChangeNotifierProvider.value(
             value: voteModel,
             child: Scaffold(
-              body: VoteBarWidget(voteModel: voteModel),
+              body: VoteControlRowWidget(voteModel: voteModel, title: 'Test Title'),
             ),
           ),
         ),
       );
 
-      // Verify initial state
-      expect(find.text('찬성 0'), findsOneWidget);
-      expect(find.text('반대 0'), findsOneWidget);
+      // Verify title is displayed
+      expect(find.text('Test Title'), findsOneWidget);
+      
+      // Verify buttons exist
+      expect(find.text('찬성'), findsOneWidget);
+      expect(find.text('반대'), findsOneWidget);
 
-      // Test vote functionality through UI interaction
-      await tester.tap(find.text('찬성 0'));
+      // Test vote functionality
+      await tester.tap(find.text('찬성'));
       await tester.pumpAndSettle();
-      expect(find.text('찬성 1'), findsOneWidget);
+      expect(voteModel.agreeCount, 1);
 
-      await tester.tap(find.text('반대 0'));
+      await tester.tap(find.text('반대'));
       await tester.pumpAndSettle();
-      expect(find.text('반대 1'), findsOneWidget);
+      expect(voteModel.disagreeCount, 1);
     });
 
     testWidgets('Vote summary widget test', (WidgetTester tester) async {
