@@ -8,23 +8,85 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:playground/main.dart';
+import 'package:judge/controllers/chat_controller.dart';
+import 'package:judge/views/chat_bubble_view.dart';
+import 'package:judge/models/chat_model.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Chat controller unit test', (WidgetTester tester) async {
+    // Test the ChatController directly without UI complications
+    final controller = ChatController();
+    
+    // Create a mock context
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            // Verify initial state
+            expect(controller.messages.length, 0);
+            expect(controller.isLimitReached, false);
+            expect(controller.showResetNotice, false);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+            // Test adding a message
+            controller.addMessage('Test message', context);
+            
+            return Container();
+          },
+        ),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Verify message was added
+    expect(controller.messages.length, 1);
+    expect(controller.messages.first.text, 'Test message');
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    controller.dispose();
+  });
+
+  testWidgets('Chat bubble view test', (WidgetTester tester) async {
+    // Test ChatBubbleView component
+    final testMessage = Message(text: 'Test Bubble', isLeft: true);
+    
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatBubbleView(message: testMessage),
+        ),
+      ),
+    );
+
+    // Verify the bubble displays the message text
+    expect(find.text('Test Bubble'), findsOneWidget);
+  });
+
+  testWidgets('Bottom input view test', (WidgetTester tester) async {
+    final controller = TextEditingController();
+    bool sendPressed = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BottomInputView(
+            controller: controller,
+            participantCount: 100,
+            onSend: () {
+              sendPressed = true;
+            },
+          ),
+        ),
+      ),
+    );
+
+    // Verify input field exists
+    expect(find.byType(TextField), findsOneWidget);
+    
+    // Verify participant count is displayed
+    expect(find.text('현재 참여자 수: 100명'), findsOneWidget);
+
+    // Test send button
+    await tester.tap(find.byIcon(Icons.send));
+    expect(sendPressed, true);
+
+    controller.dispose();
   });
 }
