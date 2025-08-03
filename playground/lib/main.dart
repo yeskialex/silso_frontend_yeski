@@ -5,6 +5,7 @@ import 'views/vote_appbar_view.dart';
 import 'controllers/chat_controller.dart';
 import 'controllers/vote_controller.dart';
 import 'models/vote_model.dart';
+import 'widgets/keyboard_aware_scaffold.dart';
 
 // 앱의 시작점입니다.
 void main() {
@@ -74,6 +75,7 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
           appBar: const VoteAppBarView(
             title: '실소재판소',
           ),
+          resizeToAvoidBottomInset: true, // 키보드 겹침 방지 활성화
           body: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             child: Stack(
@@ -103,11 +105,12 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
                           : const SizedBox.shrink(),
                 ),
 
-                // 하단 입력창
-                Positioned(
+                // 하단 입력창 - 키보드 인식 위치 조정
+                KeyboardAwarePositioned(
                   left: 0,
                   right: 0,
-                  bottom: keyboardHeight,
+                  bottom: 0,
+                  minKeyboardPadding: 20.0,
                   child: BottomInputView(
                     controller: _textController,
                     participantCount: chatController.participantCount,

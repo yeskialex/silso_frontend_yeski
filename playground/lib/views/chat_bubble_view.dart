@@ -54,8 +54,12 @@ class MessageListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 키보드가 올라왔을 때 추가 여백 제공
+    final bottomPadding = ChatConfig.inputBarHeight + keyboardHeight + 
+                         (keyboardHeight > 0 ? 20 : 0); // 키보드 있을 때 20px 추가 여백
+    
     return Padding(
-      padding: EdgeInsets.only(bottom: ChatConfig.inputBarHeight + keyboardHeight),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Stack(
         children: messages.asMap().entries.map((entry) {
           int index = entry.key;
