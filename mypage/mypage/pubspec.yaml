@@ -1,0 +1,42 @@
+name: flutter_application_1
+description: "Retro pixel-art pet home screen demo"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.2
+  flutter_svg: ^2.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/mypage/
+    - assets/mypage/appbar/
+    - assets/mypage/button/
+    - assets/mypage/pet/
+    - assets/mypage/status/
+    - assets/navigation/
+
+
+  # Uncomment and add pixel fonts when available.
+  # fonts:
+  #   - family: DungGeunMo
+  #     fonts:
+  #       - asset: assets/fonts/DungGeunMo.ttf
+  #   - family: Pretendard
+  #     fonts:
+  #       - asset: assets/fonts/Pretendard-Regular.ttf
+  #       - asset: assets/fonts/Pretendard-Bold.ttf
