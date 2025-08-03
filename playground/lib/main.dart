@@ -69,7 +69,7 @@ class _BubbleStackScreenState extends State<BubbleStackScreen> {
       final screenHeight = MediaQuery.of(context).size.height;
       final stackHeight = _messages.length * _bubbleHeight;
 
-      if (stackHeight > screenHeight * 0.75) {
+      if (stackHeight > screenHeight * 0.55) {
         // 한계에 도달하면, 경고 메시지를 표시하고 자동 리셋 타이머를 시작합니다.
         _isLimitReached = true;
         _startAutoResetTimer();
@@ -121,9 +121,9 @@ class _BubbleStackScreenState extends State<BubbleStackScreen> {
               Message message = entry.value;
               // 각 버블을 Positioned로 하단부터 쌓고, Align으로 좌우 정렬합니다.
               return Positioned(
-                bottom: 20.0 + (index * _bubbleHeight),
-                left: 200,
-                right: 200,
+                bottom: MediaQuery.of(context).size.height * 0.2 + (index * _bubbleHeight),
+                left: 30,
+                right: 30,
                 child: Align(
                   alignment: message.isLeft
                       ? Alignment.centerLeft
@@ -197,12 +197,12 @@ class ChatBubble extends StatelessWidget {
       // 버블의 최대 너비를 화면의 60%로 제한하여 좌우 배치를 명확하게 합니다.
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.6),
       margin: const EdgeInsets.symmetric(vertical: 5),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
       decoration: ShapeDecoration(
         color: const Color(0xFFFAFAFA),
         shape: RoundedRectangleBorder(
           side: const BorderSide(width: 2, color: Color(0xFF121212)),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
         ),
         shadows: const [
           BoxShadow(
@@ -216,7 +216,7 @@ class ChatBubble extends StatelessWidget {
         text,
         style: const TextStyle(
           color: Color(0xFF121212),
-          fontSize: 16,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
       ),
