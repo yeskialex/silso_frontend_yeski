@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'views/loading_screen_view.dart';
-
+import 'pages/category_selection_page.dart'; 
 /// MVC 패턴을 적용한 Flutter 앱의 메인 엔트리 포인트
 void main() {
   runApp(const MyApp());
@@ -19,7 +19,8 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.deepPurple,
         useMaterial3: true,
       ),
-      home: const LoadingScreenView(),
+      home: CategorySelectionPage(),
+      //const LoadingScreenView(),
     );
   }
 }
