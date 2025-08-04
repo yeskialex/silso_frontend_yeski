@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
-import 'dart:js' as js;
+import 'dart:js' as js if (dart.library.js) 'dart:js';
 
 class KoreanAuthService {
   static final KoreanAuthService _instance = KoreanAuthService._internal();
@@ -263,7 +263,7 @@ class KoreanAuthService {
     
     try {
       // Check if current URL has authorization code
-      final currentUrl = js.context['location']['href'].toString();
+      final currentUrl = kIsWeb ? js.context['location']['href'].toString() : 'http://localhost/';
       final uri = Uri.parse(currentUrl);
       
       print('🟡 Checking OAuth callback URL: ${uri.toString()}');
@@ -282,7 +282,9 @@ class KoreanAuthService {
         final accessToken = await _exchangeCodeForToken(authCode);
         
         // Clean up URL by removing query parameters
-        js.context.callMethod('eval', ['history.replaceState({}, document.title, window.location.pathname);']);
+        if (kIsWeb) {
+          js.context.callMethod('eval', ['history.replaceState({}, document.title, window.location.pathname);']);
+        }
         
         return accessToken;
       }
@@ -308,7 +310,7 @@ class KoreanAuthService {
         },
         body: jsonEncode({
           'authorization_code': authorizationCode,
-          'redirect_uri': js.context['location']['origin'].toString(),
+          'redirect_uri': kIsWeb ? js.context['location']['origin'].toString() : 'http://localhost',
         }),
       ).timeout(
         const Duration(seconds: 30),
@@ -396,16 +398,18 @@ class KoreanAuthService {
       await Future.delayed(const Duration(milliseconds: 100));
       
       // Check if Kakao SDK is available
-      if (js.context['Kakao'] == null) {
-        throw 'Kakao JavaScript SDK not loaded. Make sure to include the script tag.';
-      }
-      
-      // Initialize Kakao SDK
-      js.context.callMethod('eval', ['''
-        if (!Kakao.isInitialized()) {
-          Kakao.init('$_kakaoAppKey');
+      if (kIsWeb) {
+        if (js.context['Kakao'] == null) {
+          throw 'Kakao JavaScript SDK not loaded. Make sure to include the script tag.';
         }
-      ''']);
+        
+        // Initialize Kakao SDK
+        js.context.callMethod('eval', ['''
+          if (!Kakao.isInitialized()) {
+            Kakao.init('$_kakaoAppKey');
+          }
+        ''']);
+      }
       
       print('✅ Kakao JavaScript SDK initialized');
     } catch (e) {
@@ -421,32 +425,35 @@ class KoreanAuthService {
       // Create a completer to handle the async JavaScript callback
       final completer = Completer<String?>();
       
-      // Define global callback functions
-      js.context['flutterKakaoSuccess'] = js.allowInterop((dynamic authObj) {
-        try {
-          print('🟡 Kakao login success callback received');
-          final accessToken = authObj['access_token'];
-          if (accessToken != null) {
-            print('✅ Access token received: ${accessToken.toString().substring(0, 10)}...');
-            completer.complete(accessToken.toString());
-          } else {
-            print('❌ No access token in response');
-            completer.completeError('No access token received');
+      // Define global callback functions (web only)
+      if (kIsWeb) {
+        js.context['flutterKakaoSuccess'] = js.allowInterop((dynamic authObj) {
+          try {
+            print('🟡 Kakao login success callback received');
+            final accessToken = authObj['access_token'];
+            if (accessToken != null) {
+              print('✅ Access token received: ${accessToken.toString().substring(0, 10)}...');
+              completer.complete(accessToken.toString());
+            } else {
+              print('❌ No access token in response');
+              completer.completeError('No access token received');
+            }
+          } catch (e) {
+            print('❌ Error processing login result: $e');
+            completer.completeError('Error processing login result: $e');
           }
-        } catch (e) {
-          print('❌ Error processing login result: $e');
-          completer.completeError('Error processing login result: $e');
-        }
-      });
+        });
+        
+        js.context['flutterKakaoError'] = js.allowInterop((dynamic error) {
+          print('❌ Kakao login error callback received: $error');
+          completer.completeError('Kakao login failed: ${error.toString()}');
+        });
+      }
       
-      js.context['flutterKakaoError'] = js.allowInterop((dynamic error) {
-        print('❌ Kakao login error callback received: $error');
-        completer.completeError('Kakao login failed: ${error.toString()}');
-      });
-      
-      // Use eval to execute the Kakao login with proper error handling
-      print('🟡 Calling Kakao.Auth.login via eval...');
-      js.context.callMethod('eval', ['''
+      // Use eval to execute the Kakao login with proper error handling (web only)
+      if (kIsWeb) {
+        print('🟡 Calling Kakao.Auth.login via eval...');
+        js.context.callMethod('eval', ['''
         (function() {
           try {
             console.log('Kakao object available:', typeof Kakao !== 'undefined');
@@ -519,6 +526,10 @@ class KoreanAuthService {
           }
         })();
       ''']);
+      } else {
+        // Mobile fallback - not supported
+        completer.completeError('Kakao login only supported on web platform');
+      }
       
       // Wait for the result
       return await completer.future.timeout(

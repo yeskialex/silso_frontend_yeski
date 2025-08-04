@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import '../widgets/google_sign_in_button.dart';
-import '../widgets/kakao_login_button.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -110,8 +108,8 @@ top: 145 * heightRatio,
 child: SizedBox(
 width: 90 * widthRatio,
 height: 37 * heightRatio,
-child: SvgPicture.asset(
-'assets/images/silso_logo/login_logo_svg.svg',
+child: Image.asset(
+'assets/images/silso_logo/login_logo.png', // 확장자를 .svg에서 .png로 변경
 fit: BoxFit.contain, // 또는 BoxFit.fill 등 필요에 따라 조절
 ),
 ),
@@ -178,38 +176,21 @@ fit: BoxFit.contain, // 또는 BoxFit.fill 등 필요에 따라 조절
               spacing: 16 * widthRatio,
               children: [
                 // 카카오 로그인 버튼
-                KakaoLoginButtonKorean(
-                  isLoading: _isLoading,
-                  onSuccess: () {
-                    if (mounted) {
-                      Navigator.of(context).pushReplacementNamed('/home');
-                    }
-                  },
-                  onError: (error) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(error)),
-                      );
-                    }
-                  },
-                ),
+GestureDetector( // 필요에 따라 감싸서 탭 이벤트를 처리
+onTap: _handleKakaoSignInWithImage, // 이미지 탭 시 실행될 함수 (3번에서 구현)
+child: Image.asset(
+'assets/images/kakao_signin/kakao_login_large_wide.png', // .png 이미지 경로
+fit: BoxFit.fitWidth, // 필요에 따라 이미지의 fit 속성 조절
+),
+),
                 // 구글 로그인 버튼
-                GoogleSignInButton(
-                  isLoading: _isLoading,
-                  // widthRatio: widthRatio,
-                  // heightRatio: heightRatio,
-                  onSuccess: () {
-                    if (mounted) {
-                      Navigator.of(context).pushReplacementNamed('/home');
-                    }
-                  },
-                  onError: (error) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(error)),
-                      );
-                    }
-                  },
+                 GestureDetector(
+                  onTap: _isLoading ? null : _handleGoogleSignInWithImage,
+                  child: Image.asset(
+                    // AppAssetProvider를 사용하여 반응형 경로를 가져옵니다.
+                    'assets/images/google_signin/web_neutral_sq_ctn@4x.png', // .png 이미지 경로),
+                    fit: BoxFit.fitWidth,
+                  ),
                 ),
                 // Apple 로그인 버튼 (더미)
                 _buildAppleButton(widthRatio),
@@ -221,7 +202,7 @@ fit: BoxFit.contain, // 또는 BoxFit.fill 등 필요에 따라 조절
         // 전화번호로 계속하기 버튼
         Positioned(
           left: 17 * widthRatio,
-          top: 580 * heightRatio,
+          top: 590 * heightRatio,
           child: Container(
             width: 360 * widthRatio,
             height: 52 * heightRatio,
@@ -311,4 +292,47 @@ Widget _buildAppleButton(double widthRatio) {
     ),
   );
 }
+
+  Future<void> _handleKakaoSignInWithImage() async {
+    setState(() => _isLoading = true);
+    try {
+      await _authService.signInWithKakao();
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+    Future<void> _handleGoogleSignInWithImage() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.signInWithGoogle();
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 }
+
