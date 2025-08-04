@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.of(context).pushReplacementNamed( '/after-login-splash');
       }
     } catch (e) {
       if (mounted) {
@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await _authService.signInAnonymously();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.of(context).pushReplacementNamed( '/after-login-splash');
       }
     } catch (e) {
       if (mounted) {
@@ -298,7 +298,7 @@ Widget _buildAppleButton(double widthRatio) {
     try {
       await _authService.signInWithKakao();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.of(context).pushReplacementNamed( '/after-login-splash');
       }
     } catch (e) {
       if (mounted) {
@@ -320,7 +320,7 @@ Widget _buildAppleButton(double widthRatio) {
     try {
       await _authService.signInWithGoogle();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.of(context).pushReplacementNamed('/after-login-splash');
       }
     } catch (e) {
       if (mounted) {
