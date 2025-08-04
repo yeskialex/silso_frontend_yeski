@@ -8,6 +8,7 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/community_screen.dart';
+import 'screens/after_login_splash.dart';
 // Removed unused imports for community screens
 
 void main() async {
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => SplashScreen(), //const AuthWrapper(),
         '/login': (context) => const LoginScreen(),
+        '/after-login-splash': (context) => const AfterLoginSplashScreen(),
         '/home': (context) => const HomeScreen(),
         '/community': (context) => const CommunityScreen(),
       },
