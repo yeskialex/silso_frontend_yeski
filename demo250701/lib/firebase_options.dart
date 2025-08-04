@@ -25,9 +25,15 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
-        return windows;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -41,46 +47,28 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAgjOCBaJQtPfChvql95lLK1Bh6zzgF1S8',
-    appId: '1:295894338538:web:7b6d5d0865b3d2e7080093',
-    messagingSenderId: '295894338538',
-    projectId: 'coba-f3b2f',
-    authDomain: 'coba-f3b2f.firebaseapp.com',
-    storageBucket: 'coba-f3b2f.firebasestorage.app',
+    apiKey: 'AIzaSyClirEjnvxPRhFYv7_4QWhuIoYqUr_uIJE',
+    appId: '1:337349884372:web:79458f2939b40bcc4a3e41',
+    messagingSenderId: '337349884372',
+    projectId: 'mvp2025-d40f9',
+    authDomain: 'mvp2025-d40f9.firebaseapp.com',
+    storageBucket: 'mvp2025-d40f9.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB-axp_WL46GpHBlSg7UsPHvR_j7NjTJrY',
-    appId: '1:295894338538:android:823234eb0559c78e080093',
-    messagingSenderId: '295894338538',
-    projectId: 'coba-f3b2f',
-    storageBucket: 'coba-f3b2f.firebasestorage.app',
+    apiKey: 'AIzaSyCkRrdxBod70mUucLHO23ekOBHknFXe2lg',
+    appId: '1:337349884372:android:c8e8c8adc6e295694a3e41',
+    messagingSenderId: '337349884372',
+    projectId: 'mvp2025-d40f9',
+    storageBucket: 'mvp2025-d40f9.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCsJWFaadHeJi6m_-JStZhxeYCE4oC7t9c',
-    appId: '1:295894338538:ios:33a91693d54dab35080093',
-    messagingSenderId: '295894338538',
-    projectId: 'coba-f3b2f',
-    storageBucket: 'coba-f3b2f.firebasestorage.app',
-    iosBundleId: 'com.example.myapp',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCsJWFaadHeJi6m_-JStZhxeYCE4oC7t9c',
-    appId: '1:295894338538:ios:33a91693d54dab35080093',
-    messagingSenderId: '295894338538',
-    projectId: 'coba-f3b2f',
-    storageBucket: 'coba-f3b2f.firebasestorage.app',
-    iosBundleId: 'com.example.myapp',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAgjOCBaJQtPfChvql95lLK1Bh6zzgF1S8',
-    appId: '1:295894338538:web:52b45895d17c7f21080093',
-    messagingSenderId: '295894338538',
-    projectId: 'coba-f3b2f',
-    authDomain: 'coba-f3b2f.firebaseapp.com',
-    storageBucket: 'coba-f3b2f.firebasestorage.app',
+    apiKey: 'AIzaSyCd3ChURi8_nhrfXeVsbuaceqZhI8_4bmo',
+    appId: '1:337349884372:ios:a90c27073f9b5f424a3e41',
+    messagingSenderId: '337349884372',
+    projectId: 'mvp2025-d40f9',
+    storageBucket: 'mvp2025-d40f9.firebasestorage.app',
+    iosBundleId: 'com.example.mvp',
   );
 }

@@ -1,6 +1,6 @@
 {
-    "name": "demo250701",
-    "short_name": "demo250701",
+    "name": "mvp",
+    "short_name": "mvp",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
