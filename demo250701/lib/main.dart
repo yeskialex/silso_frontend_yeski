@@ -8,10 +8,7 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/community_screen.dart';
-import 'screens/community/category_selection_screen.dart';
-import 'screens/community/profile_information_screen.dart';
-import 'screens/community/phone_verification_screen.dart';
-import 'screens/community/policy_agreement_screen.dart';
+// Removed unused imports for community screens
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

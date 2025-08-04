@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/auth_service.dart';
+import '../utils/responsive_asset_manager.dart';
 
 class KakaoLoginButton extends StatefulWidget {
   final VoidCallback? onSuccess;
   final Function(String)? onError;
   final bool isLoading;
+  final bool useEnglish;
+  final bool useAssetImage;
 
   const KakaoLoginButton({
     super.key,
     this.onSuccess,
     this.onError,
     this.isLoading = false,
+    this.useEnglish = false,
+    this.useAssetImage = true,
   });
 
   @override
@@ -54,9 +59,89 @@ class _KakaoLoginButtonState extends State<KakaoLoginButton> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.useAssetImage) {
+      return _buildAssetButton(context);
+    } else {
+      return _buildCustomButton(context);
+    }
+  }
+  
+  /// Build button using responsive Kakao assets
+  Widget _buildAssetButton(BuildContext context) {
+    final buttonSize = AppAssetProvider.getResponsiveButtonSize(
+      context,
+      baseSize: const Size(360, 52),
+    );
+    
     return SizedBox(
-      width: double.infinity,
-      height: 50,
+      width: buttonSize.width,
+      height: buttonSize.height,
+      child: GestureDetector(
+        onTap: (_isSigningIn || widget.isLoading) ? null : _handleKakaoSignIn,
+        child: Stack(
+          children: [
+            // Kakao asset image
+            Container(
+              width: buttonSize.width,
+              height: buttonSize.height,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    offset: const Offset(0, 2),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  AppAssetProvider.getPath(
+                    context,
+                    AppAsset.kakaoSignin,
+                  ),
+                  width: buttonSize.width,
+                  height: buttonSize.height,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (context, error, stackTrace) => _buildCustomButton(context),
+                ),
+              ),
+            ),
+            
+            // Loading overlay
+            if (_isSigningIn || widget.isLoading)
+              Container(
+                width: buttonSize.width,
+                height: buttonSize.height,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  /// Build custom button as fallback
+  Widget _buildCustomButton(BuildContext context) {
+    final buttonSize = AppAssetProvider.getResponsiveButtonSize(
+      context,
+      baseSize: const Size(360, 52),
+    );
+    
+    return SizedBox(
+      width: buttonSize.width,
+      height: buttonSize.height,
       child: ElevatedButton.icon(
         onPressed: (_isSigningIn || widget.isLoading) ? null : _handleKakaoSignIn,
         icon: _isSigningIn 
@@ -70,9 +155,9 @@ class _KakaoLoginButtonState extends State<KakaoLoginButton> {
               )
             : _buildKakaoIcon(),
         label: Text(
-          _isSigningIn ? '로그인 중...' : '카카오톡으로 로그인',
-          style: const TextStyle(
-            fontSize: 16,
+          _isSigningIn ? '로그인 중...' : (widget.useEnglish ? 'Login with Kakao' : '카카오톡으로 로그인'),
+          style: TextStyle(
+            fontSize: 16 * (buttonSize.width / 360),
             fontWeight: FontWeight.w600,
             color: Colors.black87,
           ),

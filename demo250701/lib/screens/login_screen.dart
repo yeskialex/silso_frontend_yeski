@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../widgets/google_sign_in_button.dart';
 import '../widgets/kakao_login_button.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -102,20 +103,19 @@ Widget build(BuildContext context) {
       children: [
 
         // 로고 이미지
-        Positioned(
-          left: 16 * widthRatio,
-          top: 145 * heightRatio,
-          child: Container(
-            width: 90 * widthRatio,
-            height: 37 * heightRatio,
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: NetworkImage("https://placehold.co/90x37"), // 실제 이미지 경로로 변경
-                fit: BoxFit.fill,
-              ),
-            ),
-          ),
-        ),
+        // silso-logo
+Positioned(
+left: 16 * widthRatio,
+top: 145 * heightRatio,
+child: SizedBox(
+width: 90 * widthRatio,
+height: 37 * heightRatio,
+child: SvgPicture.asset(
+'assets/images/silso_logo/login_logo_svg.svg',
+fit: BoxFit.contain, // 또는 BoxFit.fill 등 필요에 따라 조절
+),
+),
+),
 
         // 메인 제목
         Positioned(
@@ -196,8 +196,8 @@ Widget build(BuildContext context) {
                 // 구글 로그인 버튼
                 GoogleSignInButton(
                   isLoading: _isLoading,
-                  widthRatio: widthRatio,
-                  heightRatio: heightRatio,
+                  // widthRatio: widthRatio,
+                  // heightRatio: heightRatio,
                   onSuccess: () {
                     if (mounted) {
                       Navigator.of(context).pushReplacementNamed('/home');
