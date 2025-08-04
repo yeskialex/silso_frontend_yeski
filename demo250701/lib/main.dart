@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => const AuthWrapper(),
+        '/': (context) => SplashScreen(), //const AuthWrapper(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
         '/community': (context) => const CommunityScreen(),
@@ -53,82 +53,82 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatefulWidget {
-  const AuthWrapper({super.key});
+// class AuthWrapper extends StatefulWidget {
+//   const AuthWrapper({super.key});
 
-  @override
-  State<AuthWrapper> createState() => _AuthWrapperState();
-}
+//   @override
+//   State<AuthWrapper> createState() => _AuthWrapperState();
+// }
 
-class _AuthWrapperState extends State<AuthWrapper> {
-  final authService = AuthService();
-  bool _hasCheckedRedirect = false;
-  bool _showSplash = true;
+// class _AuthWrapperState extends State<AuthWrapper> {
+//   final authService = AuthService();
+//   bool _hasCheckedRedirect = false;
+//   bool _showSplash = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeApp();
-  }
+//   @override
+//   void initState() {
+//     super.initState();
+//     _initializeApp();
+//   }
 
-  Future<void> _initializeApp() async {
-    try {
-      // Check for redirect result on web (Google)
-      await authService.checkRedirectResult();
+//   Future<void> _initializeApp() async {
+//     try {
+//       // Check for redirect result on web (Google)
+//       await authService.checkRedirectResult();
       
-      // Check for Kakao OAuth callback only (don't start new login)
-      final koreanAuth = KoreanAuthService();
-      await koreanAuth.handleOAuthCallbackOnly();
-    } catch (e) {
-      print('Redirect result check error: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _hasCheckedRedirect = true;
-        });
-      }
-    }
-  }
+//       // Check for Kakao OAuth callback only (don't start new login)
+//       final koreanAuth = KoreanAuthService();
+//       await koreanAuth.handleOAuthCallbackOnly();
+//     } catch (e) {
+//       print('Redirect result check error: $e');
+//     } finally {
+//       if (mounted) {
+//         setState(() {
+//           _hasCheckedRedirect = true;
+//         });
+//       }
+//     }
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    // If we haven't checked redirect results yet, show a loading state (not splash)
-    if (!_hasCheckedRedirect) {
-      return Container(
-        color: const Color(0xFF1E1E2E),
-        child: const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C5CE7)),
-          ),
-        ),
-      );
-    }
+//   @override
+//   Widget build(BuildContext context) {
+//     // If we haven't checked redirect results yet, show a loading state (not splash)
+//     if (!_hasCheckedRedirect) {
+//       return Container(
+//         color: const Color(0xFF1E1E2E),
+//         child: const Center(
+//           child: CircularProgressIndicator(
+//             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C5CE7)),
+//           ),
+//         ),
+//       );
+//     }
     
-    return StreamBuilder<User?>(
-      stream: authService.authStateChanges,
-      builder: (context, snapshot) {
-        // Show splash screen only on initial load
-        if (snapshot.connectionState == ConnectionState.waiting && _showSplash) {
-          // After splash screen completes, don't show it again
-          Future.delayed(const Duration(seconds: 10), () {
-            if (mounted) {
-              setState(() {
-                _showSplash = false;
-              });
-            }
-          });
-          return const SplashScreen();
-        }
+//     return StreamBuilder<User?>(
+//       stream: authService.authStateChanges,
+//       builder: (context, snapshot) {
+//         // Show splash screen only on initial load
+//         if (snapshot.connectionState == ConnectionState.waiting && _showSplash) {
+//           // After splash screen completes, don't show it again
+//           Future.delayed(const Duration(seconds: 10), () {
+//             if (mounted) {
+//               setState(() {
+//                 _showSplash = false;
+//               });
+//             }
+//           });
+//           return const SplashScreen();
+//         }
         
-        // If user is logged in, go to home
-        if (snapshot.hasData) {
-          return const HomeScreen();
-        }
+//         // If user is logged in, go to home
+//         if (snapshot.hasData) {
+//           return const HomeScreen();
+//         }
         
-        // If no user, show login screen
-        return const LoginScreen();
-      },
-    );
-  }
-}
+//         // If no user, show login screen
+//         return const LoginScreen();
+//       },
+//     );
+//   }
+//}
 
