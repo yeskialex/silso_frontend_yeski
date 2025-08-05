@@ -11,8 +11,6 @@ import 'screens/community_screen.dart';
 import 'screens/after_login_splash.dart';
 import 'screens/intro_community_splash.dart'; // Import the new splash screen
 // Removed unused imports for community screens
-import 'screens/community/policy_agreement_screen.dart';
-import 'screens/community/profile_information_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,7 +46,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) =>  SplashScreen(), //const AuthWrapper(),
+        '/': (context) => SplashScreen(), //const AuthWrapper(),
         '/login': (context) => const LoginScreen(),
         '/after-login-splash': (context) => const AfterLoginSplashScreen(),
         '/home': (context) => const HomeScreen(),
