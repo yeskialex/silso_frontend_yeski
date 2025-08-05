@@ -188,7 +188,7 @@ fit: BoxFit.fitWidth, // 필요에 따라 이미지의 fit 속성 조절
                   onTap: _isLoading ? null : _handleGoogleSignInWithImage,
                   child: Image.asset(
                     // AppAssetProvider를 사용하여 반응형 경로를 가져옵니다.
-                    'assets/images/google_signin/web_neutral_sq_ctn@4x.png', // .png 이미지 경로),
+                    'assets/images/google_signin/web_neutral_sq_ctn@3x.png', // .png 이미지 경로),
                     fit: BoxFit.fitWidth,
                   ),
                 ),
