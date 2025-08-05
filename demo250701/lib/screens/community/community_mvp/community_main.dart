@@ -238,7 +238,7 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
       child: Row(
         children: [
           _buildTrialCard(
-            imageUrl: "https://placehold.co/216x121/000000/FFFFFF?text=Sample1",
+            imageUrl: "assets/images/community/judge_1.png",
             title: '여친이랑 헤어짐; 드루와',
             timeLeft: '판결까지 3시간 남음',
             participants: '현재 참여수 56명',
@@ -247,7 +247,7 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
           ),
           const SizedBox(width: 8),
           _buildTrialCard(
-            imageUrl: "https://placehold.co/216x121/5F37CF/FFFFFF?text=Sample2",
+            imageUrl: "assets/images/community/judge_2.png",
             title: '상사한테 꾸중을 들었...',
             timeLeft: '판결까지 9시간 남음',
             participants: '현재 참여수 56명',
@@ -256,7 +256,7 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
           ),
           const SizedBox(width: 8),
           _buildTrialCard(
-            imageUrl: "https://placehold.co/216x121/C7C7C7/FFFFFF?text=Sample3",
+            imageUrl: "assets/images/community/judge_1.png",
             title: '또 다른 재판 이야기',
             timeLeft: '판결까지 1일 남음',
             participants: '현재 참여수 102명',
@@ -288,7 +288,7 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               image: DecorationImage(
-                image: NetworkImage(imageUrl),
+                image: AssetImage(imageUrl),
                 fit: BoxFit.cover,
               ),
             ),
