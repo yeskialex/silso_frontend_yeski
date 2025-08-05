@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../services/community_service.dart'; // hot posts, general posts, my posts
+
+
 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
 class CommunityMainScreen extends StatefulWidget {
@@ -11,6 +15,16 @@ class CommunityMainScreen extends StatefulWidget {
 class _CommunityMainScreenState extends State<CommunityMainScreen> {
   // 현재 선택된 탭을 관리하는 상태 변수
   String _selectedTab = 'MAIN';
+  final CommunityService _communityService = CommunityService();
+  // HOT 게시물을 비동기적으로 불러오기 위한 Future 변수
+  late Future<List<Map<String, dynamic>>> _hotPostsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // 위젯이 처음 생성될 때 HOT 게시물 데이터를 불러옵니다.
+    _hotPostsFuture = _communityService.getHotPosts();
+  }
 
 
   @override
@@ -47,20 +61,40 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
                 _buildLiveTrialsList(screenSize),
                 const SizedBox(height: 40),
                 // 'HOT 게시물' 섹션
-                _buildBoardSection(
-                  title: 'HOT 게시물',
-                  items: [
-                    _HotPostItem(
-                      category: '고백할까말까정해줘',
-                      title: '고백하려고 단톡에 글 올렸다.',
-                      views: '10,891',
-                    ),
-                    _HotPostItem(
-                      category: '팀플에 지친 자들 모여라',
-                      title: '팀플하다가 울었엉요유ㅠㅠ',
-                      views: '10,891',
-                    ),
-                  ],
+                // 'HOT 게시물' 섹션 (FutureBuilder로 감싸서 데이터 로딩 처리)
+                FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _hotPostsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      // 데이터 로딩 중일 때 로딩 인디케이터 표시
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      // 에러 발생 시 에러 메시지 표시
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      // 데이터가 없을 때 메시지 표시
+                      return _buildBoardSection(
+                        title: 'HOT 게시물',
+                        items: [], // 빈 리스트 전달
+                      );
+                    }
+                    
+                    // 데이터 로딩 완료 시 게시물 목록을 표시
+                    final hotPosts = snapshot.data!
+                        .map((postData) => _HotPostItem(
+                              category: postData['category'],
+                              title: postData['title'],
+                              views: postData['views'],
+                            ))
+                        .toList();
+
+                    return _buildBoardSection(
+                      title: 'HOT 게시물',
+                      items: hotPosts,
+                    );
+                  },
                 ),
                 const SizedBox(height: 30),
                 // '종합게시판' 섹션
