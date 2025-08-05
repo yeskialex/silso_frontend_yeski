@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// 사용자의 프로필 정보를 표시하고 수정하는 화면입니다.
 /// 기존 Stack/Positioned 레이아웃에서 발생하는 렌더링 문제를 해결하고,
@@ -17,6 +18,8 @@ class ProfileInformationScreen extends StatefulWidget {
 class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
   // 이름 입력을 제어하는 컨트롤러
   final TextEditingController _nameController = TextEditingController();
+  // 생년월일 입력을 제어하는 컨트롤러
+  final TextEditingController _birthdateController = TextEditingController();
 
   // 국적 선택 상태를 관리하는 리스트. [내국인, 외국인]
   final List<bool> _nationalitySelection = [true, false];
@@ -31,6 +34,7 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
   void dispose() {
     // 컨트롤러를 사용하지 않을 때 메모리 누수를 방지하기 위해 dispose합니다.
     _nameController.dispose();
+    _birthdateController.dispose();
     super.dispose();
   }
 
@@ -200,55 +204,79 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // 생년월일 입력 필드
         Expanded(
-          child: _buildTextFieldContainer(
-            child: const Text(
-              '030818',
-              style: TextStyle(
-                color: Color(0xFF121212),
-                fontSize: 16,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w500,
+          child: TextField(
+            controller: _birthdateController,
+            style: const TextStyle(
+              color: Color(0xFF121212),
+              fontSize: 16,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              hintText: 'YYYY-MM-DD', // 예시 플레이스홀더
+              hintStyle: const TextStyle(color: Color(0xFF737373)),
+              filled: true,
+              fillColor: const Color(0xFFEAEAEA),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(color: Color(0xFF5F37CF)),
               ),
             ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6), // 6자리로 입력 제한
+            ],
           ),
         ),
         const SizedBox(width: 25),
-        // Text.rich를 사용하여 여러 스타일의 텍스트를 조합합니다.
-        const Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: '남',
+        // 성별 선택 버튼
+        Row(
+          children: [
+            _buildGenderOption('남'),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                '|',
                 style: TextStyle(
-                  color: Color(0xFFC4C4C4),
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
+                    color: Color(0xFF575757),
+                    fontSize: 16,
+                    fontFamily: 'Pretendard'),
               ),
-              TextSpan(
-                text: '   |   ',
-                style: TextStyle(
-                  color: Color(0xFF575757),
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              TextSpan(
-                text: '여',
-                style: TextStyle(
-                  color: Color(0xFF121212),
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+            ),
+            _buildGenderOption('여'),
+          ],
         )
       ],
+    );
+  }
+
+  /// 성별 선택 옵션 위젯을 빌드합니다.
+  Widget _buildGenderOption(String gender) {
+    final isSelected = _selectedGender == gender;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedGender = gender;
+        });
+      },
+      child: Text(
+        gender,
+        style: TextStyle(
+          color: isSelected ? const Color(0xFF121212) : const Color(0xFFC4C4C4),
+          fontSize: 16,
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 
