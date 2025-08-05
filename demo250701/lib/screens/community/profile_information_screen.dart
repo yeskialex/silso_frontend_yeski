@@ -21,6 +21,15 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
   // 생년월일 입력을 제어하는 컨트롤러
   final TextEditingController _birthdateController = TextEditingController();
 
+  // 전화번호을 제어하는 컨트롤러
+  final TextEditingController _phoneController = TextEditingController();
+  
+  // 인증번호 입력을 제어하는 컨트롤러
+  final TextEditingController _authCodeController = TextEditingController();
+
+  // 인증 요청 상태를 관리하는 변수
+  bool _isVerificationRequested = false; // service 함수에서 호출받아야함. 
+
   // 국적 선택 상태를 관리하는 리스트. [내국인, 외국인]
   final List<bool> _nationalitySelection = [true, false];
 
@@ -289,11 +298,14 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            _buildRadioButton('SKT', true),
-            const SizedBox(width: 30),
-            _buildRadioButton('KT', false),
-            const SizedBox(width: 30),
-            _buildRadioButton('LG U+', false),
+            _buildRadioButton('SKT'),
+            const SizedBox(width: 15),
+            _buildRadioButton('KT'),
+            const SizedBox(width: 15),
+            _buildRadioButton('LG U+'),
+            const SizedBox(width: 15),
+            _buildRadioButton('알뜰폰'),
+
           ],
         ),
         const SizedBox(height: 15),
@@ -301,50 +313,62 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
         Row(
           children: [
             Expanded(
-              child: Container(
-                height: 52,
-                padding: const EdgeInsets.symmetric(horizontal: 17),
-                decoration: const ShapeDecoration(
-                  color: Color(0xFFEAEAEA),
-                  shape: RoundedRectangleBorder(
+               child: TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                style: const TextStyle(
+                  color: Color(0xFF121212),
+                  fontSize: 16,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                ),
+                decoration: _textFieldDecoration(
+                  hintText: '전화번호 입력',
+                  prefixText: '+82 ',
+                ).copyWith(
+                  border: const OutlineInputBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(6),
                       bottomLeft: Radius.circular(6),
                     ),
+                    borderSide: BorderSide.none,
                   ),
-                ),
-                child: const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '010-1234-5678',
-                    style: TextStyle(
-                      color: Color(0xFF121212),
-                      fontSize: 16,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w500,
+                  focusedBorder: const OutlineInputBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(6),
+                      bottomLeft: Radius.circular(6),
                     ),
+                    borderSide: BorderSide(color: Color(0xFF5F37CF)),
                   ),
                 ),
               ),
             ),
             // '인증요청' 버튼
-            Container(
+            // '인증요청' 버튼
+            SizedBox(
               width: 116,
               height: 52,
-              decoration: const ShapeDecoration(
-                color: Color(0xFF121212),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(6),
-                    bottomRight: Radius.circular(6),
+              child: TextButton(
+                onPressed: () {
+                  setState(() {
+                    _isVerificationRequested = true;
+                  });
+                  // TODO: Add phone verification logic here
+                  print('Verification requested for ${_phoneController.text}');
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFF121212),
+                  foregroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(6),
+                      bottomRight: Radius.circular(6),
+                    ),
                   ),
                 ),
-              ),
-              child: const Center(
                 child: Text(
-                  '인증요청',
-                  style: TextStyle(
-                    color: Colors.white,
+                  _isVerificationRequested ? '재전송' : '인증요청',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontFamily: 'Pretendard',
                     fontWeight: FontWeight.w500,
@@ -356,60 +380,103 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
         ),
         const SizedBox(height: 8),
         // 인증번호 입력 필드
-        _buildTextFieldContainer(
-          child: const Text(
-            '64832',
-            style: TextStyle(
-              color: Color(0xFF121212),
-              fontSize: 16,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 통신사 선택을 위한 라디오 버튼 위젯을 빌드합니다.
-  Widget _buildRadioButton(String label, bool isSelected) {
-    return Row(
-      children: [
-        Container(
-          width: 19,
-          height: 19,
-          decoration: ShapeDecoration(
-            shape: OvalBorder(
-              side: const BorderSide(width: 1, color: Color(0xFFBBBBBB)),
-            ),
-          ),
-          // 선택되었을 때 중앙에 원을 표시합니다.
-          child: isSelected
-              ? Center(
-                  child: Container(
-                    width: 11,
-                    height: 11,
-                    decoration: const ShapeDecoration(
-                      color: Color(0xFF121212),
-                      shape: OvalBorder(),
-                    ),
-                  ),
-                )
-              : null,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label,
+        TextField(
+          controller: _authCodeController,
+          keyboardType: TextInputType.number,
           style: const TextStyle(
             color: Color(0xFF121212),
             fontSize: 16,
             fontFamily: 'Pretendard',
             fontWeight: FontWeight.w500,
           ),
-        )
+          decoration: _textFieldDecoration(hintText: '인증번호 입력'),
+        ),
       ],
     );
   }
+
+  /// 통신사 선택을 위한 라디오 버튼 위젯을 빌드합니다.
+
+  Widget _buildRadioButton(String label) {
+    final bool isSelected = (_selectedTelecom == label);
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTelecom = label;
+        });
+      },
+      child: Row(
+        children: [
+          Container(
+            width: 19,
+            height: 19,
+            decoration: ShapeDecoration(
+              shape: OvalBorder(
+                side: const BorderSide(width: 1, color: Color(0xFFBBBBBB)),
+              ),
+            ),
+            child: isSelected
+                ? Center(
+                    child: Container(
+                      width: 11,
+                      height: 11,
+                      decoration: const ShapeDecoration(
+                        color: Color(0xFF121212),
+                        shape: OvalBorder(),
+                      ),
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF121212),
+              fontSize: 16,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w500,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContinueButton() {
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 25),
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: () {
+              // TODO: Add form submission logic
+              print('Continue button pressed');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5F37CF),
+              foregroundColor: const Color(0xFFFAFAFA),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              '계속하기',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   /// 입력 필드의 기본 스타일을 정의하는 컨테이너 위젯입니다.
   Widget _buildTextFieldContainer({required Widget child}) {
@@ -429,34 +496,29 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     );
   }
 
-  /// 하단의 '계속하기' 버튼 위젯을 빌드합니다.
-  Widget _buildContinueButton() {
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 10, 18, 25),
-        child: Container(
-          width: double.infinity,
-          height: 52,
-          clipBehavior: Clip.antiAlias,
-          decoration: ShapeDecoration(
-            color: const Color(0xFF5F37CF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: const Center(
-            child: Text(
-              '계속하기',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFFFAFAFA),
-                fontSize: 18,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
+   /// TextField의 공통 스타일을 반환하는 헬퍼 메서드입니다.
+  InputDecoration _textFieldDecoration({required String hintText, String? prefixText}) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: Color(0xFF737373)),
+      prefixText: prefixText,
+      prefixStyle: const TextStyle(
+        color: Color(0xFF121212),
+        fontSize: 16,
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w500,
+      ),
+      filled: true,
+      fillColor: const Color(0xFFEAEAEA),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: Color(0xFF5F37CF)),
       ),
     );
   }
