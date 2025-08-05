@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/community_service.dart'; // hot posts, general posts, my posts
-
+import '../post_detail_screen.dart';
 
 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
@@ -26,6 +26,44 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
     _hotPostsFuture = _communityService.getHotPosts();
   }
 
+  // PostDetailScreen으로 이동하는 함수 
+  Future<void> _navigateToPostDetail(String postId, String communityId) async {
+    // 데이터 로딩 중임을 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+
+    try {
+      // 게시물과 커뮤니티의 상세 정보를 가져옵니다.
+      final post = await _communityService.getPost(postId);
+      final community = await _communityService.getCommunity(communityId);
+
+      Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+
+      // PostDetailScreen으로 이동
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PostDetailScreen(
+            post: post,
+            community: community,
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+      // 에러 발생 시 스낵바 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('게시물 정보를 불러오는 데 실패했습니다: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,9 +122,12 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
                     // 데이터 로딩 완료 시 게시물 목록을 표시
                     final hotPosts = snapshot.data!
                         .map((postData) => _HotPostItem(
+                              postId: postData['postId'],
+                              communityId: postData['communityId'],
                               category: postData['category'],
                               title: postData['title'],
                               views: postData['views'],
+                              onTap: () => _navigateToPostDetail(postData['postId'], postData['communityId']),
                             ))
                         .toList();
 
@@ -452,61 +493,71 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
 
 // 'HOT 게시물' 아이템 위젯
 class _HotPostItem extends StatelessWidget {
+  final String postId;
+  final String communityId;
   final String category;
   final String title;
   final String views;
+  final VoidCallback onTap;
 
   const _HotPostItem({
+    required this.postId,
+    required this.communityId,
     required this.category,
     required this.title,
     required this.views,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBFAFF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF5F37CF)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            category,
-            style: const TextStyle(
-              color: Color(0xFF8E8E8E),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8.0),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFBFAFF),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF5F37CF)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              category,
+              style: const TextStyle(
+                color: Color(0xFF8E8E8E),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-              Text(
-                '조회수: $views',
-                style: const TextStyle(
-                  color: Color(0xFF5F37CF),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                Text(
+                  '조회수: $views',
+                  style: const TextStyle(
+                    color: Color(0xFF5F37CF),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

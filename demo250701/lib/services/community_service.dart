@@ -321,6 +321,8 @@ class CommunityService {
 
         // UI에 필요한 데이터 형식으로 맵을 구성합니다.
         return {
+          'postId': postDoc.id,
+          'communityId': communityId,
           'category': communityName,
           'title': postData['title'] ?? 'No Title',
           'views': (postData['viewCount'] ?? 0).toString(),
