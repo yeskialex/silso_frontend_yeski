@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../services/community_service.dart';
 import 'community/category_selection_screen.dart';
+// Importing community screens
+import 'community/add_community_screen.dart';
+import 'community/main_communities_screen.dart';
+import 'community/my_communities_screen.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -28,8 +32,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           _hasCompletedSetup = hasCompleted;
           _isLoading = false;
         });
-        
-        // If not completed, navigate to category selection
+
         if (!hasCompleted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -64,13 +67,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
       );
     }
 
+    // 요청하신 _DevCommunityScreen의 Scaffold 코드로 교체된 부분입니다.
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E2E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
-          'Community',
+          'Community (Dev Mode)',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -87,6 +91,36 @@ class _CommunityScreenState extends State<CommunityScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Development Notice
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.orange.withOpacity(0.3),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.code, color: Colors.orange),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Development Mode: Profile setup bypassed',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
               // Welcome Header
               Container(
                 width: double.infinity,
@@ -127,136 +161,112 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
-              // Community Features Grid
-              Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  children: [
-                    _buildFeatureCard(
-                      icon: Icons.forum,
-                      title: 'Discussions',
-                      subtitle: 'Join conversations',
-                      onTap: () {
-                        // TODO: Navigate to discussions
-                        _showComingSoon('Discussions');
+
+              // Community Navigation Options
+              Column(
+                children: [
+                  // Add Community Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 60,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const AddCommunityScreen(),
+                          ),
+                        );
                       },
+                      icon: const Icon(Icons.add_circle, color: Colors.white),
+                      label: const Text(
+                        'Add Community',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6C5CE7),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
-                    _buildFeatureCard(
-                      icon: Icons.event,
-                      title: 'Events',
-                      subtitle: 'Discover events',
-                      onTap: () {
-                        // TODO: Navigate to events
-                        _showComingSoon('Events');
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Main Page Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 60,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const MainCommunitiesScreen(),
+                          ),
+                        );
                       },
+                      icon: const Icon(Icons.home, color: Colors.white),
+                      label: const Text(
+                        'Main Page',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF74B9FF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
-                    _buildFeatureCard(
-                      icon: Icons.group,
-                      title: 'Groups',
-                      subtitle: 'Find your tribe',
-                      onTap: () {
-                        // TODO: Navigate to groups
-                        _showComingSoon('Groups');
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // My Communities Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 60,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const MyCommunitiesScreen(),
+                          ),
+                        );
                       },
+                      icon: const Icon(Icons.group, color: Colors.white),
+                      label: const Text(
+                        'My Communities',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00B894),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
-                    _buildFeatureCard(
-                      icon: Icons.person,
-                      title: 'Profile',
-                      subtitle: 'View your profile',
-                      onTap: () {
-                        // TODO: Navigate to profile
-                        _showComingSoon('Profile');
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+
+              const Spacer(),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 40,
-              color: const Color(0xFF6C5CE7),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showComingSoon(String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2D2D44),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Coming Soon',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          '$feature feature is under development and will be available soon!',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
-              'OK',
-              style: TextStyle(color: Color(0xFF6C5CE7)),
-            ),
-          ),
-        ],
       ),
     );
   }
