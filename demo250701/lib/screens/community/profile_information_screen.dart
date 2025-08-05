@@ -1,303 +1,90 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../services/community_service.dart';
-import '../../models/country_data.dart';
-import 'phone_verification_screen.dart';
 
+/// 사용자의 프로필 정보를 표시하고 수정하는 화면입니다.
+/// 기존 Stack/Positioned 레이아웃에서 발생하는 렌더링 문제를 해결하고,
+/// Column/Row 기반의 반응형 레이아웃으로 재구성했습니다.
+/// 
+/// 사용자의 프로필 정보를 입력받는 화면입니다.
+/// 사용자 입력을 처리하기 위해 StatefulWidget으로 구성되었습니다.
 class ProfileInformationScreen extends StatefulWidget {
   const ProfileInformationScreen({super.key});
 
   @override
-  State<ProfileInformationScreen> createState() => _ProfileInformationScreenState();
+  State<ProfileInformationScreen> createState() =>
+      _ProfileInformationScreenState();
 }
 
-class _ProfileInformationScreenState extends State<ProfileInformationScreen>
-    with TickerProviderStateMixin {
-  final CommunityService _communityService = CommunityService();
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  
-  String? _selectedCountry;
-  String? _selectedGender;
-  DateTime? _selectedBirthdate;
-  bool _isLoading = false;
-  CountryData? _selectedCountryData;
-  
-  // Animation controllers
-  late AnimationController _buttonAnimationController;
-  late Animation<double> _buttonScaleAnimation;
-  late AnimationController _progressAnimationController;
-  late Animation<double> _progressAnimation;
+class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
+  // 이름 입력을 제어하는 컨트롤러
+  final TextEditingController _nameController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    
-    // Initialize with default country (South Korea)
-    _selectedCountryData = CountryService.defaultCountry;
-    _selectedCountry = _selectedCountryData?.name;
-    
-    // Initialize animations
-    _buttonAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    
-    _buttonScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _buttonAnimationController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _progressAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-    
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.67, // 2/3 progress for second step
-    ).animate(CurvedAnimation(
-      parent: _progressAnimationController,
-      curve: Curves.easeInOut,
-    ));
-    
-    // Start progress animation
-    _progressAnimationController.forward();
-  }
+  // 국적 선택 상태를 관리하는 리스트. [내국인, 외국인]
+  final List<bool> _nationalitySelection = [true, false];
+
+  // 성별 선택 상태를 관리하는 변수. '남', '여'
+  String _selectedGender = '여';
+
+  // 통신사 선택 상태를 관리하는 변수.
+  String _selectedTelecom = 'SKT';
 
   @override
   void dispose() {
+    // 컨트롤러를 사용하지 않을 때 메모리 누수를 방지하기 위해 dispose합니다.
     _nameController.dispose();
-    _phoneController.dispose();
-    _buttonAnimationController.dispose();
-    _progressAnimationController.dispose();
     super.dispose();
-  }
-
-  void _triggerButtonAnimation() {
-    _buttonAnimationController.forward().then((_) {
-      _buttonAnimationController.reverse();
-    });
-  }
-
-  /// Handle country selection and update phone field
-  void _onCountrySelected(String? countryName) {
-    if (countryName == null) return;
-    
-    final countryData = CountryService.getCountryByName(countryName);
-    if (countryData == null) return;
-    
-    setState(() {
-      _selectedCountry = countryName;
-      _selectedCountryData = countryData;
-    });
-    
-    // Update phone field with country code if it's empty
-    if (_phoneController.text.isEmpty) {
-      _phoneController.text = '+${countryData.phoneCode} ';
-      _phoneController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _phoneController.text.length),
-      );
-    } else {
-      // If phone field has content, try to update country code
-      _updatePhoneWithCountryCode(countryData);
-    }
-    
-    _triggerButtonAnimation();
-  }
-
-  /// Update phone field with new country code
-  void _updatePhoneWithCountryCode(CountryData countryData) {
-    String currentPhone = _phoneController.text;
-    
-    // Remove existing country code if present
-    if (currentPhone.startsWith('+')) {
-      final spaceIndex = currentPhone.indexOf(' ');
-      if (spaceIndex != -1) {
-        currentPhone = currentPhone.substring(spaceIndex + 1);
-      }
-    }
-    
-    // Add new country code
-    _phoneController.text = '+${countryData.phoneCode} $currentPhone';
-    _phoneController.selection = TextSelection.fromPosition(
-      TextPosition(offset: _phoneController.text.length),
-    );
-  }
-
-  /// Format phone number as user types
-  void _onPhoneChanged(String value) {
-    if (_selectedCountryData == null) return;
-    
-    // Don't format if user is editing the country code part
-    if (!value.startsWith('+${_selectedCountryData!.phoneCode}')) {
-      return;
-    }
-    
-    // Extract just the phone number part (after country code)
-    final countryCodePart = '+${_selectedCountryData!.phoneCode} ';
-    if (value.length <= countryCodePart.length) return;
-    
-    final phoneNumber = value.substring(countryCodePart.length);
-    final formattedPhone = _selectedCountryData!.formatPhoneNumber(phoneNumber);
-    
-    final newValue = countryCodePart + formattedPhone;
-    
-    if (newValue != value) {
-      _phoneController.value = TextEditingValue(
-        text: newValue,
-        selection: TextSelection.fromPosition(
-          TextPosition(offset: newValue.length),
-        ),
-      );
-    }
-    
-    _triggerButtonAnimation();
-  }
-
-  Future<void> _selectBirthdate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
-      firstDate: DateTime(1920),
-      lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF5F37CF),
-              onPrimary: Colors.white,
-              surface: Color(0xFFFAFAFA),
-              onSurface: Color(0xFF121212),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && picked != _selectedBirthdate) {
-      setState(() {
-        _selectedBirthdate = picked;
-      });
-      _triggerButtonAnimation();
-    }
-  }
-
-  Future<void> _saveAndContinue() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedCountry == null || _selectedGender == null || _selectedBirthdate == null) {
-      _showValidationError('필수 정보 누락', '모든 필수 항목을 입력해주세요.');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      // Get properly formatted phone number with country code
-      String formattedPhoneNumber = _phoneController.text.trim();
-      if (_selectedCountryData != null && !formattedPhoneNumber.startsWith('+')) {
-        formattedPhoneNumber = _selectedCountryData!.getFullPhoneNumber(formattedPhoneNumber);
-      }
-      
-      // Save profile information
-      await _communityService.saveProfileInformation(
-        name: _nameController.text.trim(),
-        country: _selectedCountry!,
-        birthdate: _selectedBirthdate!.toIso8601String().split('T')[0],
-        gender: _selectedGender!,
-        phoneNumber: formattedPhoneNumber,
-      );
-      
-      if (mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => PhoneVerificationScreen(
-              phoneNumber: _phoneController.text.trim(),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        _showValidationError('오류', e.toString());
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  void _showValidationError(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          message,
-          style: const TextStyle(
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
-              '확인',
-              style: TextStyle(
-                color: Color(0xFF5F37CF),
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    const double baseWidth = 393.0;
-    final double widthRatio = screenWidth / baseWidth;
-    final bool isFormValid = _nameController.text.isNotEmpty && 
-                            _selectedCountry != null && 
-                            _selectedGender != null && 
-                            _selectedBirthdate != null && 
-                            _phoneController.text.isNotEmpty;
-    
     return Scaffold(
+      // 화면 배경색 설정
       backgroundColor: const Color(0xFFFAFAFA),
-      appBar: _buildAppBar(context, widthRatio),
+      // 상단 앱 바 빌드
+      appBar: _buildAppBar(context),
+      // 메인 컨텐츠 영역
       body: Column(
         children: [
+          // 스크롤 가능한 컨텐츠 영역
           Expanded(
-            child: _buildMainContent(context, widthRatio),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                    const SizedBox(height: 30), // 상단 여백
+
+                    // '이름' 섹션
+                    _buildSectionTitle('이름'),
+                    const SizedBox(height: 8),
+                    _buildNameAndNationality(),
+                    const SizedBox(height: 35),
+
+                    // '생년월일' 섹션
+                    _buildSectionTitle('생년월일'),
+                    const SizedBox(height: 8),
+                    _buildBirthdateAndGender(),
+                    const SizedBox(height: 35),
+
+                    // '휴대폰 인증' 섹션
+                    _buildSectionTitle('휴대폰 인증'),
+                    const SizedBox(height: 15),
+                    _buildPhoneAuthSection(),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
           ),
-          _buildBottomButton(context, widthRatio, isFormValid),
+          // 하단 '계속하기' 버튼
+          _buildContinueButton(),
         ],
       ),
     );
   }
 
-  /// Build app bar with progress indicator
-  PreferredSizeWidget _buildAppBar(BuildContext context, double widthRatio) {
+  /// 화면 상단의 앱 바 (진행률 표시 포함)를 빌드합니다.
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: const Color(0xFFFAFAFA),
       elevation: 0,
@@ -310,444 +97,338 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen>
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: AnimatedBuilder(
-                animation: _progressAnimation,
-                builder: (context, child) {
-                  return LinearProgressIndicator(
-                    value: _progressAnimation.value,
-                    backgroundColor: const Color(0xFFE0E0E0),
-                    color: const Color(0xFF5F37CF),
-                    minHeight: 8,
-                  );
-                },
+              // UI 데모를 위해 고정된 진행률 값을 사용합니다.
+              child: const LinearProgressIndicator(
+                value: 0.67,
+                backgroundColor: Color(0xFFE0E0E0),
+                color: Color(0xFF5F37CF),
+                minHeight: 8,
               ),
             ),
           ),
         ],
       ),
+      centerTitle: true,
     );
   }
 
-  /// Build main content area
-  Widget _buildMainContent(BuildContext context, double widthRatio) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16 * widthRatio),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 60 * widthRatio),
-              
-              // Title
-              Text(
-                '개인정보를\n입력해주세요',
-                style: TextStyle(
-                  color: const Color(0xFF121212),
-                  fontSize: 24 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w600,
-                  height: 1.21,
-                ),
-              ),
-              
-              SizedBox(height: 16 * widthRatio),
-
-              // Subtitle
-              Text(
-                '더 나은 커뮤니티 경험을 위해 필요한 정보입니다',
-                style: TextStyle(
-                  color: const Color(0xFFC7C7C7),
-                  fontSize: 16 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w600,
-                  height: 1.39,
-                ),
-              ),
-
-              SizedBox(height: 32 * widthRatio),
-
-              // Form Fields
-              _buildNameField(widthRatio),
-              SizedBox(height: 20 * widthRatio),
-              
-              _buildCountryDropdown(widthRatio),
-              SizedBox(height: 20 * widthRatio),
-              
-              _buildBirthdateField(widthRatio),
-              SizedBox(height: 20 * widthRatio),
-              
-              _buildGenderDropdown(widthRatio),
-              SizedBox(height: 20 * widthRatio),
-              
-              _buildPhoneField(widthRatio),
-              SizedBox(height: 40 * widthRatio),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Build name input field
-  Widget _buildNameField(double widthRatio) {
-    return TextFormField(
-      controller: _nameController,
-      style: TextStyle(
-        color: const Color(0xFF121212),
+  /// 각 정보 섹션의 제목 위젯을 빌드합니다.
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Color(0xFF121212),
+        fontSize: 16,
         fontFamily: 'Pretendard',
-        fontSize: 16 * widthRatio,
+        fontWeight: FontWeight.w500,
       ),
-      decoration: InputDecoration(
-        labelText: '이름',
-        labelStyle: TextStyle(
-          color: const Color(0xFFC7C7C7),
-          fontFamily: 'Pretendard',
-          fontSize: 16 * widthRatio,
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFF5F37CF), width: 2),
-        ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 16 * widthRatio,
-          vertical: 16 * widthRatio,
-        ),
-      ),
-      onChanged: (value) => _triggerButtonAnimation(),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return '이름을 입력해주세요';
-        }
-        return null;
-      },
     );
   }
 
-  /// Build country dropdown
-  Widget _buildCountryDropdown(double widthRatio) {
-    return DropdownButtonFormField<String>(
-      value: _selectedCountry,
-      style: TextStyle(
-        color: const Color(0xFF121212),
-        fontFamily: 'Pretendard',
-        fontSize: 16 * widthRatio,
-      ),
-      dropdownColor: Colors.white,
-      decoration: InputDecoration(
-        labelText: '국가',
-        labelStyle: TextStyle(
-          color: const Color(0xFFC7C7C7),
-          fontFamily: 'Pretendard',
-          fontSize: 16 * widthRatio,
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFF5F37CF), width: 2),
-        ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 16 * widthRatio,
-          vertical: 16 * widthRatio,
-        ),
-      ),
-      items: CountryService.availableCountries.map((countryData) {
-        return DropdownMenuItem(
-          value: countryData.name,
-          child: Row(
-            children: [
-              Text(
-                countryData.flag,
-                style: TextStyle(fontSize: 20 * widthRatio),
+  /// '이름'과 '국적'을 표시하는 위젯을 빌드합니다.
+  Widget _buildNameAndNationality() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // 이름 입력 필드
+        Expanded(
+          child: TextField(
+            controller: _nameController,
+            style: const TextStyle(
+              color: Color(0xFF121212),
+              fontSize: 16,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              hintText: '이름',
+              hintStyle: const TextStyle(color: Color(0xFF737373)),
+              filled: true,
+              fillColor: const Color(0xFFEAEAEA),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide.none,
               ),
-              SizedBox(width: 8 * widthRatio),
-              Expanded(
-                child: Text(
-                  countryData.name,
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 16 * widthRatio,
-                  ),
-                ),
-              ),
-              Text(
-                '+${countryData.phoneCode}',
-                style: TextStyle(
-                  color: const Color(0xFFC7C7C7),
-                  fontFamily: 'Pretendard',
-                  fontSize: 14 * widthRatio,
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-      onChanged: _onCountrySelected,
-      validator: (value) {
-        if (value == null) {
-          return '국가를 선택해주세요';
-        }
-        return null;
-      },
-    );
-  }
-
-  /// Build birthdate selection field
-  Widget _buildBirthdateField(double widthRatio) {
-    return GestureDetector(
-      onTap: _selectBirthdate,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          horizontal: 16 * widthRatio,
-          vertical: 16 * widthRatio,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              _selectedBirthdate != null
-                  ? '${_selectedBirthdate!.year}년 ${_selectedBirthdate!.month}월 ${_selectedBirthdate!.day}일'
-                  : '생년월일 선택',
-              style: TextStyle(
-                color: _selectedBirthdate != null 
-                    ? const Color(0xFF121212)
-                    : const Color(0xFFC7C7C7),
-                fontSize: 16 * widthRatio,
-                fontFamily: 'Pretendard',
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(color: Color(0xFF5F37CF)),
               ),
             ),
-            Icon(
-              Icons.calendar_today,
-              color: const Color(0xFFC7C7C7),
-              size: 20 * widthRatio,
+          ),
+        ),
+        const SizedBox(width: 15),
+        // 국적 선택 토글 버튼
+        ToggleButtons(
+          isSelected: _nationalitySelection,
+          onPressed: (int index) {
+            setState(() {
+              // 버튼을 누를 때마다 상태를 업데이트합니다.
+              // 한 번에 하나의 버튼만 선택되도록 로직을 구현합니다.
+              for (int i = 0; i < _nationalitySelection.length; i++) {
+                _nationalitySelection[i] = i == index;
+              }
+            });
+          },
+          borderRadius: BorderRadius.circular(6),
+          selectedColor: Colors.white,
+          color: const Color(0xFF121212),
+          fillColor: const Color(0xFF121212),
+          splashColor: const Color(0xFF5F37CF).withOpacity(0.12),
+          constraints: const BoxConstraints(
+            minHeight: 52.0,
+            minWidth: 70.0,
+          ),
+          children: const <Widget>[
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text('내국인', style: TextStyle(fontFamily: 'Pretendard')),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text('외국인', style: TextStyle(fontFamily: 'Pretendard')),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Build gender dropdown
-  Widget _buildGenderDropdown(double widthRatio) {
-    return DropdownButtonFormField<String>(
-      value: _selectedGender,
-      style: TextStyle(
-        color: const Color(0xFF121212),
-        fontFamily: 'Pretendard',
-        fontSize: 16 * widthRatio,
-      ),
-      dropdownColor: Colors.white,
-      decoration: InputDecoration(
-        labelText: '성별',
-        labelStyle: TextStyle(
-          color: const Color(0xFFC7C7C7),
-          fontFamily: 'Pretendard',
-          fontSize: 16 * widthRatio,
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFF5F37CF), width: 2),
-        ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 16 * widthRatio,
-          vertical: 16 * widthRatio,
-        ),
-      ),
-      items: CommunityService.availableGenders.map((gender) {
-        return DropdownMenuItem(
-          value: gender,
-          child: Text(gender),
-        );
-      }).toList(),
-      onChanged: (value) {
-        setState(() => _selectedGender = value);
-        _triggerButtonAnimation();
-      },
-      validator: (value) {
-        if (value == null) {
-          return '성별을 선택해주세요';
-        }
-        return null;
-      },
-    );
-  }
-
-  /// Build phone number input field
-  Widget _buildPhoneField(double widthRatio) {
-    return TextFormField(
-      controller: _phoneController,
-      keyboardType: TextInputType.phone,
-      style: TextStyle(
-        color: const Color(0xFF121212),
-        fontFamily: 'Pretendard',
-        fontSize: 16 * widthRatio,
-      ),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s\(\)]')),
       ],
-      decoration: InputDecoration(
-        labelText: '전화번호',
-        hintText: _selectedCountryData?.phonePlaceholder ?? '010-1234-5678',
-        hintStyle: TextStyle(
-          color: const Color(0xFFC7C7C7),
-          fontFamily: 'Pretendard',
-          fontSize: 16 * widthRatio,
-        ),
-        labelStyle: TextStyle(
-          color: const Color(0xFFC7C7C7),
-          fontFamily: 'Pretendard',
-          fontSize: 16 * widthRatio,
-        ),
-        prefixIcon: _selectedCountryData != null
-            ? Container(
-                padding: EdgeInsets.symmetric(horizontal: 12 * widthRatio, vertical: 16 * widthRatio),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _selectedCountryData!.flag,
-                      style: TextStyle(fontSize: 18 * widthRatio),
-                    ),
-                    SizedBox(width: 4 * widthRatio),
-                    Text(
-                      '+${_selectedCountryData!.phoneCode}',
-                      style: TextStyle(
-                        color: const Color(0xFF5F37CF),
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14 * widthRatio,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : null,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          borderSide: const BorderSide(color: Color(0xFF5F37CF), width: 2),
-        ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 16 * widthRatio,
-          vertical: 16 * widthRatio,
-        ),
-      ),
-      onChanged: _onPhoneChanged,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return '전화번호를 입력해주세요';
-        }
-        
-        if (_selectedCountryData != null) {
-          // Remove country code for validation
-          String phoneOnly = value;
-          if (phoneOnly.startsWith('+${_selectedCountryData!.phoneCode}')) {
-            phoneOnly = phoneOnly.substring('+${_selectedCountryData!.phoneCode} '.length);
-          }
-          
-          if (!_selectedCountryData!.isValidPhoneNumber(phoneOnly)) {
-            return '올바른 ${_selectedCountryData!.name} 전화번호를 입력해주세요';
-          }
-        } else {
-          if (value.trim().length < 10) {
-            return '올바른 전화번호를 입력해주세요';
-          }
-        }
-        
-        return null;
-      },
     );
   }
 
-  /// Build bottom continue button with animation
-  Widget _buildBottomButton(BuildContext context, double widthRatio, bool canProceed) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16.0 * widthRatio),
-      child: AnimatedBuilder(
-        animation: _buttonScaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: canProceed ? _buttonScaleAnimation.value : 0.98,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              child: ElevatedButton(
-                onPressed: (_isLoading || !canProceed) ? null : _saveAndContinue,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: canProceed 
-                      ? const Color(0xFF5F37CF) 
-                      : const Color(0xFFBDBDBD),
-                  disabledBackgroundColor: const Color(0xFFBDBDBD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 16 * widthRatio),
-                  elevation: canProceed ? 2 : 0,
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        '계속하기',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: canProceed 
-                              ? Colors.white 
-                              : const Color(0xFFEEEEEE),
-                          fontSize: 18 * widthRatio,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w600,
-                          height: 1.23,
-                        ),
-                      ),
+  /// '생년월일'과 '성별'을 표시하는 위젯을 빌드합니다.
+  Widget _buildBirthdateAndGender() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: _buildTextFieldContainer(
+            child: const Text(
+              '030818',
+              style: TextStyle(
+                color: Color(0xFF121212),
+                fontSize: 16,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w500,
               ),
             ),
-          );
-        },
+          ),
+        ),
+        const SizedBox(width: 25),
+        // Text.rich를 사용하여 여러 스타일의 텍스트를 조합합니다.
+        const Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: '남',
+                style: TextStyle(
+                  color: Color(0xFFC4C4C4),
+                  fontSize: 16,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              TextSpan(
+                text: '   |   ',
+                style: TextStyle(
+                  color: Color(0xFF575757),
+                  fontSize: 16,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              TextSpan(
+                text: '여',
+                style: TextStyle(
+                  color: Color(0xFF121212),
+                  fontSize: 16,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        )
+      ],
+    );
+  }
+
+  /// '휴대폰 인증' 전체 섹션 위젯을 빌드합니다.
+  Widget _buildPhoneAuthSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 통신사 선택 라디오 버튼
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            _buildRadioButton('SKT', true),
+            const SizedBox(width: 30),
+            _buildRadioButton('KT', false),
+            const SizedBox(width: 30),
+            _buildRadioButton('LG U+', false),
+          ],
+        ),
+        const SizedBox(height: 15),
+        // 전화번호 입력 및 인증요청 버튼
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                height: 52,
+                padding: const EdgeInsets.symmetric(horizontal: 17),
+                decoration: const ShapeDecoration(
+                  color: Color(0xFFEAEAEA),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(6),
+                      bottomLeft: Radius.circular(6),
+                    ),
+                  ),
+                ),
+                child: const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '010-1234-5678',
+                    style: TextStyle(
+                      color: Color(0xFF121212),
+                      fontSize: 16,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // '인증요청' 버튼
+            Container(
+              width: 116,
+              height: 52,
+              decoration: const ShapeDecoration(
+                color: Color(0xFF121212),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(6),
+                    bottomRight: Radius.circular(6),
+                  ),
+                ),
+              ),
+              child: const Center(
+                child: Text(
+                  '인증요청',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // 인증번호 입력 필드
+        _buildTextFieldContainer(
+          child: const Text(
+            '64832',
+            style: TextStyle(
+              color: Color(0xFF121212),
+              fontSize: 16,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 통신사 선택을 위한 라디오 버튼 위젯을 빌드합니다.
+  Widget _buildRadioButton(String label, bool isSelected) {
+    return Row(
+      children: [
+        Container(
+          width: 19,
+          height: 19,
+          decoration: ShapeDecoration(
+            shape: OvalBorder(
+              side: const BorderSide(width: 1, color: Color(0xFFBBBBBB)),
+            ),
+          ),
+          // 선택되었을 때 중앙에 원을 표시합니다.
+          child: isSelected
+              ? Center(
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: const ShapeDecoration(
+                      color: Color(0xFF121212),
+                      shape: OvalBorder(),
+                    ),
+                  ),
+                )
+              : null,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF121212),
+            fontSize: 16,
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w500,
+          ),
+        )
+      ],
+    );
+  }
+
+  /// 입력 필드의 기본 스타일을 정의하는 컨테이너 위젯입니다.
+  Widget _buildTextFieldContainer({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 17),
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        color: const Color(0xFFEAEAEA),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: child,
+      ),
+    );
+  }
+
+  /// 하단의 '계속하기' 버튼 위젯을 빌드합니다.
+  Widget _buildContinueButton() {
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 25),
+        child: Container(
+          width: double.infinity,
+          height: 52,
+          clipBehavior: Clip.antiAlias,
+          decoration: ShapeDecoration(
+            color: const Color(0xFF5F37CF),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: const Center(
+            child: Text(
+              '계속하기',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFFFAFAFA),
+                fontSize: 18,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
