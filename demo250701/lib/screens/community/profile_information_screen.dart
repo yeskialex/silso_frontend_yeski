@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+// 필요한 서비스와 화면을 import 합니다.
+import '../../services/community_service.dart';
+import 'policy_agreement_screen.dart';
 
-/// 사용자의 프로필 정보를 표시하고 수정하는 화면입니다.
-/// 기존 Stack/Positioned 레이아웃에서 발생하는 렌더링 문제를 해결하고,
-/// Column/Row 기반의 반응형 레이아웃으로 재구성했습니다.
-/// 
 /// 사용자의 프로필 정보를 입력받는 화면입니다.
 /// 사용자 입력을 처리하기 위해 StatefulWidget으로 구성되었습니다.
 class ProfileInformationScreen extends StatefulWidget {
@@ -16,70 +15,104 @@ class ProfileInformationScreen extends StatefulWidget {
 }
 
 class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
-  // 이름 입력을 제어하는 컨트롤러
-  final TextEditingController _nameController = TextEditingController();
-  // 생년월일 입력을 제어하는 컨트롤러
-  final TextEditingController _birthdateController = TextEditingController();
+  // --- Services ---
+  final CommunityService _communityService = CommunityService();
 
-  // 전화번호을 제어하는 컨트롤러
+  // --- Controllers ---
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _birthdateController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  
-  // 인증번호 입력을 제어하는 컨트롤러
   final TextEditingController _authCodeController = TextEditingController();
 
-  // 인증 요청 상태를 관리하는 변수
-  bool _isVerificationRequested = false; // service 함수에서 호출받아야함. 
-
-  // 국적 선택 상태를 관리하는 리스트. [내국인, 외국인]
+  // --- State Variables ---
   final List<bool> _nationalitySelection = [true, false];
-
-  // 성별 선택 상태를 관리하는 변수. '남', '여'
   String _selectedGender = '여';
-
-  // 통신사 선택 상태를 관리하는 변수.
   String _selectedTelecom = 'SKT';
+  bool _isVerificationRequested = false;
+  bool _isLoading = false; // 로딩 상태를 관리하는 변수
 
   @override
   void dispose() {
-    // 컨트롤러를 사용하지 않을 때 메모리 누수를 방지하기 위해 dispose합니다.
     _nameController.dispose();
     _birthdateController.dispose();
+    _phoneController.dispose();
+    _authCodeController.dispose();
     super.dispose();
+  }
+
+  /// '계속하기' 버튼을 눌렀을 때 실행될 메서드
+  Future<void> _submitProfile() async {
+    // TODO: 폼 유효성 검사 로직 추가 (예: 모든 필드가 채워졌는지)
+
+    setState(() {
+      _isLoading = true; // 로딩 시작
+    });
+
+    try {
+      // 국적 문자열 결정
+      final String country = _nationalitySelection[0] ? '내국인' : '외국인';
+
+      // Firestore에 프로필 정보 저장
+      await _communityService.saveProfileInformation(
+        name: _nameController.text,
+        country: country,
+        birthdate: _birthdateController.text,
+        gender: _selectedGender,
+        phoneNumber: "+82${_phoneController.text}", // 국가번호 포함
+      );
+
+      // 저장 성공 시 다음 화면으로 이동
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PolicyAgreementScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      // 오류 발생 시 SnackBar로 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('프로필 저장에 실패했습니다: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      // 로딩 상태 종료
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 화면 배경색 설정
       backgroundColor: const Color(0xFFFAFAFA),
-      // 상단 앱 바 빌드
       appBar: _buildAppBar(context),
-      // 메인 컨텐츠 영역
       body: Column(
         children: [
-          // 스크롤 가능한 컨텐츠 영역
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                    const SizedBox(height: 30), // 상단 여백
-
-                    // '이름' 섹션
+                  children: [
+                    const SizedBox(height: 30),
                     _buildSectionTitle('이름'),
                     const SizedBox(height: 8),
                     _buildNameAndNationality(),
                     const SizedBox(height: 35),
-
-                    // '생년월일' 섹션
                     _buildSectionTitle('생년월일'),
                     const SizedBox(height: 8),
                     _buildBirthdateAndGender(),
                     const SizedBox(height: 35),
-
-                    // '휴대폰 인증' 섹션
                     _buildSectionTitle('휴대폰 인증'),
                     const SizedBox(height: 15),
                     _buildPhoneAuthSection(),
@@ -89,14 +122,12 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
               ),
             ),
           ),
-          // 하단 '계속하기' 버튼
           _buildContinueButton(),
         ],
       ),
     );
   }
 
-  /// 화면 상단의 앱 바 (진행률 표시 포함)를 빌드합니다.
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -110,7 +141,6 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              // UI 데모를 위해 고정된 진행률 값을 사용합니다.
               child: const LinearProgressIndicator(
                 value: 0.67,
                 backgroundColor: Color(0xFFE0E0E0),
@@ -125,7 +155,6 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     );
   }
 
-  /// 각 정보 섹션의 제목 위젯을 빌드합니다.
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
@@ -138,12 +167,10 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     );
   }
 
-  /// '이름'과 '국적'을 표시하는 위젯을 빌드합니다.
   Widget _buildNameAndNationality() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 이름 입력 필드
         Expanded(
           child: TextField(
             controller: _nameController,
@@ -153,32 +180,14 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w500,
             ),
-            decoration: InputDecoration(
-              hintText: '이름',
-              hintStyle: const TextStyle(color: Color(0xFF737373)),
-              filled: true,
-              fillColor: const Color(0xFFEAEAEA),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFF5F37CF)),
-              ),
-            ),
+            decoration: _textFieldDecoration(hintText: '이름'),
           ),
         ),
         const SizedBox(width: 15),
-        // 국적 선택 토글 버튼
         ToggleButtons(
           isSelected: _nationalitySelection,
           onPressed: (int index) {
             setState(() {
-              // 버튼을 누를 때마다 상태를 업데이트합니다.
-              // 한 번에 하나의 버튼만 선택되도록 로직을 구현합니다.
               for (int i = 0; i < _nationalitySelection.length; i++) {
                 _nationalitySelection[i] = i == index;
               }
@@ -208,12 +217,10 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     );
   }
 
-  /// '생년월일'과 '성별'을 표시하는 위젯을 빌드합니다.
   Widget _buildBirthdateAndGender() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 생년월일 입력 필드
         Expanded(
           child: TextField(
             controller: _birthdateController,
@@ -223,31 +230,15 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w500,
             ),
-            decoration: InputDecoration(
-              hintText: 'YYYY-MM-DD', // 예시 플레이스홀더
-              hintStyle: const TextStyle(color: Color(0xFF737373)),
-              filled: true,
-              fillColor: const Color(0xFFEAEAEA),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: const BorderSide(color: Color(0xFF5F37CF)),
-              ),
-            ),
+            decoration: _textFieldDecoration(hintText: 'YYMMDD'),
             keyboardType: TextInputType.number,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6), // 6자리로 입력 제한
+              LengthLimitingTextInputFormatter(6),
             ],
           ),
         ),
         const SizedBox(width: 25),
-        // 성별 선택 버튼
         Row(
           children: [
             _buildGenderOption('남'),
@@ -268,7 +259,6 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     );
   }
 
-  /// 성별 선택 옵션 위젯을 빌드합니다.
   Widget _buildGenderOption(String gender) {
     final isSelected = _selectedGender == gender;
     return GestureDetector(
@@ -289,31 +279,25 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     );
   }
 
-  /// '휴대폰 인증' 전체 섹션 위젯을 빌드합니다.
   Widget _buildPhoneAuthSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 통신사 선택 라디오 버튼
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             _buildRadioButton('SKT'),
-            const SizedBox(width: 15),
+            const SizedBox(width: 30),
             _buildRadioButton('KT'),
-            const SizedBox(width: 15),
+            const SizedBox(width: 30),
             _buildRadioButton('LG U+'),
-            const SizedBox(width: 15),
-            _buildRadioButton('알뜰폰'),
-
           ],
         ),
         const SizedBox(height: 15),
-        // 전화번호 입력 및 인증요청 버튼
         Row(
           children: [
             Expanded(
-               child: TextField(
+              child: TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 style: const TextStyle(
@@ -343,8 +327,6 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                 ),
               ),
             ),
-            // '인증요청' 버튼
-            // '인증요청' 버튼
             SizedBox(
               width: 116,
               height: 52,
@@ -379,7 +361,6 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        // 인증번호 입력 필드
         TextField(
           controller: _authCodeController,
           keyboardType: TextInputType.number,
@@ -394,8 +375,6 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
       ],
     );
   }
-
-  /// 통신사 선택을 위한 라디오 버튼 위젯을 빌드합니다.
 
   Widget _buildRadioButton(String label) {
     final bool isSelected = (_selectedTelecom == label);
@@ -443,6 +422,7 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     );
   }
 
+  /// 하단의 '계속하기' 버튼 위젯을 빌드합니다. (수정된 부분)
   Widget _buildContinueButton() {
     return SafeArea(
       child: Container(
@@ -451,53 +431,45 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
           width: double.infinity,
           height: 52,
           child: ElevatedButton(
-            onPressed: () {
-              // TODO: Add form submission logic
-              print('Continue button pressed');
-            },
+            // 로딩 중이 아닐 때 _submitProfile 메서드 호출
+            onPressed: _isLoading ? null : _submitProfile,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF5F37CF),
               foregroundColor: const Color(0xFFFAFAFA),
+              // 로딩 중일 때 비활성화된 버튼 색상
+              disabledBackgroundColor: Colors.grey,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              '계속하기',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: _isLoading
+                // 로딩 중이면 인디케이터 표시
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
+                  )
+                // 로딩 중이 아니면 텍스트 표시
+                : const Text(
+                    '계속하기',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
           ),
         ),
       ),
     );
   }
 
-
-  /// 입력 필드의 기본 스타일을 정의하는 컨테이너 위젯입니다.
-  Widget _buildTextFieldContainer({required Widget child}) {
-    return Container(
-      width: double.infinity,
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 17),
-      clipBehavior: Clip.antiAlias,
-      decoration: ShapeDecoration(
-        color: const Color(0xFFEAEAEA),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-      ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: child,
-      ),
-    );
-  }
-
-   /// TextField의 공통 스타일을 반환하는 헬퍼 메서드입니다.
-  InputDecoration _textFieldDecoration({required String hintText, String? prefixText}) {
+  InputDecoration _textFieldDecoration(
+      {required String hintText, String? prefixText}) {
     return InputDecoration(
       hintText: hintText,
       hintStyle: const TextStyle(color: Color(0xFF737373)),
