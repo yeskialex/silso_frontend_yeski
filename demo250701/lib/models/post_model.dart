@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Post {
+  final String id; // The property to hold the document ID
   final String postId;
   final String userId; // User who posted
   final String communityId;
@@ -15,6 +16,7 @@ class Post {
   final DateTime updatedAt;
 
   Post({
+    required this.id,
     required this.postId,
     required this.userId,
     required this.communityId,
@@ -50,6 +52,7 @@ class Post {
   // Create Post object from Firestore document
   factory Post.fromMap(Map<String, dynamic> map, String documentId) {
     return Post(
+      id: documentId, // Set the document ID
       postId: documentId,
       userId: map['userId'] ?? '',
       communityId: map['communityId'] ?? '',
@@ -81,6 +84,7 @@ class Post {
     DateTime? updatedAt,
   }) {
     return Post(
+      id: id, // Keep the original document ID
       postId: postId ?? this.postId,
       userId: userId ?? this.userId,
       communityId: communityId ?? this.communityId,

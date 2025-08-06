@@ -284,6 +284,68 @@ class CommunityService {
     }
   }
 
+
+// Get the latest post from each community the user has joined (More Efficient Version)
+Future<List<Map<String, dynamic>>> getLatestPostsFromMyCommunities() async {
+  if (currentUserId == null) throw 'User not authenticated';
+
+  try {
+     final List<Community> myCommunities = await getMyCommunities();
+ 
+
+    if (myCommunities.isEmpty) {
+      return [];
+    }
+
+    final communityIds = myCommunities.map((c) => c.communityId).toList();
+ 
+
+
+    if (communityIds.isEmpty) {
+        return [];
+    }
+    
+    final postsSnapshot = await _firestore
+        .collection('posts')
+        .where('communityId', whereIn: communityIds)
+        .orderBy('datePosted', descending: true)
+        .get();
+
+ 
+
+
+    final Map<String, Post> latestPostsMap = {};
+    for (final doc in postsSnapshot.docs) {
+      final post = Post.fromMap(doc.data(), doc.id);
+      if (!latestPostsMap.containsKey(post.communityId)) {
+        latestPostsMap[post.communityId] = post;
+      }
+    }
+ 
+
+
+    // ... 이하 코드는 동일 ...
+    final communityNameMap = {for (var c in myCommunities) c.communityId: c.communityName};
+    final result = latestPostsMap.entries.map((entry) {
+      final communityId = entry.key;
+      final post = entry.value;
+      return {
+        'communityId': communityId,
+        'communityName': communityNameMap[communityId] ?? 'Unknown Community',
+        'postId': post.id,
+        'postTitle': post.title,
+        'postDate': post.datePosted,
+      };
+    }).toList();
+    
+    result.sort((a, b) => (b['postDate'] as DateTime).compareTo(a['postDate'] as DateTime));
+    return result;
+    
+  } catch (e) {
+    return [];
+  }
+}
+
   // Get community Hot posting (Top3, Top View Posting; HOT 게시물 가져오기 (상위 3개)) 
   Future<List<Map<String, dynamic>>> getHotPosts() async {
     try {

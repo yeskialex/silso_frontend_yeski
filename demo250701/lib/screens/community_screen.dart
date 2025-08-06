@@ -5,6 +5,8 @@ import 'community/category_selection_screen.dart';
 import 'community/add_community_screen.dart';
 import 'community/main_communities_screen.dart';
 import 'community/my_communities_screen.dart';
+// Import design communities UI
+import 'community/community_mvp/community_main.dart'; 
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -207,7 +209,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => const MainCommunitiesScreen(),
+                            builder: (context) => CommunityMainScreen(), // const MainCommunitiesScreen(), // 
                           ),
                         );
                       },
