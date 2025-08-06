@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/community_service.dart'; // hot posts, general posts, my posts
 import '../post_detail_screen.dart';
+import '../../../models/post_model.dart';
 
 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
@@ -18,12 +19,15 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
   final CommunityService _communityService = CommunityService();
   // HOT 게시물을 비동기적으로 불러오기 위한 Future 변수
   late Future<List<Map<String, dynamic>>> _hotPostsFuture;
-
+  late Future<List<Post>> _generalPostsFuture; // 종합 게시판 게시물
   @override
   void initState() {
     super.initState();
     // 위젯이 처음 생성될 때 HOT 게시물 데이터를 불러옵니다.
     _hotPostsFuture = _communityService.getHotPosts();
+    // 종합 게시판 게시물 데이터를 불러옵니다.
+    _generalPostsFuture = _communityService.getCommunityPosts('r8zn6yjJtKHP3jyDoJ2x');
+
   }
 
   // PostDetailScreen으로 이동하는 함수 
@@ -64,6 +68,8 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
       );
     }
   }
+
+  
 
   @override
   Widget build(BuildContext context) {
@@ -139,15 +145,44 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
                 ),
                 const SizedBox(height: 30),
                 // '종합게시판' 섹션
-                _buildBoardSection(
-                  title: '종합게시판',
-                  isGeneral: true,
-                  items: [
-                    '오늘 내가 이런 일이 있었는데 진짜 아닌 것 같다. 내가...',
-                    '오늘 내가 이런 일이 있었는데 진짜 아닌 것 같다. 내가...',
-                    '오늘 내가 이런 일이 있었는데 진짜 아닌 것 같다. 내가...',
-                  ],
-                ),
+// Replace the original '종합게시판' _buildBoardSection with this FutureBuilder
+FutureBuilder<List<Post>>(
+  future: _generalPostsFuture,
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (snapshot.hasError) {
+      return Center(child: Text('Error: ${snapshot.error}'));
+    }
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      return _buildBoardSection(
+        title: '종합게시판',
+        items: [], // Pass an empty list
+      );
+    }
+
+    // Map the fetched Post data to our _GeneralPostItem widgets
+    final generalPosts = snapshot.data!.map((post) {
+      // Check if the post is new (e.g., posted within the last 24 hours)
+      final bool isNew = DateTime.now().difference(post.datePosted).inHours < 24;
+
+      return _GeneralPostItem(
+        title: post.title,
+        isNew: isNew,
+        postId: post.id,
+        communityId: post.communityId,
+        onTap: () => _navigateToPostDetail(post.id, post.communityId),
+      );
+    }).toList();
+
+    return _buildBoardSection(
+      title: '종합게시판',
+      isGeneral: true,
+      items: generalPosts,
+    );
+  },
+),
                 const SizedBox(height: 30),
                 // '내 게시판' 섹션
                 _buildBoardSection(
@@ -470,8 +505,8 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
               // 게시판 종류에 따라 다른 위젯을 렌더링합니다.
               if (title == 'HOT 게시물' && item is _HotPostItem) {
                 itemWidget = item;
-              } else if (isGeneral && item is String) {
-                itemWidget = _GeneralPostItem(title: item, isNew: true);
+              } else if (item is _GeneralPostItem) {
+                itemWidget = item;
               } else if (item is Map<String, String>) {
                  itemWidget = _MyPostItem(category: item['category']!, title: item['title']!, isNew: true);
               } else {
@@ -490,6 +525,7 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
     );
   }
 }
+
 
 // 'HOT 게시물' 아이템 위젯
 class _HotPostItem extends StatelessWidget {
@@ -567,26 +603,40 @@ class _HotPostItem extends StatelessWidget {
 class _GeneralPostItem extends StatelessWidget {
   final String title;
   final bool isNew;
+  final String postId;
+  final String communityId;
+  final VoidCallback onTap;
 
-  const _GeneralPostItem({required this.title, this.isNew = false});
+  const _GeneralPostItem({
+    required this.title,
+    this.isNew = false,
+    required this.postId,
+    required this.communityId,
+    required this.onTap,
+  });
+
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Color(0xFF8E8E8E), fontSize: 14),
+    // Wrap with InkWell to make it tappable
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Color(0xFF8E8E8E), fontSize: 14),
+            ),
           ),
-        ),
-        if (isNew) ...[
-          const SizedBox(width: 7),
-          _buildNewBadge(),
-        ]
-      ],
+          if (isNew) ...[
+            const SizedBox(width: 7),
+            _buildNewBadge(),
+          ]
+        ],
+      ),
     );
   }
 }
@@ -608,7 +658,7 @@ class _MyPostItem extends StatelessWidget {
             TextSpan(
               children: [
                 TextSpan(
-                  text: '[$category]',
+                  text: '$category',
                   style: const TextStyle(
                     color: Color(0xFF121212),
                     fontSize: 14,
