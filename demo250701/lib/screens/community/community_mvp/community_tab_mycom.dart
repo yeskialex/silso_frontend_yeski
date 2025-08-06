@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/community_service.dart'; // hot posts, general posts, my posts
 import '../post_detail_screen.dart';
 import '../../../models/post_model.dart';
+import '../../../models/community_model.dart';
 
 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
@@ -21,6 +22,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   late Future<List<Map<String, dynamic>>> _hotPostsFuture;
   late Future<List<Post>> _generalPostsFuture; // 종합 게시판 게시물
   late Future<List<Map<String, dynamic>>> _myPostsFuture; // '내 게시판'을 위한 Future 추가
+ late Future<List<Community>> _top5CommunitiesFuture;
 
   @override
   void initState() {
@@ -30,6 +32,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     // 종합 게시판 게시물 데이터를 불러옵니다.
     _generalPostsFuture = _communityService.getCommunityPosts('r8zn6yjJtKHP3jyDoJ2x');
     _myPostsFuture = _communityService.getLatestPostsFromMyCommunities(); // 새로 만든 함수 호출
+    _top5CommunitiesFuture = _communityService.getTop5Communities();
 
   }
 
@@ -459,53 +462,57 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   }
   
   // Helper widget for the horizontally scrollable TOP 5 communities
-  Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
-    // Dummy data for the top 5 communities
-    final topCommunities = [
-      {
-        'rank': '1위',
-        'title': '대학교 빌런이 되지말자',
-        'description': '대학교에서 팀플 많은 사람들 모여라! 팀플 꿀팁 대방출',
-        'members': '9,909명',
-        'imageUrl': 'https://placehold.co/300x87'
-      },
-      {
-        'rank': '2위',
-        'title': '스타트업 시작하는 사람들의 모임',
-        'description': '스타트업을 시작하며 겪었던 여러 실패들을 서로 공유하는 공간',
-        'members': '8,013명',
-        'imageUrl': 'https://placehold.co/300x87'
-      },
-      {
-        'rank': '3위',
-        'title': '엄빠가 처음이라',
-        'description': '육아에서 시행착오를 겪은 부모들이 진솔한 경험담을 나누는 공간',
-        'members': '8,112명',
-        'imageUrl': 'https://placehold.co/300x87'
-      },
-    ];
+// community_tab_mycom.dart
 
-    return SizedBox(
-      height: 176 * heightRatio,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: topCommunities.length,
-        separatorBuilder: (context, index) => SizedBox(width: 12 * widthRatio),
-        itemBuilder: (context, index) {
-          final community = topCommunities[index];
-          return _buildRankedCommunityCard(
-            widthRatio,
-            heightRatio,
-            rank: community['rank']!,
-            title: community['title']!,
-            description: community['description']!,
-            members: community['members']!,
-            imageUrl: community['imageUrl']!,
-          );
-        },
-      ),
-    );
-  }
+// Helper widget for the horizontally scrollable TOP 5 communities
+Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
+  // FutureBuilder를 사용하여 비동기 데이터를 처리합니다.
+  return FutureBuilder<List<Community>>(
+    future: _top5CommunitiesFuture, // 여기서 state 변수를 사용합니다.
+    builder: (context, snapshot) {
+      // 데이터 로딩 중일 때 로딩 인디케이터를 표시합니다.
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      // 에러가 발생했을 때 에러 메시지를 표시합니다.
+      if (snapshot.hasError) {
+        return Center(child: Text('커뮤니티를 불러오는 데 실패했습니다.'));
+      }
+      // 데이터가 없거나 비어있을 때 메시지를 표시합니다.
+      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return const Center(child: Text('표시할 커뮤니티가 없습니다.'));
+      }
+
+      // 데이터를 성공적으로 가져왔을 때 리스트를 빌드합니다.
+      final topCommunities = snapshot.data!;
+
+      return SizedBox(
+        height: 176 * heightRatio,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: topCommunities.length,
+          separatorBuilder: (context, index) => SizedBox(width: 12 * widthRatio),
+          itemBuilder: (context, index) {
+            final community = topCommunities[index];
+            // 순위를 표시하기 위해 index를 활용합니다.
+            final rank = '${index + 1}위'; 
+
+            return _buildRankedCommunityCard(
+              widthRatio,
+              heightRatio,
+              rank: rank,
+              // Community 모델의 프로퍼티를 직접 사용합니다.
+              title: community.communityName,
+              description: community.announcement ?? '소개가 없습니다.', // announcement가 null일 경우 기본값 설정
+              members: '${community.memberCount}명',
+              imageUrl: community.communityBanner ?? 'https://placehold.co/300x87', // 배너가 없을 경우 기본 이미지
+            );
+          },
+        ),
+      );
+    },
+  );
+}
   
   // Helper widget for a single ranked community card
   Widget _buildRankedCommunityCard(double widthRatio, double heightRatio,

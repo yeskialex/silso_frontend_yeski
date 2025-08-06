@@ -260,6 +260,33 @@ class CommunityService {
     }
   }
 
+  // Get top 5 communities by member count (Improved Version)
+  Future<List<Community>> getTop5Communities() async {
+    try {
+      // 1. 'memberCount'를 기준으로 내림차순 정렬하여 상위 5개의 커뮤니티를 가져옵니다.
+      // 이 쿼리 한 번으로 필요한 모든 데이터가 snapshot.docs에 담깁니다.
+      final snapshot = await _firestore
+          .collection('communities')
+          .orderBy('memberCount', descending: true)
+          .limit(5)
+          .get();
+
+      // 2. 루프를 돌며 불필요하게 데이터를 다시 요청할 필요가 없습니다.
+      // snapshot.docs에 있는 각 문서를 Community 객체로 바로 변환합니다.
+      // 이미 만들어두신 Community.fromMap 팩토리 생성자를 활용합니다.
+      return snapshot.docs.map((doc) {
+        // doc.data()는 문서의 필드를 담은 Map이고, doc.id는 문서의 ID입니다.
+        return Community.fromMap(doc.data(), doc.id);
+      }).toList();
+
+    } catch (e) {
+      // 오류 발생 시 콘솔에 로그를 남기고 빈 리스트를 반환합니다.
+      print('Error fetching top 5 communities: $e');
+      return [];
+    }
+  }
+
+
   // Get communities user has joined
   Future<List<Community>> getMyCommunities() async {
     if (currentUserId == null) throw 'User not authenticated';
@@ -291,7 +318,6 @@ Future<List<Map<String, dynamic>>> getLatestPostsFromMyCommunities() async {
 
   try {
      final List<Community> myCommunities = await getMyCommunities();
- 
 
     if (myCommunities.isEmpty) {
       return [];
@@ -299,8 +325,6 @@ Future<List<Map<String, dynamic>>> getLatestPostsFromMyCommunities() async {
 
     final communityIds = myCommunities.map((c) => c.communityId).toList();
  
-
-
     if (communityIds.isEmpty) {
         return [];
     }
@@ -311,9 +335,6 @@ Future<List<Map<String, dynamic>>> getLatestPostsFromMyCommunities() async {
         .orderBy('datePosted', descending: true)
         .get();
 
- 
-
-
     final Map<String, Post> latestPostsMap = {};
     for (final doc in postsSnapshot.docs) {
       final post = Post.fromMap(doc.data(), doc.id);
@@ -321,10 +342,7 @@ Future<List<Map<String, dynamic>>> getLatestPostsFromMyCommunities() async {
         latestPostsMap[post.communityId] = post;
       }
     }
- 
 
-
-    // ... 이하 코드는 동일 ...
     final communityNameMap = {for (var c in myCommunities) c.communityId: c.communityName};
     final result = latestPostsMap.entries.map((entry) {
       final communityId = entry.key;
