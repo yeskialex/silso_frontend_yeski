@@ -18,6 +18,8 @@ import 'screens/community/community_mvp/community_tab.dart';
 import 'screens/community/community_mvp/community_tab_mycom.dart'; 
 
 import 'screens/community/my_communities_screen.dart';
+import 'screens/community/main_communities_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
