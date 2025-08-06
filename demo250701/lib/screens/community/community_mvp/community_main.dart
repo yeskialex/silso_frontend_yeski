@@ -701,7 +701,7 @@ class _MyPostItem extends StatelessWidget {
               TextSpan(
                 children: [
                   TextSpan(
-                    text: '$category: ', // 커뮤니티 이름을 타이틀과 구분
+                    text: '$category ', // 커뮤니티 이름을 타이틀과 구분
                     style: const TextStyle(
                       color: Color(0xFF121212),
                       fontSize: 14,
