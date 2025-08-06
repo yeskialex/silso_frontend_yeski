@@ -290,34 +290,42 @@ Future<List<Map<String, dynamic>>> getLatestPostsFromMyCommunities() async {
   if (currentUserId == null) throw 'User not authenticated';
 
   try {
-    // 1. Get all communities the user has joined (1st DB read)
-    final List<Community> myCommunities = await getMyCommunities();
+     final List<Community> myCommunities = await getMyCommunities();
+ 
+
     if (myCommunities.isEmpty) {
       return [];
     }
 
-    // Create a map for quick community name lookups
-    final communityNameMap = {for (var c in myCommunities) c.communityId: c.communityName};
     final communityIds = myCommunities.map((c) => c.communityId).toList();
+ 
 
-    // 2. Fetch all posts from those communities in a single query (2nd DB read)
+
+    if (communityIds.isEmpty) {
+        return [];
+    }
+    
     final postsSnapshot = await _firestore
         .collection('posts')
         .where('communityId', whereIn: communityIds)
         .orderBy('datePosted', descending: true)
         .get();
 
-    // 3. Process the results in memory to find the latest post for each community
+ 
+
+
     final Map<String, Post> latestPostsMap = {};
     for (final doc in postsSnapshot.docs) {
       final post = Post.fromMap(doc.data(), doc.id);
-      // Since the list is sorted by date, the first post we encounter for a community is the latest.
       if (!latestPostsMap.containsKey(post.communityId)) {
         latestPostsMap[post.communityId] = post;
       }
     }
+ 
 
-    // 4. Format the data for the UI
+
+    // ... 이하 코드는 동일 ...
+    final communityNameMap = {for (var c in myCommunities) c.communityId: c.communityName};
     final result = latestPostsMap.entries.map((entry) {
       final communityId = entry.key;
       final post = entry.value;
@@ -330,13 +338,10 @@ Future<List<Map<String, dynamic>>> getLatestPostsFromMyCommunities() async {
       };
     }).toList();
     
-    // Sort the final list by post date to show the absolute newest posts first
     result.sort((a, b) => (b['postDate'] as DateTime).compareTo(a['postDate'] as DateTime));
-
     return result;
     
   } catch (e) {
-    print('Error fetching latest posts from my communities: $e');
     return [];
   }
 }
