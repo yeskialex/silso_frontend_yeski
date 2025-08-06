@@ -20,6 +20,8 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
   // HOT 게시물을 비동기적으로 불러오기 위한 Future 변수
   late Future<List<Map<String, dynamic>>> _hotPostsFuture;
   late Future<List<Post>> _generalPostsFuture; // 종합 게시판 게시물
+  late Future<List<Map<String, dynamic>>> _myPostsFuture; // '내 게시판'을 위한 Future 추가
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +29,7 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
     _hotPostsFuture = _communityService.getHotPosts();
     // 종합 게시판 게시물 데이터를 불러옵니다.
     _generalPostsFuture = _communityService.getCommunityPosts('r8zn6yjJtKHP3jyDoJ2x');
+    _myPostsFuture = _communityService.getLatestPostsFromMyCommunities(); // 새로 만든 함수 호출
 
   }
 
@@ -185,15 +188,43 @@ FutureBuilder<List<Post>>(
 ),
                 const SizedBox(height: 30),
                 // '내 게시판' 섹션
-                _buildBoardSection(
-                  title: '내 게시판',
-                  isGeneral: true,
-                  items: [
-                    {'category': '농사 게시판', 'title': '이런 일이 있었는데 진짜 아닌 것 같다. 내..'},
-                    {'category': '농사 게시판', 'title': '이런 일이 있었는데 진짜 아닌 것 같다. 내..'},
-                    {'category': '농사 게시판', 'title': '이런 일이 있었는데 진짜 아닌 것 같다. 내..'},
-                  ],
-                ),
+FutureBuilder<List<Map<String, dynamic>>>(
+  future: _myPostsFuture,
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (snapshot.hasError) {
+      return Center(child: Text('게시판을 불러오는 데 실패했습니다: ${snapshot.error}'));
+    }
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      return _buildBoardSection(
+        title: '내 게시판',
+        items: [], // 데이터가 없으면 빈 리스트를 전달
+      );
+    }
+
+    // 가져온 데이터를 _MyPostItem 위젯 리스트로 변환합니다.
+    final myPosts = snapshot.data!.map((postData) {
+      final DateTime postDate = postData['postDate'];
+      final bool isNew = DateTime.now().difference(postDate).inHours < 24;
+
+      return _MyPostItem(
+        category: postData['communityName'],
+        title: postData['postTitle'],
+        isNew: isNew,
+        postId: postData['postId'],
+        communityId: postData['communityId'],
+        onTap: () => _navigateToPostDetail(postData['postId'], postData['communityId']),
+      );
+    }).toList();
+
+    return _buildBoardSection(
+      title: '내 게시판',
+      items: myPosts,
+    );
+  },
+),
                  const SizedBox(height: 40), // 하단 여백
               ],
             ),
@@ -507,8 +538,8 @@ FutureBuilder<List<Post>>(
                 itemWidget = item;
               } else if (item is _GeneralPostItem) {
                 itemWidget = item;
-              } else if (item is Map<String, String>) {
-                 itemWidget = _MyPostItem(category: item['category']!, title: item['title']!, isNew: true);
+              } else if (item is _MyPostItem) {
+                 itemWidget = item;
               } else {
                 itemWidget = const SizedBox.shrink();
               }
@@ -646,44 +677,57 @@ class _MyPostItem extends StatelessWidget {
   final String category;
   final String title;
   final bool isNew;
+  final String postId;
+  final String communityId;
+  final VoidCallback onTap;
 
-  const _MyPostItem({required this.category, required this.title, this.isNew = false});
+  const _MyPostItem({
+    required this.category,
+    required this.title,
+    this.isNew = false,
+    required this.postId,
+    required this.communityId,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: '$category',
-                  style: const TextStyle(
-                    color: Color(0xFF121212),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+    return InkWell( // InkWell로 감싸서 탭 이벤트를 처리합니다.
+      onTap: onTap,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '$category: ', // 커뮤니티 이름을 타이틀과 구분
+                    style: const TextStyle(
+                      color: Color(0xFF121212),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600, // 더 잘보이게 Bold 처리
+                    ),
                   ),
-                ),
-                TextSpan(
-                  text: ' $title',
-                  style: const TextStyle(
-                    color: Color(0xFF8E8E8E),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                  TextSpan(
+                    text: title,
+                    style: const TextStyle(
+                      color: Color(0xFF8E8E8E),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-             maxLines: 1,
-             overflow: TextOverflow.ellipsis,
           ),
-        ),
-        if (isNew) ...[
-          const SizedBox(width: 7),
-          _buildNewBadge(),
-        ]
-      ],
+          if (isNew) ...[
+            const SizedBox(width: 7),
+            _buildNewBadge(),
+          ]
+        ],
+      ),
     );
   }
 }
