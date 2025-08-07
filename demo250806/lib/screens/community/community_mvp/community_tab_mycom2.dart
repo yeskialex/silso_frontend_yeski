@@ -25,6 +25,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   late Future<List<Map<String, dynamic>>> _myPostsFuture; // '내 게시판'을 위한 Future 추가
   late Future<List<Community>> _myCommunitiesFuture; // '내 커뮤니티'를 위한 Future
   late Future<List<Community>> _top5CommunitiesFuture;
+  late Future<List<String>> _userInterestsFuture; // 사용자 관심사를 위한 Future 추가
 
   @override
   void initState() {
@@ -36,6 +37,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     _myPostsFuture = _communityService.getLatestPostsFromMyCommunities(); // 새로 만든 함수 호출
     _myCommunitiesFuture = _communityService.getMyCommunities(); // '내 커뮤니티'를 위한 Future
     _top5CommunitiesFuture = _communityService.getTop5Communities();
+    _userInterestsFuture = _communityService.getUserInterests(); // 새로 만든 함수 호출로 초기화
 
   }
 
@@ -328,10 +330,24 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
                     SizedBox(height: 18 * heightRatio),
                     
                     // Category filter chips with horizontal scroll
-                    SizedBox(
-                      height: 40 * heightRatio,
-                      child: _buildCategoryChips(widthRatio, heightRatio),
-                    ),
+                  // 사용자 관심사를 가져와 카테고리 칩을 동적으로 생성합니다.
+                  FutureBuilder<List<String>>(
+                    future: _userInterestsFuture,
+                    builder: (context, interestSnapshot) {
+                      if (interestSnapshot.connectionState == ConnectionState.waiting) {
+                        return const SizedBox(height: 40, child: Center(child: CircularProgressIndicator()));
+                      }
+                      if (interestSnapshot.hasError || !interestSnapshot.hasData || interestSnapshot.data!.isEmpty) {
+                        // 관심사가 없거나 로드 실패 시 아무것도 표시하지 않음
+                        return const SizedBox.shrink();
+                      }
+                      final interests = interestSnapshot.data!;
+                      return SizedBox(
+                        height: 40 * heightRatio,
+                        child: _buildCategoryChips(widthRatio, heightRatio, interests),
+                      );
+                    },
+                  ),
                     SizedBox(height: 22 * heightRatio),
                     
                     // Grid of recommended community cards with proper constraints
@@ -663,24 +679,24 @@ color: const Color(0xFF5F37CF),
   }
 
   /// Helper widget for the category filter chips.
-  Widget _buildCategoryChips(double widthRatio, double heightRatio) {
-    return SingleChildScrollView(
+  Widget _buildCategoryChips(double widthRatio, double heightRatio, List<String> interests) {
+    // 관심사 목록이 비어있으면 아무것도 표시하지 않습니다.
+    if (interests.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return ListView.separated(
       scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _buildChip('🏬', '자영업', widthRatio, heightRatio),
-          SizedBox(width: 8 * widthRatio),
-          _buildChip('💼', '이직', widthRatio, heightRatio),
-          SizedBox(width: 8 * widthRatio),
-          _buildChip('🧘‍♀️', '멘탈케어', widthRatio, heightRatio),
-          SizedBox(width: 8 * widthRatio),
-          _buildChip('🎓', '취업', widthRatio, heightRatio),
-          SizedBox(width: 8 * widthRatio),
-          _buildChip('💰', '창업', widthRatio, heightRatio),
-        ],
-      ),
+      itemCount: interests.length,
+      separatorBuilder: (context, index) => SizedBox(width: 8 * widthRatio),
+      itemBuilder: (context, index) {
+        final interest = interests[index];
+        // TODO: 각 interest에 맞는 이모지를 매핑하는 로직을 추가하면 좋습니다.
+        return _buildChip('💡', interest, widthRatio, heightRatio);
+      },
     );
   }
+
   
   // A single filter chip widget
   Widget _buildChip(String emoji, String label, double widthRatio, double heightRatio) {
