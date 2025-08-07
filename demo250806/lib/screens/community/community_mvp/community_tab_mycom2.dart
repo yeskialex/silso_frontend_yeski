@@ -26,6 +26,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   late Future<List<Community>> _myCommunitiesFuture; // '내 커뮤니티'를 위한 Future
   late Future<List<Community>> _top5CommunitiesFuture;
   late Future<List<String>> _userInterestsFuture; // 사용자 관심사를 위한 Future 추가
+  late Future<List<Community>> _recommendedCommunitiesFuture; // 추천 커뮤니티를 위한 Future 추가
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     _myCommunitiesFuture = _communityService.getMyCommunities(); // '내 커뮤니티'를 위한 Future
     _top5CommunitiesFuture = _communityService.getTop5Communities();
     _userInterestsFuture = _communityService.getUserInterests(); // 새로 만든 함수 호출로 초기화
+    _recommendedCommunitiesFuture = _communityService.getRecommendedCommunities(); // 새로 만든 함수 호출로 초기화
 
   }
 
@@ -734,52 +736,57 @@ color: const Color(0xFF5F37CF),
   }
 
 
-  /// Helper widget for the grid of recommended community cards.
-  /// Helper widget for the grid of recommended community cards, now as a horizontal carousel.
-  Widget _buildRecommendedCommunityGrid(double widthRatio, double heightRatio) {
-    // These are the cards from your design. They can be populated with dynamic data later.
-    final List<Map<String, String>> recommendedCommunitiesData = [
-      {
-        'title': '퇴사하는 사람들의 모임',
-        'members': '344명',
-        'imageUrl': 'https://placehold.co/144x201/A9A9A9/FFFFFF?text=UI',
-      },
-      {
-        'title': '유리멘탈러들 모여라',
-        'members': '344명',
-        'imageUrl': 'https://placehold.co/144x201/A9A9A9/FFFFFF?text=UI',
-      },
-      {
-        'title': '자영업에 대한\n모든것',
-        'members': '344명',
-        'imageUrl': 'https://placehold.co/144x201/A9A9A9/FFFFFF?text=UI',
-      },
-      // Add more communities here to see them in the carousel
-    ];
+   /// Helper widget for the grid of recommended community cards, now as a horizontal carousel.
+   // community_tab_mycom2.dart
 
-    // A SizedBox is used to give a specific height to the horizontal ListView.
-    // This is crucial when placing a horizontal list inside a vertical scrolling parent.
-    return SizedBox(
-      height: 201 * heightRatio, // Set the height to the height of a single card
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal, // Make the list scroll horizontally
-        itemCount: recommendedCommunitiesData.length,
-        // To prevent the card's shadow from being cut off
-        clipBehavior: Clip.none, 
-        itemBuilder: (context, index) {
-          final community = recommendedCommunitiesData[index];
-          // We reuse the same card widget from before
-          return _buildRecommendedCard(
-            widthRatio,
-            heightRatio,
-            title: community['title']!,
-            members: community['members']!,
-            imageUrl: community['imageUrl']!,
-          );
-        },
-        // This widget builds the space between the cards
-        separatorBuilder: (context, index) => SizedBox(width: 12 * widthRatio),
-      ),
+  /// Helper widget for the grid of recommended community cards.
+  Widget _buildRecommendedCommunityGrid(double widthRatio, double heightRatio) {
+    return FutureBuilder<List<Community>>(
+      future: _recommendedCommunitiesFuture, // 1. 여기서 state 변수를 사용합니다.
+      builder: (context, snapshot) {
+        // 데이터 로딩 중일 때 로딩 인디케이터를 표시합니다.
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        // 에러가 발생했을 때 에러 메시지를 표시합니다.
+        if (snapshot.hasError) {
+          return Center(child: Text("추천 커뮤니티를 불러오는 데 실패했습니다: ${snapshot.error}"));
+        }
+
+        // 데이터가 없거나 비어있을 때 메시지를 표시합니다.
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text("추천할 커뮤니'티가 없습니다."));
+        }
+
+        // 2. 데이터를 성공적으로 가져왔을 때 리스트를 빌드합니다.
+        final recommendedCommunities = snapshot.data!;
+
+        return SizedBox(
+          height: 201 * heightRatio, // 카드 높이에 맞춰 컨테이너 높이 설정
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: recommendedCommunities.length,
+            clipBehavior: Clip.none,
+            itemBuilder: (context, index) {
+              final community = recommendedCommunities[index];
+              
+              // 3. Community 모델의 데이터를 _buildRecommendedCard에 전달합니다.
+              return GestureDetector(
+                onTap: () => _navigateToCommunityDetail(community.communityId),
+                child: _buildRecommendedCard(
+                  widthRatio,
+                  heightRatio,
+                  title: community.communityName,
+                  members: '${community.memberCount}명',
+                  imageUrl: community.communityBanner ?? 'https://placehold.co/144x201/A9A9A9/FFFFFF?text=UI',
+                ),
+              );
+            },
+            separatorBuilder: (context, index) => SizedBox(width: 12 * widthRatio),
+          ),
+        );
+      },
     );
   }
 
