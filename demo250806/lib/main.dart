@@ -15,7 +15,7 @@ import 'screens/intro_community_splash.dart'; // Import the new splash screen
 // for test 
 import 'screens/community/community_mvp/community_tab_mycom2.dart'; 
 import 'screens/community/community_mvp/community_explore_page.dart'; 
-
+import 'screens/community/community_mvp/community_search_page.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => CommunityExplorePage(), //CommunityMainTabScreenMycom(),// SplashScreen(), //CommunityMainScreen(), CommunityMainTabScreenMycom(),
+        '/': (context) => ExploreSearchPage(), //CommunityExplorePage(), //CommunityMainTabScreenMycom(),// SplashScreen(), //CommunityMainScreen(), CommunityMainTabScreenMycom(),
         '/login': (context) => const LoginScreen(),
         '/after-login-splash': (context) => const AfterLoginSplashScreen(),
         '/home': (context) => const HomeScreen(),
