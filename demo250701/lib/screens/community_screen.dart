@@ -7,7 +7,7 @@ import 'community/main_communities_screen.dart';
 import 'community/my_communities_screen.dart';
 // Import design communities UI
 //import 'community/community_mvp/community_main.dart'; 
-import 'community/community_mvp/community_tab.dart'; // 
+import 'community/community_mvp/community_tab_mycom.dart'; // 
 
 
 
@@ -212,7 +212,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => CommunityMainTabScreen(), //CommunityMainScreen(), // const MainCommunitiesScreen(), // 
+                            builder: (context) => const CommunityMainTabScreenMycom(), //MainCommunitiesScreen(), // CommunityMainTabScreen(), //CommunityMainScreen(), //  
                           ),
                         );
                       },

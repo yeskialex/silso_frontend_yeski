@@ -8,13 +8,15 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/community_screen.dart';
-import 'screens/after_login_splash.dart';
+//import 'screens/after_login_splash.dart';
+import 'screens/community/community_mvp/intro_after_login_splash2.dart';  // for MVP community flow 
 import 'screens/intro_community_splash.dart'; // Import the new splash screen
 // Removed unused imports for community screens
 
 // for test 
-import 'screens/community/community_mvp/community_main.dart'; 
-
+import 'screens/community/community_mvp/community_tab_mycom2.dart'; 
+import 'screens/community/community_mvp/community_explore_page.dart'; 
+import 'screens/community/community_mvp/community_search_page.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,12 +52,13 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) =>  SplashScreen(), //CommunityMainScreen(),
+        '/': (context) => SplashScreen(),//CommunityMainTabScreenMycom(), //ExploreSearchPage(), //CommunityExplorePage(),  
         '/login': (context) => const LoginScreen(),
         '/after-login-splash': (context) => const AfterLoginSplashScreen(),
         '/home': (context) => const HomeScreen(),
         '/intro-community-splash': (context) => const IntroCommunitySplash(),
         '/community': (context) => const CommunityScreen(),
+        '/mvp_community' : (context) => const CommunityMainTabScreenMycom(), // Updated to new splash screen
       },
     );
   }

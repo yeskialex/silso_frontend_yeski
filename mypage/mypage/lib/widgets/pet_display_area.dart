@@ -59,24 +59,54 @@ class PetDisplayArea extends StatelessWidget {
                     return Stack(
                       alignment: Alignment.center,
                       children: [
-                        // Pet egg positioned at bottom of nest for better visual hierarchy
+                        // Pet egg positioned at bottom of nest for better visual hierarchy - overflow safe
                         Positioned(
-                          bottom: constrainedNestHeight * 5.0, // Near bottom for realistic nest placement
-                          child: Image.asset(
-                            'assets/mypage/pet/pet_egg.png',
-                            width: constrainedEggSize,
-                            height: constrainedEggSize,
-                            fit: BoxFit.contain,
+                          bottom: (constrainedNestHeight * 0.1).clamp(0.0, constrainedNestHeight * 0.3), // Safe positioning
+                          child: Container(
+                            constraints: BoxConstraints(
+                              maxWidth: constrainedEggSize,
+                              maxHeight: constrainedEggSize,
+                            ),
+                            child: Image.asset(
+                              'assets/mypage/pet/pet_egg.png',
+                              width: constrainedEggSize,
+                              height: constrainedEggSize,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: constrainedEggSize,
+                                height: constrainedEggSize,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.pets, color: Colors.grey),
+                              ),
+                            ),
                           ),
                         ),
 
-                        // Nest background
+                        // Nest background - overflow safe
                         Positioned(
-                          child: Image.asset(
-                            'assets/mypage/pet/nest.png',
-                            width: constrainedNestWidth,
-                            height: constrainedNestHeight,
-                            fit: BoxFit.contain,
+                          child: Container(
+                            constraints: BoxConstraints(
+                              maxWidth: constrainedNestWidth,
+                              maxHeight: constrainedNestHeight,
+                            ),
+                            child: Image.asset(
+                              'assets/mypage/pet/nest.png',
+                              width: constrainedNestWidth,
+                              height: constrainedNestHeight,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: constrainedNestWidth,
+                                height: constrainedNestHeight,
+                                decoration: BoxDecoration(
+                                  color: Colors.brown[200],
+                                  borderRadius: BorderRadius.circular(constrainedNestWidth * 0.5),
+                                ),
+                                child: const Icon(Icons.home, size: 40, color: Colors.brown),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -99,8 +129,8 @@ class PetDisplayArea extends StatelessWidget {
               //   ),
               // ),
               
-              // // Level text with responsive spacing
-              SizedBox(height: screenSize.height * 2.0),
+              // // Level text with responsive spacing - overflow safe
+              SizedBox(height: (screenSize.height * 0.02).clamp(8.0, 40.0)),
               
               // TextField(
               //   'name_pet', 

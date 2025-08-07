@@ -156,6 +156,7 @@ class CommunityService {
     }
   }
 
+
   // Get user's community profile data
   Future<Map<String, dynamic>?> getCommunityProfile() async {
     if (currentUserId == null) return null;
@@ -282,6 +283,124 @@ class CommunityService {
       throw 'Failed to load my communities: ${e.toString()}';
     }
   }
+
+
+// Get the latest post from each community the user has joined (More Efficient Version)
+Future<List<Map<String, dynamic>>> getLatestPostsFromMyCommunities() async {
+  if (currentUserId == null) throw 'User not authenticated';
+
+  try {
+     final List<Community> myCommunities = await getMyCommunities();
+ 
+
+    if (myCommunities.isEmpty) {
+      return [];
+    }
+
+    final communityIds = myCommunities.map((c) => c.communityId).toList();
+ 
+
+
+    if (communityIds.isEmpty) {
+        return [];
+    }
+    
+    final postsSnapshot = await _firestore
+        .collection('posts')
+        .where('communityId', whereIn: communityIds)
+        .orderBy('datePosted', descending: true)
+        .get();
+
+ 
+
+
+    final Map<String, Post> latestPostsMap = {};
+    for (final doc in postsSnapshot.docs) {
+      final post = Post.fromMap(doc.data(), doc.id);
+      if (!latestPostsMap.containsKey(post.communityId)) {
+        latestPostsMap[post.communityId] = post;
+      }
+    }
+ 
+
+
+    // ... 이하 코드는 동일 ...
+    final communityNameMap = {for (var c in myCommunities) c.communityId: c.communityName};
+    final result = latestPostsMap.entries.map((entry) {
+      final communityId = entry.key;
+      final post = entry.value;
+      return {
+        'communityId': communityId,
+        'communityName': communityNameMap[communityId] ?? 'Unknown Community',
+        'postId': post.id,
+        'postTitle': post.title,
+        'postDate': post.datePosted,
+      };
+    }).toList();
+    
+    result.sort((a, b) => (b['postDate'] as DateTime).compareTo(a['postDate'] as DateTime));
+    return result;
+    
+  } catch (e) {
+    return [];
+  }
+}
+
+  // Get community Hot posting (Top3, Top View Posting; HOT 게시물 가져오기 (상위 3개)) 
+  Future<List<Map<String, dynamic>>> getHotPosts() async {
+    try {
+      // 'posts' 컬렉션에서 'viewCount'를 기준으로 내림차순 정렬하여 상위 3개 문서를 가져옵니다.
+      final postSnapshot = await _firestore
+          .collection('posts')
+          .orderBy('viewCount', descending: true)
+          .limit(3)
+          .get();
+
+      if (postSnapshot.docs.isEmpty) {
+        return [];
+      }
+
+      // 각 게시물의 커뮤니티 이름을 가져오기 위한 비동기 작업 목록을 생성합니다.
+      final futures = postSnapshot.docs.map((postDoc) async {
+        final postData = postDoc.data();
+        final communityId = postData['communityId'] as String?;
+        String communityName = 'Unknown'; // 기본값
+
+        if (communityId != null) {
+          try {
+            final communityDoc = await _firestore
+                .collection('communities')
+                .doc(communityId)
+                .get();
+            if (communityDoc.exists) {
+              communityName = communityDoc.data()?['communityName'] ?? 'Unknown';
+            }
+          } catch (e) {
+            // 커뮤니티를 찾지 못해도 오류를 발생시키지 않고 기본값을 사용합니다.
+            print('Error fetching community name for post ${postDoc.id}: $e');
+          }
+        }
+
+        // UI에 필요한 데이터 형식으로 맵을 구성합니다.
+        return {
+          'postId': postDoc.id,
+          'communityId': communityId,
+          'category': communityName,
+          'title': postData['title'] ?? 'No Title',
+          'views': (postData['viewCount'] ?? 0).toString(),
+        };
+      }).toList();
+
+      // 모든 비동기 작업을 병렬로 실행하고 결과를 기다립니다.
+      return await Future.wait(futures);
+    } catch (e) {
+      print('Error fetching hot posts: $e');
+      // 오류 발생 시 빈 리스트를 반환하여 앱이 중단되지 않도록 합니다.
+      return [];
+    }
+  }
+
+
 
   // Join a community
   Future<void> joinCommunity(String communityId) async {

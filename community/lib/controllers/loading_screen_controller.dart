@@ -1,17 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/loading_screen_model.dart';
+import '../pages/category_selection_page.dart';
 
 /// 로딩 스크린의 비즈니스 로직을 관리하는 Controller 클래스
 class LoadingScreenController extends ChangeNotifier {
   final LoadingScreenModel _model = LoadingScreenModel();
   Timer? _loadingTimer;
+  BuildContext? _context;
   
   // Model에 대한 접근자
   LoadingScreenModel get model => _model;
   
   /// 컨트롤러 초기화
-  void initialize() {
+  void initialize([BuildContext? context]) {
+    _context = context;
     _startLoadingProcess();
   }
   
@@ -30,7 +33,16 @@ class LoadingScreenController extends ChangeNotifier {
   void completeLoading() {
     _model.completeLoading();
     notifyListeners();
-    // 여기서 다음 화면으로 네비게이션 로직 추가 가능
+    
+    // 다음 화면으로 네비게이션
+    if (_context != null && _context!.mounted) {
+      Navigator.pushReplacement(
+        _context!,
+        MaterialPageRoute(
+          builder: (context) => const CategorySelectionPage(),
+        ),
+      );
+    }
   }
   
   /// 에러 처리

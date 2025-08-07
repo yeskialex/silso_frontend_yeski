@@ -111,8 +111,8 @@ class _CategorySelectionPageState extends State<CategorySelectionPage>
 
   /// Handle process completion
   void _handleCompletion() {
-    // Export selected data
-    final selectedData = _controller.exportData();
+    // Export selected data for potential future use
+    _controller.exportData();
     
     // Here you would typically:
     // 1. Save data to persistent storage
