@@ -247,67 +247,47 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
         if (snapshot.hasError) {
           return Center(child: Text("Error: ${snapshot.error}"));
         }
-
+        // // If user has not joined any communities, show the empty state.
+        // if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        //   return _buildEmptyMyTab(widthRatio, heightRatio);
+        // }
+        // Otherwise, show the list of joined communities.
+        //final myPosts = snapshot.data!;
+        //return _buildMyCommunitiesList(widthRatio, heightRatio, myPosts);
+      
         final myJoinedCommunities = snapshot.data ?? [];
 
-        // Use LayoutBuilder to get available constraints
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            return SafeArea(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 16 * widthRatio),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 20 * heightRatio),
-                    
-                    // My Communities Section (if any)
-                    if (myJoinedCommunities.isNotEmpty) ...[
-                      _buildMyCommunitiesSection(widthRatio, heightRatio, myJoinedCommunities),
-                      SizedBox(height: 30 * heightRatio),
-                    ],
-                    
-                    // Empty state message or find community button
-                    if (myJoinedCommunities.isEmpty) ...[
-                      SizedBox(height: 60 * heightRatio),
-                      _buildEmptyStateMessage(widthRatio, heightRatio),
-                      SizedBox(height: 30 * heightRatio),
-                    ],
-                    
-                    // Find Community Button (always visible)
-                    Center(
-                      child: _buildFindCommunityButton(widthRatio, heightRatio),
-                    ),
-                    
-                    SizedBox(height: 40 * heightRatio),
-                    
-                    // Recommended Communities Section
-                    _buildRecommendedHeader(widthRatio),
-                    SizedBox(height: 18 * heightRatio),
-                    
-                    // Category filter chips with horizontal scroll
-                    SizedBox(
-                      height: 40 * heightRatio,
-                      child: _buildCategoryChips(widthRatio, heightRatio),
-                    ),
-                    SizedBox(height: 22 * heightRatio),
-                    
-                    // Grid of recommended community cards with proper constraints
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: 220 * heightRatio,
-                        maxWidth: constraints.maxWidth - (32 * widthRatio),
-                      ),
-                      child: _buildRecommendedCommunityGrid(widthRatio, heightRatio),
-                    ),
-                    
-                    SizedBox(height: 40 * heightRatio), // Bottom padding
-                  ],
-                ),
-              ),
-            );
-          },
+         // Stack 위젯을 사용하여 스크롤 영역과 고정 버튼을 겹쳐서 배치합니다.
+        return Column(
+          children: [
+            // --- 영역 1: 스크롤 가능한 콘텐츠 (배경) ---
+            // 가입한 커뮤니티 유무에 따라 다른 위젯을 보여줍니다.
+            myJoinedCommunities.isEmpty
+                ? _buildEmptyStateMessage(widthRatio, heightRatio)
+                : _buildMyCommunitiesScrollableList(widthRatio, heightRatio, myJoinedCommunities),
+
+            // --- 영역 2: 중앙 고정 버튼 (전경) ---
+            // 이 버튼은 항상 화면 중앙에 위치합니다.
+            Center(
+              child: _buildFindCommunityButton(widthRatio, heightRatio),
+            ),
+
+                // Title for the new section
+                _buildRecommendedHeader(widthRatio),
+                SizedBox(height: 18 * heightRatio),
+
+                // Category filter chips
+                _buildCategoryChips(widthRatio, heightRatio),
+                SizedBox(height: 22 * heightRatio),
+
+                // Grid of recommended community cards
+                _buildRecommendedCommunityGrid(widthRatio, heightRatio),
+                
+                SizedBox(height: 40 * heightRatio), // Bottom padding
+            
+          ],
         );
+      
       },
     );
   }
@@ -336,46 +316,24 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     );
   }
 
-  /// 가입한 커뮤니티 섹션을 빌드합니다.
-  Widget _buildMyCommunitiesSection(double widthRatio, double heightRatio, List<Map<String, dynamic>> posts) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '내 커뮤니티',
-          style: TextStyle(
-            color: const Color(0xFF121212),
-            fontSize: 20 * widthRatio,
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(height: 16 * heightRatio),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: posts.length,
-          separatorBuilder: (context, index) => SizedBox(height: 16 * heightRatio),
-          itemBuilder: (context, index) {
-            final postData = posts[index];
-            return _buildMyCommunityCard(widthRatio, heightRatio, postData);
-          },
-        ),
-      ],
-    );
-  }
-
   /// 가입한 커뮤니티가 없을 때 보여줄 안내 메시지 위젯입니다.
   Widget _buildEmptyStateMessage(double widthRatio, double heightRatio) {
-    return Text(
-      '참여한 커뮤니티가 없어요.\n자유롭게 관심있는 커뮤니티를 추가해보세요!',
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        color: const Color(0xFFC7C7C7),
-        fontSize: 14 * widthRatio,
-        fontFamily: 'Pretendard',
-        fontWeight: FontWeight.w600,
-        height: 1.43,
+    // Align 위젯을 사용하여 화면 상단에 텍스트를 배치합니다.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: EdgeInsets.only(top: 120 * heightRatio),
+        child: Text(
+          '참여한 커뮤니티가 없어요.\n자유롭게 관심있는 커뮤니티를 추가해보세요!',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: const Color(0xFFC7C7C7),
+            fontSize: 14 * widthRatio,
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w600,
+            height: 1.43,
+          ),
+        ),
       ),
     );
   }
@@ -619,21 +577,14 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
 
   /// Helper widget for the category filter chips.
   Widget _buildCategoryChips(double widthRatio, double heightRatio) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _buildChip('🏬', '자영업', widthRatio, heightRatio),
-          SizedBox(width: 8 * widthRatio),
-          _buildChip('💼', '이직', widthRatio, heightRatio),
-          SizedBox(width: 8 * widthRatio),
-          _buildChip('🧘‍♀️', '멘탈케어', widthRatio, heightRatio),
-          SizedBox(width: 8 * widthRatio),
-          _buildChip('🎓', '취업', widthRatio, heightRatio),
-          SizedBox(width: 8 * widthRatio),
-          _buildChip('💰', '창업', widthRatio, heightRatio),
-        ],
-      ),
+    return Wrap(
+      spacing: 8 * widthRatio, // Horizontal space between chips
+      runSpacing: 8 * heightRatio, // Vertical space if chips wrap
+      children: [
+        _buildChip('🏬', '자영업', widthRatio, heightRatio),
+        _buildChip('💼', '이직', widthRatio, heightRatio),
+        _buildChip('🧘‍♀️', '멘탈케어', widthRatio, heightRatio),
+      ],
     );
   }
   
