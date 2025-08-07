@@ -65,7 +65,7 @@ class CategorySelectionModel {
   }
 
   String getSelectionSummary() {
-    return '${selectedCount}개 선택됨';
+    return '$selectedCount개 선택됨';
   }
 
   // Validation

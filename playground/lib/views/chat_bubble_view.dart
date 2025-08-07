@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/chat_model.dart';
 
-// 채팅 버블 위젯 - UI 컴포넌트
+// 채팅 버블 위젯 - UI 컴포넌트 (overflow safe)
 class ChatBubbleView extends StatelessWidget {
   final Message message;
 
@@ -9,9 +9,14 @@ class ChatBubbleView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxBubbleWidth = (screenWidth * ChatConfig.maxBubbleWidthRatio).clamp(200.0, screenWidth * 0.85);
+    
     return Container(
       constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * ChatConfig.maxBubbleWidthRatio,
+        maxWidth: maxBubbleWidth,
+        minWidth: 100.0,
+        maxHeight: 200.0, // Prevent extremely tall bubbles
       ),
       margin: const EdgeInsets.symmetric(vertical: 5),
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
@@ -36,12 +41,15 @@ class ChatBubbleView extends StatelessWidget {
           fontSize: 16,
           fontWeight: FontWeight.w600,
         ),
+        maxLines: 10, // Limit maximum lines
+        overflow: TextOverflow.ellipsis,
+        softWrap: true,
       ),
     );
   }
 }
 
-// 메시지 리스트를 표시하는 위젯
+// 메시지 리스트를 표시하는 위젯 (overflow safe)
 class MessageListView extends StatelessWidget {
   final List<Message> messages;
   final double keyboardHeight;
@@ -54,29 +62,49 @@ class MessageListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 키보드가 올라왔을 때 추가 여백 제공
-    final bottomPadding = ChatConfig.inputBarHeight + keyboardHeight + 
-                         (keyboardHeight > 0 ? 20 : 0); // 키보드 있을 때 20px 추가 여백
+    final screenHeight = MediaQuery.of(context).size.height;
+    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
     
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      child: Stack(
-        children: messages.asMap().entries.map((entry) {
-          int index = entry.key;
-          Message message = entry.value;
-          return Positioned(
-            bottom: 20.0 + (index * ChatConfig.bubbleHeight),
-            left: 20,
-            right: 20,
-            child: Align(
-              alignment: message.isLeft
-                  ? Alignment.centerLeft
-                  : Alignment.centerRight,
-              child: ChatBubbleView(message: message),
+    // 키보드가 올라왔을 때 추가 여백 제공 - overflow safe
+    final bottomPadding = (ChatConfig.inputBarHeight + keyboardHeight + 
+                         (keyboardHeight > 0 ? 20 : 0)).clamp(0.0, screenHeight * 0.4);
+    
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableHeight = constraints.maxHeight - bottomPadding;
+        
+        return SingleChildScrollView(
+          reverse: true, // Start from bottom
+          child: Container(
+            constraints: BoxConstraints(
+              minHeight: availableHeight,
+              maxHeight: screenHeight * 0.8, // Prevent full screen takeover
             ),
-          );
-        }).toList(),
-      ),
+            padding: EdgeInsets.only(bottom: bottomPadding),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: messages.asMap().entries.map((entry) {
+                int index = entry.key;
+                Message message = entry.value;
+                final positionBottom = (20.0 + (index * ChatConfig.bubbleHeight))
+                    .clamp(0.0, availableHeight - 100); // Ensure visibility
+                
+                return Positioned(
+                  bottom: positionBottom,
+                  left: 20,
+                  right: 20,
+                  child: Align(
+                    alignment: message.isLeft
+                        ? Alignment.centerLeft
+                        : Alignment.centerRight,
+                    child: ChatBubbleView(message: message),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -113,16 +141,22 @@ class BottomInputView extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '현재 참여자 수: $participantCount명',
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
+                    Flexible(
+                      child: Text(
+                        '현재 참여자 수: $participantCount명',
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                    const SizedBox(width: 100),
-                    const Text(
-                      '남은 시간: 3시간',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 16),
+                    const Flexible(
+                      child: Text(
+                        '남은 시간: 3시간',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                   ],
                 ),

@@ -22,7 +22,8 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   late Future<List<Map<String, dynamic>>> _hotPostsFuture;
   late Future<List<Post>> _generalPostsFuture; // 종합 게시판 게시물
   late Future<List<Map<String, dynamic>>> _myPostsFuture; // '내 게시판'을 위한 Future 추가
- late Future<List<Community>> _top5CommunitiesFuture;
+  late Future<List<Community>> _myCommunitiesFuture; // '내 커뮤니티'를 위한 Future
+  late Future<List<Community>> _top5CommunitiesFuture;
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     // 종합 게시판 게시물 데이터를 불러옵니다.
     _generalPostsFuture = _communityService.getCommunityPosts('r8zn6yjJtKHP3jyDoJ2x');
     _myPostsFuture = _communityService.getLatestPostsFromMyCommunities(); // 새로 만든 함수 호출
+    _myCommunitiesFuture = _communityService.getMyCommunities(); // '내 커뮤니티'를 위한 Future
     _top5CommunitiesFuture = _communityService.getTop5Communities();
 
   }
@@ -277,8 +279,8 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     final widthRatio = screenWidth / designWidth;
     final heightRatio = screenHeight / designHeight;
 
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _myPostsFuture,
+    return FutureBuilder<List<Community>>(
+      future: _myCommunitiesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -352,7 +354,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   }
 
   /// 가입한 커뮤니티 목록을 스크롤 가능한 리스트로 빌드합니다.
-  Widget _buildMyCommunitiesScrollableList(double widthRatio, double heightRatio, List<Map<String, dynamic>> posts) {
+  Widget _buildMyCommunitiesScrollableList(double widthRatio, double heightRatio, List<Community> commuities) {
     return SingleChildScrollView(
       // 중앙 버튼에 마지막 항목이 가려지지 않도록 하단에 충분한 여백을 추가합니다.
       padding: EdgeInsets.only(
@@ -364,10 +366,10 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
       child: ListView.separated(
         shrinkWrap: true, // 자식 위젯의 크기만큼만 차지하도록 설정
         physics: const NeverScrollableScrollPhysics(), // 부모 스크롤과 충돌 방지
-        itemCount: posts.length,
+        itemCount: commuities.length,
         separatorBuilder: (context, index) => SizedBox(height: 16 * heightRatio),
         itemBuilder: (context, index) {
-          final postData = posts[index];
+          final postData = commuities[index];
           // 기존의 커뮤니티 카드 위젯을 재사용합니다.
           return _buildMyCommunityCard(widthRatio, heightRatio, postData);
         },
@@ -376,7 +378,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   }
 
   /// 가입한 커뮤니티 섹션을 빌드합니다.
-  Widget _buildMyCommunitiesSection(double widthRatio, double heightRatio, List<Map<String, dynamic>> posts) {
+  Widget _buildMyCommunitiesSection(double widthRatio, double heightRatio, List<Community> communities) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -393,11 +395,11 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: posts.length,
+          itemCount: communities.length,
           separatorBuilder: (context, index) => SizedBox(height: 16 * heightRatio),
           itemBuilder: (context, index) {
-            final postData = posts[index];
-            return _buildMyCommunityCard(widthRatio, heightRatio, postData);
+            final community = communities[index]; // Community 객체를 직접 사용
+            return _buildMyCommunityCard(widthRatio, heightRatio, community); // community 객체 전달
           },
         ),
       ],
@@ -480,7 +482,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   // }
 
   /// Helper widget to display the list of joined communities.
-  Widget _buildMyCommunitiesList(double widthRatio, double heightRatio, List<Map<String, dynamic>> posts) {
+  Widget _buildMyCommunitiesList(double widthRatio, double heightRatio, List<Community> communities) {
     return SingleChildScrollView(
       child: Container(
         width: double.infinity,
@@ -494,11 +496,11 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
             ListView.separated(
               shrinkWrap: true, // Important for nesting in a Column
               physics: const NeverScrollableScrollPhysics(), // Disable its own scrolling
-              itemCount: posts.length,
+              itemCount: communities.length,
               separatorBuilder: (context, index) => SizedBox(height: 16 * heightRatio),
               itemBuilder: (context, index) {
-                final postData = posts[index];
-                return _buildMyCommunityCard(widthRatio, heightRatio, postData);
+                final community = communities[index];
+                return _buildMyCommunityCard(widthRatio, heightRatio, community);
               },
             ),
             SizedBox(height: 50 * heightRatio),
@@ -565,12 +567,11 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   }
 
   // Builds a card for a joined community, now with dynamic data.
-  Widget _buildMyCommunityCard(double widthRatio, double heightRatio, Map<String, dynamic> postData) {
-    final String communityName = postData['communityName'] ?? '커뮤니티';
-    final String postTitle = postData['postTitle'] ?? '최신글이 없습니다.';
-    final String postId = postData['postId'];
-    final String communityId = postData['communityId'];
-
+  Widget _buildMyCommunityCard(double widthRatio, double heightRatio, Community community) {
+    final String communityName = community.communityName ?? '커뮤니티';
+    final String announcemnt = community.announcement ?? '아직 소개글이 없습니다 ;) ';
+    final String communityId = community.communityId;
+    final String imageUrl = community.communityBanner ?? "https://placehold.co/101x125/EFEFEF/7F7F7F?text=Image";
     return GestureDetector(
       onTap: () => _navigateToCommunityDetail(communityId),
       child: Container(
@@ -588,9 +589,9 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
             Container(
               width: 101 * widthRatio,
               height: 125 * heightRatio,
-              decoration: const ShapeDecoration(
+              decoration: ShapeDecoration(
                 image: DecorationImage(
-                  image: NetworkImage("https://placehold.co/101x125/EFEFEF/7F7F7F?text=Image"),
+                  image: NetworkImage(imageUrl),
                   fit: BoxFit.cover,
                 ),
                 shape: RoundedRectangleBorder(
@@ -622,7 +623,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
                     ),
                     SizedBox(height: 11 * heightRatio),
                     Text(
-                      postTitle,
+                      announcemnt,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

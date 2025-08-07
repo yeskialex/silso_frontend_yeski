@@ -7,9 +7,28 @@ class AppTheme {
   static const Color textColor = Color(0xFFFAFAFA);
   static const Color transparentWhite = Colors.white;
   
-  // 컨테이너 크기 설정
-  static const double containerWidth = 393;
-  static const double containerHeight = 852;
+  // 반응형 컨테이너 크기 설정 (기준 크기)
+  static const double baseContainerWidth = 393;
+  static const double baseContainerHeight = 852;
+  
+  // 반응형 컨테이너 크기 계산 메서드
+  static double getContainerWidth(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return (screenWidth * 0.95).clamp(300.0, 500.0);
+  }
+  
+  static double getContainerHeight(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final safeArea = MediaQuery.of(context).padding;
+    final availableHeight = screenSize.height - safeArea.top - safeArea.bottom;
+    return (availableHeight * 0.9).clamp(400.0, 900.0);
+  }
+  
+  // 호환성을 위한 정적 속성 유지 (deprecated)
+  @Deprecated('Use getContainerWidth(context) instead')
+  static const double containerWidth = baseContainerWidth;
+  @Deprecated('Use getContainerHeight(context) instead')
+  static const double containerHeight = baseContainerHeight;
   
   // 이미지 설정
   static const double characterImageSize = 180;
