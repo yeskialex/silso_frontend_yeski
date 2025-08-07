@@ -1,44 +1,20 @@
-// Of course\! I can help you with that.
-
-// It looks like you want to replace the current placeholder UI in the `_buildMyTabContent()` widget with a new, more detailed layout. You also want to make sure this new UI is responsive and adapts to different screen sizes, using a base design of 393x800.
-
-// I've refactored the UI code you provided to be responsive and structured it using standard Flutter layout widgets like `SingleChildScrollView`, `Column`, and `Row` instead of `Stack` with hardcoded positions. This makes the code cleaner and more adaptable.
-
-// Here is the updated code for the entire `community_tab.dart` file. You can copy and paste this to replace the existing file.
-
-// ### Overview of the Solution
-
-// 1.  **Responsiveness**: I've used `MediaQuery` to get the screen's width and height. All sizing and spacing are now calculated as a ratio of the original design's dimensions (393x800), ensuring the layout scales properly on any device.
-// 2.  **Layout Structure**: The main layout is built with a `SingleChildScrollView` containing a `Column`. This is a robust way to create a vertically scrolling screen that avoids pixel overflows.
-// 3.  **Helper Widgets**: To keep the code organized and readable, I've broken down the UI into smaller, reusable helper methods:
-//       * `_buildEmptyState()`: Displays the central message and "Find Community" button.
-//       * `_buildMyCommunityCard()`: Creates the top card for the "General Bulletin Board."
-//       * `_buildTop5Header()`: Creates the title for the "TOP 5 Community" section.
-//       * `_buildTop5CommunityList()`: Builds the horizontally scrolling list of ranked community cards.
-// 4.  **Dummy Data**: As requested, the UI is built with placeholder data to show how it will look.
-
-// -----
-
-// ### Updated Code: `community_tab.dart`
-
-// Here is the complete code for the file. The main changes are within the `_buildMyTabContent` widget and the new helper methods I've added below it.
- 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/community_service.dart'; // hot posts, general posts, my posts
 import '../post_detail_screen.dart';
 import '../../../models/post_model.dart';
+import '../../../models/community_model.dart';
 
 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
-class CommunityMainTabScreen extends StatefulWidget {
-  const CommunityMainTabScreen({super.key});
+class CommunityMainTabScreenMycom extends StatefulWidget {
+  const CommunityMainTabScreenMycom({super.key});
 
   @override
-  State<CommunityMainTabScreen> createState() => _CommunityMainTabScreenState();
+  State<CommunityMainTabScreenMycom> createState() => _CommunityMainTabScreenMycomState();
 }
 
-class _CommunityMainTabScreenState extends State<CommunityMainTabScreen> {
+class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMycom> {
   // 현재 선택된 탭을 관리하는 상태 변수
   String _selectedTab = 'MAIN';
   final CommunityService _communityService = CommunityService();
@@ -46,6 +22,7 @@ class _CommunityMainTabScreenState extends State<CommunityMainTabScreen> {
   late Future<List<Map<String, dynamic>>> _hotPostsFuture;
   late Future<List<Post>> _generalPostsFuture; // 종합 게시판 게시물
   late Future<List<Map<String, dynamic>>> _myPostsFuture; // '내 게시판'을 위한 Future 추가
+ late Future<List<Community>> _top5CommunitiesFuture;
 
   @override
   void initState() {
@@ -55,11 +32,15 @@ class _CommunityMainTabScreenState extends State<CommunityMainTabScreen> {
     // 종합 게시판 게시물 데이터를 불러옵니다.
     _generalPostsFuture = _communityService.getCommunityPosts('r8zn6yjJtKHP3jyDoJ2x');
     _myPostsFuture = _communityService.getLatestPostsFromMyCommunities(); // 새로 만든 함수 호출
+    _top5CommunitiesFuture = _communityService.getTop5Communities();
 
   }
 
   // PostDetailScreen으로 이동하는 함수
   Future<void> _navigateToPostDetail(String postId, String communityId) async {
+    // Increment view count when navigating to post detail
+    await _communityService.incrementPostViewCount(postId);
+
     // 데이터 로딩 중임을 표시
     showDialog(
       context: context,
@@ -157,7 +138,7 @@ class _CommunityMainTabScreenState extends State<CommunityMainTabScreen> {
                 final hotPosts = snapshot.data!
                     .map((postData) => _HotPostItem(
                           postId: postData['postId'],
-                          communityId: postData['communityId'],
+                          communityId: postData['communityId'] ?? '',
                           category: postData['category'],
                           title: postData['title'],
                           views: postData['views'],
@@ -246,37 +227,124 @@ class _CommunityMainTabScreenState extends State<CommunityMainTabScreen> {
     );
   }
 
-  /// Builds the content for the 'MY' tab using a responsive layout.
+  /// Builds the content for the 'MY' tab.
+  /// It dynamically shows either a list of joined communities or an empty state message.
   Widget _buildMyTabContent() {
-    // Base screen dimensions from the design
+    // Define base screen dimensions for responsive UI calculations
     const double designWidth = 393.0;
-    const double designHeight = 800.0;
-
-    // Get current screen dimensions
+    const double designHeight = 870.0;
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-
-    // Calculate responsive ratios
     final widthRatio = screenWidth / designWidth;
     final heightRatio = screenHeight / designHeight;
 
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _myPostsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text("Error: ${snapshot.error}"));
+        }
+        // // If user has not joined any communities, show the empty state.
+        // if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        //   return _buildEmptyMyTab(widthRatio, heightRatio);
+        // }
+        // Otherwise, show the list of joined communities.
+        //final myPosts = snapshot.data!;
+        //return _buildMyCommunitiesList(widthRatio, heightRatio, myPosts);
+      
+              final myJoinedCommunities = snapshot.data ?? [];
+
+        return SingleChildScrollView(
+          child: Container(
+            width: double.infinity,
+            color: const Color(0xFFFAFAFA),
+            padding: EdgeInsets.symmetric(horizontal: 16 * widthRatio),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 40 * heightRatio),
+                // Section for the user's joined communities (re-using existing logic)
+                _buildMyCommunitiesList(widthRatio, heightRatio, myJoinedCommunities),
+                
+                SizedBox(height: 40 * heightRatio), // Spacing from design
+                
+                // --- New "Recommended Communities" Section ---
+
+                // Title for the new section
+                _buildRecommendedHeader(widthRatio),
+                SizedBox(height: 18 * heightRatio),
+
+                // Category filter chips
+                _buildCategoryChips(widthRatio, heightRatio),
+                SizedBox(height: 22 * heightRatio),
+
+                // Grid of recommended community cards
+                _buildRecommendedCommunityGrid(widthRatio, heightRatio),
+                
+                SizedBox(height: 40 * heightRatio), // Bottom padding
+              ],
+            ),
+          ),
+        );
+      
+      },
+    );
+  }
+
+  /// Helper widget to show when the user has not joined any communities.
+  Widget _buildEmptyMyTab(double widthRatio, double heightRatio) {
     return SingleChildScrollView(
       child: Container(
-        width: screenWidth,
+        width: double.infinity,
         color: const Color(0xFFFAFAFA),
         padding: EdgeInsets.symmetric(horizontal: 16 * widthRatio),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 40 * heightRatio),
-            _buildMyCommunityCard(widthRatio, heightRatio),
-            SizedBox(height: 53 * heightRatio),
+            SizedBox(height: 120 * heightRatio),
             _buildEmptyState(widthRatio, heightRatio),
             SizedBox(height: 124 * heightRatio),
             _buildTop5Header(widthRatio),
             SizedBox(height: 12 * heightRatio),
             _buildTop5CommunityList(widthRatio, heightRatio),
             SizedBox(height: 40 * heightRatio),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Helper widget to display the list of joined communities.
+  Widget _buildMyCommunitiesList(double widthRatio, double heightRatio, List<Map<String, dynamic>> posts) {
+    return SingleChildScrollView(
+      child: Container(
+        width: double.infinity,
+        color: const Color(0xFFFAFAFA),
+        padding: EdgeInsets.symmetric(horizontal: 16 * widthRatio),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 40 * heightRatio),
+            // List of joined communities
+            ListView.separated(
+              shrinkWrap: true, // Important for nesting in a Column
+              physics: const NeverScrollableScrollPhysics(), // Disable its own scrolling
+              itemCount: posts.length,
+              separatorBuilder: (context, index) => SizedBox(height: 16 * heightRatio),
+              itemBuilder: (context, index) {
+                final postData = posts[index];
+                return _buildMyCommunityCard(widthRatio, heightRatio, postData);
+              },
+            ),
+            SizedBox(height: 50 * heightRatio),
+            // // "TOP 5" section below the user's communities
+            // _buildTop5Header(widthRatio),
+            // SizedBox(height: 12 * heightRatio),
+            // _buildTop5CommunityList(widthRatio, heightRatio),
+            // SizedBox(height: 40 * heightRatio),
           ],
         ),
       ),
@@ -334,68 +402,270 @@ class _CommunityMainTabScreenState extends State<CommunityMainTabScreen> {
     );
   }
 
-  // Helper widget for the card at the top of the 'MY' tab
-  Widget _buildMyCommunityCard(double widthRatio, double heightRatio) {
-    return Container(
-      width: 360 * widthRatio,
-      height: 125 * heightRatio,
-      decoration: ShapeDecoration(
-        color: const Color(0xFFFAFAFA),
-        shape: RoundedRectangleBorder(
-          side: const BorderSide(width: 1, color: Color(0xFFC7C7C7)),
-          borderRadius: BorderRadius.circular(12),
+  // Builds a card for a joined community, now with dynamic data.
+  Widget _buildMyCommunityCard(double widthRatio, double heightRatio, Map<String, dynamic> postData) {
+    final String communityName = postData['communityName'] ?? '커뮤니티';
+    final String postTitle = postData['postTitle'] ?? '최신글이 없습니다.';
+    final String postId = postData['postId'];
+    final String communityId = postData['communityId'];
+
+    return GestureDetector(
+      onTap: () => _navigateToPostDetail(postId, communityId),
+      child: Container(
+        width: 360 * widthRatio,
+        height: 125 * heightRatio,
+        decoration: ShapeDecoration(
+          color: const Color(0xFFFAFAFA),
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(width: 1, color: Color(0xFFC7C7C7)),
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 101 * widthRatio,
-            height: 125 * heightRatio,
-            decoration: const ShapeDecoration(
-              image: DecorationImage(
-                image: NetworkImage("https://placehold.co/101x125"),
-                fit: BoxFit.cover,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
+        child: Row(
+          children: [
+            Container(
+              width: 101 * widthRatio,
+              height: 125 * heightRatio,
+              decoration: const ShapeDecoration(
+                image: DecorationImage(
+                  image: NetworkImage("https://placehold.co/101x125/EFEFEF/7F7F7F?text=Image"),
+                  fit: BoxFit.cover,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  ),
                 ),
               ),
             ),
-          ),
-          SizedBox(width: 13 * widthRatio),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '종합게시판',
-                  style: TextStyle(
-                    color: const Color(0xFF121212),
-                    fontSize: 16 * widthRatio,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w600,
-                  ),
+            SizedBox(width: 13 * widthRatio),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: 12 * widthRatio),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      communityName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: const Color(0xFF121212),
+                        fontSize: 16 * widthRatio,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 11 * heightRatio),
+                    Text(
+                      postTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: const Color(0xFF8E8E8E),
+                        fontSize: 14 * widthRatio,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w400,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 11 * heightRatio),
-                Text(
-                  '다양한 사람들의 실패 썰들을 들어보세요!',
-                  style: TextStyle(
-                    color: const Color(0xFF8E8E8E),
-                    fontSize: 14 * widthRatio,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  /// Helper widget for the "추천 커뮤니티" header.
+  Widget _buildRecommendedHeader(double widthRatio) {
+    return Text(
+      '추천 커뮤니티',
+      style: TextStyle(
+        color: const Color(0xFF121212),
+        fontSize: 20 * widthRatio,
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  /// Helper widget for the category filter chips.
+  Widget _buildCategoryChips(double widthRatio, double heightRatio) {
+    return Wrap(
+      spacing: 8 * widthRatio, // Horizontal space between chips
+      runSpacing: 8 * heightRatio, // Vertical space if chips wrap
+      children: [
+        _buildChip('🏬', '자영업', widthRatio, heightRatio),
+        _buildChip('💼', '이직', widthRatio, heightRatio),
+        _buildChip('🧘‍♀️', '멘탈케어', widthRatio, heightRatio),
+      ],
+    );
+  }
+  
+  // A single filter chip widget
+  Widget _buildChip(String emoji, String label, double widthRatio, double heightRatio) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12 * widthRatio, vertical: 5 * heightRatio),
+        decoration: ShapeDecoration(
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(
+              width: 1.0,
+              color: Color(0xFF121212),
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: '$emoji ',
+                style: TextStyle(fontSize: 14 * widthRatio),
+              ),
+              TextSpan(
+                text: label,
+                style: TextStyle(
+                  color: const Color(0xFF121212),
+                  fontSize: 14 * widthRatio,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+  }
+
+
+  /// Helper widget for the grid of recommended community cards.
+  /// Helper widget for the grid of recommended community cards, now as a horizontal carousel.
+  Widget _buildRecommendedCommunityGrid(double widthRatio, double heightRatio) {
+    // These are the cards from your design. They can be populated with dynamic data later.
+    final List<Map<String, String>> recommendedCommunitiesData = [
+      {
+        'title': '퇴사하는 사람들의 모임',
+        'members': '344명',
+        'imageUrl': 'https://placehold.co/144x201/A9A9A9/FFFFFF?text=UI',
+      },
+      {
+        'title': '유리멘탈러들 모여라',
+        'members': '344명',
+        'imageUrl': 'https://placehold.co/144x201/A9A9A9/FFFFFF?text=UI',
+      },
+      {
+        'title': '자영업에 대한\n모든것',
+        'members': '344명',
+        'imageUrl': 'https://placehold.co/144x201/A9A9A9/FFFFFF?text=UI',
+      },
+      // Add more communities here to see them in the carousel
+    ];
+
+    // A SizedBox is used to give a specific height to the horizontal ListView.
+    // This is crucial when placing a horizontal list inside a vertical scrolling parent.
+    return SizedBox(
+      height: 201 * heightRatio, // Set the height to the height of a single card
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal, // Make the list scroll horizontally
+        itemCount: recommendedCommunitiesData.length,
+        // To prevent the card's shadow from being cut off
+        clipBehavior: Clip.none, 
+        itemBuilder: (context, index) {
+          final community = recommendedCommunitiesData[index];
+          // We reuse the same card widget from before
+          return _buildRecommendedCard(
+            widthRatio,
+            heightRatio,
+            title: community['title']!,
+            members: community['members']!,
+            imageUrl: community['imageUrl']!,
+          );
+        },
+        // This widget builds the space between the cards
+        separatorBuilder: (context, index) => SizedBox(width: 12 * widthRatio),
+      ),
+    );
+  }
+
+  /// Builds a single card for the recommended community section.
+  Widget _buildRecommendedCard(
+    double widthRatio, 
+    double heightRatio, {
+    required String title,
+    required String members,
+    required String imageUrl,
+  }) {
+    return Container(
+      width: 144 * widthRatio,
+      height: 201 * heightRatio,
+      clipBehavior: Clip.antiAlias,
+      decoration: ShapeDecoration(
+        image: DecorationImage(
+          image: NetworkImage(imageUrl),
+          fit: BoxFit.cover,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: Container(
+        // Add a gradient overlay for better text readability
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.1),
+                    Colors.black.withOpacity(0.6),
+                ]
+            )
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              left: 7 * widthRatio,
+              top: 32 * heightRatio,
+              right: 7 * widthRatio, // Added right constraint to help with text wrapping
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.29 * widthRatio,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Positioned(
+              right: 8 * widthRatio,
+              bottom: 8 * heightRatio,
+              child: Row(
+                children: [
+                   Icon(Icons.person_outline, color: Colors.white, size: 14 * widthRatio),
+                   SizedBox(width: 4 * widthRatio),
+                  Text(
+                    members,
+                    style: TextStyle(
+                      color: const Color(0xFFFAFAFA),
+                      fontSize: 12 * widthRatio,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   // Helper widget for the "TOP 5" header
   Widget _buildTop5Header(double widthRatio) {
@@ -414,53 +684,57 @@ class _CommunityMainTabScreenState extends State<CommunityMainTabScreen> {
   }
   
   // Helper widget for the horizontally scrollable TOP 5 communities
-  Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
-    // Dummy data for the top 5 communities
-    final topCommunities = [
-      {
-        'rank': '1위',
-        'title': '대학교 빌런이 되지말자',
-        'description': '대학교에서 팀플 많은 사람들 모여라! 팀플 꿀팁 대방출',
-        'members': '9,909명',
-        'imageUrl': 'https://placehold.co/300x87'
-      },
-      {
-        'rank': '2위',
-        'title': '스타트업 시작하는 사람들의 모임',
-        'description': '스타트업을 시작하며 겪었던 여러 실패들을 서로 공유하는 공간',
-        'members': '8,013명',
-        'imageUrl': 'https://placehold.co/300x87'
-      },
-      {
-        'rank': '3위',
-        'title': '엄빠가 처음이라',
-        'description': '육아에서 시행착오를 겪은 부모들이 진솔한 경험담을 나누는 공간',
-        'members': '8,112명',
-        'imageUrl': 'https://placehold.co/300x87'
-      },
-    ];
+// community_tab_mycom.dart
 
-    return SizedBox(
-      height: 176 * heightRatio,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: topCommunities.length,
-        separatorBuilder: (context, index) => SizedBox(width: 12 * widthRatio),
-        itemBuilder: (context, index) {
-          final community = topCommunities[index];
-          return _buildRankedCommunityCard(
-            widthRatio,
-            heightRatio,
-            rank: community['rank']!,
-            title: community['title']!,
-            description: community['description']!,
-            members: community['members']!,
-            imageUrl: community['imageUrl']!,
-          );
-        },
-      ),
-    );
-  }
+// Helper widget for the horizontally scrollable TOP 5 communities
+Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
+  // FutureBuilder를 사용하여 비동기 데이터를 처리합니다.
+  return FutureBuilder<List<Community>>(
+    future: _top5CommunitiesFuture, // 여기서 state 변수를 사용합니다.
+    builder: (context, snapshot) {
+      // 데이터 로딩 중일 때 로딩 인디케이터를 표시합니다.
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      // 에러가 발생했을 때 에러 메시지를 표시합니다.
+      if (snapshot.hasError) {
+        return Center(child: Text('커뮤니티를 불러오는 데 실패했습니다.'));
+      }
+      // 데이터가 없거나 비어있을 때 메시지를 표시합니다.
+      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return const Center(child: Text('표시할 커뮤니티가 없습니다.'));
+      }
+
+      // 데이터를 성공적으로 가져왔을 때 리스트를 빌드합니다.
+      final topCommunities = snapshot.data!;
+
+      return SizedBox(
+        height: 176 * heightRatio,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: topCommunities.length,
+          separatorBuilder: (context, index) => SizedBox(width: 12 * widthRatio),
+          itemBuilder: (context, index) {
+            final community = topCommunities[index];
+            // 순위를 표시하기 위해 index를 활용합니다.
+            final rank = '${index + 1}위'; 
+
+            return _buildRankedCommunityCard(
+              widthRatio,
+              heightRatio,
+              rank: rank,
+              // Community 모델의 프로퍼티를 직접 사용합니다.
+              title: community.communityName,
+              description: community.announcement ?? '소개가 없습니다.', // announcement가 null일 경우 기본값 설정
+              members: '${community.memberCount}명',
+              imageUrl: community.communityBanner ?? 'https://placehold.co/300x87', // 배너가 없을 경우 기본 이미지
+            );
+          },
+        ),
+      );
+    },
+  );
+}
   
   // Helper widget for a single ranked community card
   Widget _buildRankedCommunityCard(double widthRatio, double heightRatio,

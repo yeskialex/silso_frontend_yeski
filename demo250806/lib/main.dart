@@ -13,7 +13,7 @@ import 'screens/intro_community_splash.dart'; // Import the new splash screen
 // Removed unused imports for community screens
 
 // for test 
-import 'screens/community/community_mvp/community_main.dart'; 
+import 'screens/community/community_mvp/community_tab_mycom2.dart'; 
 
 
 void main() async {
@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) =>  SplashScreen(), //CommunityMainScreen(),
+        '/': (context) =>  CommunityMainTabScreenMycom(), //SplashScreen(), //CommunityMainScreen(),
         '/login': (context) => const LoginScreen(),
         '/after-login-splash': (context) => const AfterLoginSplashScreen(),
         '/home': (context) => const HomeScreen(),
