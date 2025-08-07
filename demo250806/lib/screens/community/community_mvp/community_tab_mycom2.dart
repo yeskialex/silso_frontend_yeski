@@ -6,6 +6,7 @@ import '../../../models/post_model.dart';
 import '../../../models/community_model.dart';
 import '../community_detail_screen.dart'; 
 import 'community_explore_page.dart'; // Import the community explore page
+import 'community_search_page.dart'; // Import the search page
 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
 class CommunityMainTabScreenMycom extends StatefulWidget {
@@ -34,7 +35,8 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     // 위젯이 처음 생성될 때 HOT 게시물 데이터를 불러옵니다.
     _hotPostsFuture = _communityService.getHotPosts();
     // 종합 게시판 게시물 데이터를 불러옵니다.
-    _generalPostsFuture = _communityService.getCommunityPosts('r8zn6yjJtKHP3jyDoJ2x');
+    
+    _generalPostsFuture = _communityService.getCommunityPosts(CommunityService.defaultCommunityId);
     _myPostsFuture = _communityService.getLatestPostsFromMyCommunities(); // 새로 만든 함수 호출
     _myCommunitiesFuture = _communityService.getMyCommunities(); // '내 커뮤니티'를 위한 Future
     _top5CommunitiesFuture = _communityService.getTop5Communities();
@@ -199,22 +201,26 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
             ),
             const SizedBox(height: 30),
             // '종합게시판' 섹션
+            // '종합게시판' 섹션
             FutureBuilder<List<Post>>(
               future: _generalPostsFuture,
               builder: (context, snapshot) {
+                // 1. 헤더를 탭했을 때 동작할 함수를 미리 정의합니다.
+                final onTapToCommunity = () => _navigateToCommunityDetail(CommunityService.defaultCommunityId);
+
+                // 로딩 중일 때
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
+
+                // 에러 발생 시
                 if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return _buildBoardSection(
-                    title: '종합게시판',
-                    items: [], // Pass an empty list
-                  );
-                }
-                final generalPosts = snapshot.data!.map((post) {
+
+                // 2. 데이터 유무와 상관없이 generalPosts 리스트를 안전하게 생성합니다.
+                // 데이터가 없으면 snapshot.data는 null이므로, ?? []를 통해 빈 리스트로 만듭니다.
+                final generalPosts = (snapshot.data ?? []).map((post) {
                   final bool isNew = DateTime.now().difference(post.datePosted).inHours < 24;
                   return _GeneralPostItem(
                     title: post.title,
@@ -224,31 +230,46 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
                     onTap: () => _navigateToPostDetail(post.postId, post.communityId),
                   );
                 }).toList();
-                return _buildBoardSection(
-                  title: '종합게시판',
-                  isGeneral: true,
-                  items: generalPosts,
+                
+                // 3. 분리된 함수들을 사용하여 최종 UI를 조합합니다.
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 헤더 생성 (탭 기능 전달)
+                    _buildBoardHeader(
+                      title: '종합게시판',
+                      onTap: onTapToCommunity,
+                    ),
+                    const SizedBox(height: 12),
+                    // 내용 생성 (게시물 목록 전달)
+                    _buildBoardContent(
+                      title: '종합게시판',
+                      items: generalPosts,
+                    ),
+                  ],
                 );
               },
-            ),
-            const SizedBox(height: 30),
-            // '내 게시판' 섹션
+            ),            const SizedBox(height: 30),
+             // '내 게시판' 섹션
             FutureBuilder<List<Map<String, dynamic>>>(
               future: _myPostsFuture,
               builder: (context, snapshot) {
+                // 탭 하면 'MY' 탭으로 이동하는 함수를 미리 정의합니다.
+                final onTapToMyTab = () {
+                  setState(() {
+                    _selectedTab = 'MY';
+                  });
+                };
+
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
                   return Center(child: Text('게시판을 불러오는 데 실패했습니다: ${snapshot.error}'));
                 }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return _buildBoardSection(
-                    title: '내 게시판',
-                    items: [], // 데이터가 없으면 빈 리스트를 전달
-                  );
-                }
-                final myPosts = snapshot.data!.map((postData) {
+                
+                // 데이터가 없거나 비어있더라도 myPosts를 초기화합니다.
+                final myPosts = (snapshot.data ?? []).map((postData) {
                   final DateTime postDate = postData['postDate'];
                   final bool isNew = DateTime.now().difference(postDate).inHours < 24;
                   return _MyPostItem(
@@ -260,9 +281,23 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
                     onTap: () => _navigateToPostDetail(postData['postId'], postData['communityId']),
                   );
                 }).toList();
-                return _buildBoardSection(
-                  title: '내 게시판',
-                  items: myPosts,
+
+                // Column으로 헤더와 내용을 조합합니다.
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. 헤더 생성
+                    _buildBoardHeader(
+                      title: '내 게시판',
+                      onTap: onTapToMyTab,
+                    ),
+                    const SizedBox(height: 12),
+                    // 2. 내용 생성
+                    _buildBoardContent(
+                      title: '내 게시판',
+                      items: myPosts,
+                    ),
+                  ],
                 );
               },
             ),
@@ -1075,8 +1110,10 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
               IconButton(
                 icon : const Icon(Icons.search, size: 28, color: Color(0xFF5F37CF),),
                 onPressed: () {
-                  // TODO: 검색 버튼 클릭 시 동작 구현
-                  print('Search button tapped!');
+                          Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ExploreSearchPage()),
+      );
                 },
                 ), // 검색 아이콘
               SizedBox(width: screenWidth * (6.15 / 393.0)),
@@ -1316,10 +1353,98 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
   }
 
   // 게시판 섹션을 생성하는 함수입니다.
-  Widget _buildBoardSection({
+/// 게시판의 제목 헤더를 생성합니다. (탭 기능 포함)
+Widget _buildBoardHeader({
+  required String title,
+  VoidCallback? onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    behavior: HitTestBehavior.translucent, // 탭 영역을 전체 Row로 확장
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF5F37CF),
+            fontSize: 16,
+            fontFamily: 'Pretendard',
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        // onTap 기능이 전달된 경우에만 '>' 아이콘을 표시합니다.
+        if (onTap != null)
+          const Icon(
+            Icons.chevron_right,
+            color: Color(0xFF5F37CF),
+            size: 24.0,
+          ),
+      ],
+    ),
+  );
+}
+
+/// 게시물 목록 또는 빈 메시지가 담긴 흰색 컨테이너를 생성합니다.
+Widget _buildBoardContent({
+  required String title, // 게시물 타입 구분을 위해 title이 여전히 필요합니다.
+  required List<dynamic> items,
+}) {
+  // 게시물이 없을 경우
+  if (items.isEmpty) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 40),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Center(
+        child: Text(
+          '게시물이 없습니다.',
+          style: TextStyle(color: Colors.grey, fontSize: 14),
+        ),
+      ),
+    );
+  }
+
+  // 게시물이 있을 경우
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
+      children: List.generate(items.length, (index) {
+        final item = items[index];
+        Widget itemWidget;
+        // 게시판 종류에 따라 다른 위젯을 렌더링합니다.
+        if (title == 'HOT 게시물' && item is _HotPostItem) {
+          itemWidget = item;
+        } else if (title == '종합게시판' && item is _GeneralPostItem) {
+          itemWidget = item;
+        } else if (title == '내 게시판' && item is _MyPostItem) {
+          itemWidget = item;
+        } else {
+          itemWidget = const SizedBox.shrink();
+        }
+
+        // 마지막 아이템이 아닐 경우에만 간격을 줍니다.
+        return Padding(
+          padding: EdgeInsets.only(bottom: index == items.length - 1 ? 0 : 12),
+          child: itemWidget,
+        );
+      }),
+    ),
+  );
+}
+
+  Widget _buildBoardSection({  // need replace 
     required String title,
     required List<dynamic> items,
     bool isGeneral = false,
+    VoidCallback? onTap,
   }) {
     // If there are no items, show a message instead of an empty box.
     if (items.isEmpty) {
@@ -1357,15 +1482,32 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFF5F37CF),
-            fontSize: 16,
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w600,
-          ),
+      GestureDetector(
+        onTap: onTap, // 전달받은 콜백 함수를 연결합니다.
+        // 탭 영역을 넓히기 위해 Row 전체에 투명한 배경색을 줍니다.
+        behavior: HitTestBehavior.translucent,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFF5F37CF),
+                fontSize: 16,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            // 3. onTap 콜백이 있을 경우에만 아이콘을 표시합니다.
+            if (onTap != null)
+              const Icon(
+                Icons.chevron_right,
+                color: Color(0xFF5F37CF),
+                size: 24.0,
+              ),
+          ],
         ),
+      ),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 18),
