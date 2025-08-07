@@ -437,10 +437,11 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
         width: 139 * widthRatio,
         height: 35 * heightRatio, // 터치 영역을 고려하여 높이 조정
         decoration: ShapeDecoration(
+          color: const Color(0xFFF1ECFF),
           shape: RoundedRectangleBorder(
             side: const BorderSide(
-              width: 1.20,
-              color: Color(0xFF121212),
+width: 1,
+color: const Color(0xFF5F37CF),
             ),
             borderRadius: BorderRadius.circular(400),
           ),
@@ -450,7 +451,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
             '커뮤니티 찾아보기',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: const Color(0xFF121212),
+              color: const Color(0xFF5F37CF),
               fontSize: 14 * widthRatio,
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,
