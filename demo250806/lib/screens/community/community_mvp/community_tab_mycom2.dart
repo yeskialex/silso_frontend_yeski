@@ -5,6 +5,7 @@ import '../post_detail_screen.dart';
 import '../../../models/post_model.dart';
 import '../../../models/community_model.dart';
 import '../community_detail_screen.dart'; 
+import 'community_explore_page.dart'; // Import the community explore page
 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
 class CommunityMainTabScreenMycom extends StatefulWidget {
@@ -427,8 +428,11 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     return GestureDetector(
       onTap: () {
         // TODO: 커뮤니티 찾기/탐색 페이지로 이동하는 로직 구현
-        print('커뮤니티 찾아보기 버튼 클릭!');
-      },
+        Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CommunityExplorePage()),
+      );
+       },
       child: Container(
         width: 139 * widthRatio,
         height: 35 * heightRatio, // 터치 영역을 고려하여 높이 조정
