@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => ExploreSearchPage(), //CommunityExplorePage(), //CommunityMainTabScreenMycom(),// SplashScreen(), //CommunityMainScreen(), CommunityMainTabScreenMycom(),
+        '/': (context) => CommunityMainTabScreenMycom(), //ExploreSearchPage(), //CommunityExplorePage(), //CommunityMainTabScreenMycom(),// SplashScreen(), //CommunityMainScreen(), CommunityMainTabScreenMycom(),
         '/login': (context) => const LoginScreen(),
         '/after-login-splash': (context) => const AfterLoginSplashScreen(),
         '/home': (context) => const HomeScreen(),

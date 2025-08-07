@@ -4,7 +4,7 @@ import '../../../services/community_service.dart'; // hot posts, general posts, 
 import '../post_detail_screen.dart';
 import '../../../models/post_model.dart';
 import '../../../models/community_model.dart';
-
+import '../community_detail_screen.dart'; 
 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
 class CommunityMainTabScreenMycom extends StatefulWidget {
@@ -36,7 +36,46 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
 
   }
 
-  // PostDetailScreen으로 이동하는 함수
+// In community_tab_mycom2.dart, inside the _CommunityMainTabScreenMycomState class:
+
+  // New function to navigate to the Community Detail Screen
+  Future<void> _navigateToCommunityDetail(String communityId) async {
+    // Show a loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+
+    try {
+      // Fetch the community details using the service
+      final community = await _communityService.getCommunity(communityId);
+
+      Navigator.of(context).pop(); // Close the loading dialog
+
+      // Navigate to the new screen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => CommunityDetailScreen(
+            community: community,
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.of(context).pop(); // Close the loading dialog
+      // Show an error message if something goes wrong
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load community details: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // // PostDetailScreen으로 이동하는 함수
   Future<void> _navigateToPostDetail(String postId, String communityId) async {
     // Increment view count when navigating to post detail
     await _communityService.incrementPostViewCount(postId);
@@ -533,7 +572,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     final String communityId = postData['communityId'];
 
     return GestureDetector(
-      onTap: () => _navigateToPostDetail(postId, communityId),
+      onTap: () => _navigateToCommunityDetail(communityId),
       child: Container(
         width: 360 * widthRatio,
         height: 125 * heightRatio,
@@ -1530,3 +1569,5 @@ Widget _buildNewBadge() {
     ),
   );
 }
+
+ 
