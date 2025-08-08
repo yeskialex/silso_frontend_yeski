@@ -311,6 +311,10 @@ class CommunityService {
     }
   }
 
+  // 
+
+
+
   // Get user's community profile data
   Future<Map<String, dynamic>?> getCommunityProfile() async {
     if (currentUserId == null) return null;
@@ -394,6 +398,29 @@ class CommunityService {
 
     } catch (e) {
       print('Error fetching top 5 communities: $e');
+      return [];
+    }
+  }
+
+  // Get communiteis by ordering (communiter_explore_page.dart)
+  /// [sortBy] 필드 기준으로 정렬합니다. ('memberCount', 'createdAt' 등)
+  /// [descending]이 true이면 내림차순, false이면 오름차순으로 정렬합니다.
+  Future<List<Community>> getCommunities({
+    String sortBy = 'memberCount', // 기본 정렬: 인기순
+    bool descending = true,
+  }) async {
+    try {
+      final snapshot = await _firestore
+          .collection('communities')
+          .orderBy(sortBy, descending: descending)
+          .get();
+
+      return snapshot.docs.map((doc) {
+        return Community.fromMap(doc.data(), doc.id);
+      }).toList();
+    } catch (e) {
+      // 앱이 비정상 종료되지 않도록 에러를 처리하고 빈 리스트를 반환합니다.
+      debugPrint('Error fetching communities: $e');
       return [];
     }
   }
