@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math; // for PageController rotation
 import '../../../models/community_model.dart'; // 커뮤니티 모델을 가져옵니다.
 import '../../../services/community_service.dart'; // 커뮤니티 서비스 (API 호출 등)를 가져옵니다.
-
+import '../../../utils/community_navigation_helper.dart'; // 네비게이션 헬퍼를 가져옵니다.
+import '../community_detail_screen.dart'; // 커뮤니티 상세 페이지를 가져옵니다.
 
 class CommunityExplorePage extends StatefulWidget {
   const CommunityExplorePage({super.key});
@@ -285,117 +286,122 @@ class _TopCommunityCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // 왼쪽 이미지
-          ClipRRect(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(12 * scale),
-              bottomLeft: Radius.circular(12 * scale),
-            ),
-            child: Image.network(
-              info.communityBanner ?? 'https://placehold.co/159x217/EFEFEF/9E9E9E?text=No+Image',
-              width: 159 * scale,
-              // ⚠️ [수정 1] 이미지 높이를 부모 컨테이너 높이에 맞춥니다.
-              height: 212 * scale,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return const Center(child: CircularProgressIndicator(color: Color(0xFF5F37CF)));
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
+      // REFACTOR: 탭 기능을 추가하기 위해 ClipRRect와 InkWell 위젯으로 감싸줍니다.
+      child: ClipRRect(
+        // InkWell의 물결 효과가 둥근 모서리를 벗어나지 않도록 설정합니다.
+        borderRadius: BorderRadius.circular(12 * scale),
+        child: InkWell(
+          // 탭 했을 때의 동작을 정의합니다.
+          onTap: () {
+            // 중앙에서 관리하는 공용 네비게이션 함수를 호출합니다.
+            NavigationHelper.navigateToCommunityDetail(context, info.communityId);
+          },
+          child: Row(
+            children: [
+              // 왼쪽 이미지
+              ClipRRect(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12 * scale),
+                  bottomLeft: Radius.circular(12 * scale),
+                ),
+                child: Image.network(
+                  info.communityBanner ?? 'https://placehold.co/159x217/EFEFEF/9E9E9E?text=No+Image',
                   width: 159 * scale,
                   height: 212 * scale,
-                  color: Colors.grey[200],
-                  child: Icon(Icons.broken_image_outlined, color: Colors.grey[400]),
-                );
-              },
-            ),
-          ),
-          // 오른쪽 텍스트 정보
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                18.0 * scale, 18.0 * scale, 18.0 * scale, 12.0 * scale // 하단 패딩 약간 조정
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator(color: Color(0xFF5F37CF)));
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 159 * scale,
+                      height: 212 * scale,
+                      color: Colors.grey[200],
+                      child: Icon(Icons.broken_image_outlined, color: Colors.grey[400]),
+                    );
+                  },
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 랭킹 배지
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 4 * scale),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF5F37CF),
-                      borderRadius: BorderRadius.circular(400),
-                    ),
-                    child: Text(
-                      '$rank위',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14 * scale,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+              // 오른쪽 텍스트 정보
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    18.0 * scale, 18.0 * scale, 18.0 * scale, 12.0 * scale
                   ),
-                  SizedBox(height: 14 * scale),
-                  // 커뮤니티 제목
-                  Text(
-                    info.communityName,
-                    style: TextStyle(
-                      color: const Color(0xFF121212),
-                      fontSize: 18 * scale,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                      height: 1.33,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 8 * scale),
-                  
-                  // ⚠️ [수정 2] Spacer 대신 Flexible 위젯 사용
-                  // Flexible 위젯이 남은 공간을 모두 차지하여 설명 텍스트가 유연하게 표시됩니다.
-                  Flexible(
-                    child: Text(
-                      info.announcement ?? '공지사항이 없습니다.',
-                      style: TextStyle(
-                        color: const Color(0xFF8E8E8E),
-                        fontSize: 14 * scale,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-
-                  // Spacer를 제거했으므로 하단 여백을 위해 SizedBox 추가
-                  SizedBox(height: 8 * scale),
-
-                  // 멤버 수
-                  Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.person, color: const Color(0xFF5F37CF), size: 14 * scale),
-                      SizedBox(width: 4 * scale),
-                      Text(
-                        '${info.memberCount}명',
-                        style: TextStyle(
+                      // 랭킹 배지
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 4 * scale),
+                        decoration: BoxDecoration(
                           color: const Color(0xFF5F37CF),
-                          fontSize: 12 * scale,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w500,
+                          borderRadius: BorderRadius.circular(400),
                         ),
+                        child: Text(
+                          '$rank위',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14 * scale,
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 14 * scale),
+                      // 커뮤니티 제목
+                      Text(
+                        info.communityName,
+                        style: TextStyle(
+                          color: const Color(0xFF121212),
+                          fontSize: 18 * scale,
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w600,
+                          height: 1.33,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 8 * scale),
+                      Flexible(
+                        child: Text(
+                          info.announcement ?? '공지사항이 없습니다.',
+                          style: TextStyle(
+                            color: const Color(0xFF8E8E8E),
+                            fontSize: 14 * scale,
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w500,
+                            height: 1.4,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(height: 8 * scale),
+                      // 멤버 수
+                      Row(
+                        children: [
+                          Icon(Icons.person, color: const Color(0xFF5F37CF), size: 14 * scale),
+                          SizedBox(width: 4 * scale),
+                          Text(
+                            '${info.memberCount}명',
+                            style: TextStyle(
+                              color: const Color(0xFF5F37CF),
+                              fontSize: 12 * scale,
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
