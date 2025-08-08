@@ -1,23 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math; // for PageController rotation
+import '../../../models/community_model.dart'; // 커뮤니티 모델을 가져옵니다.
+import '../../../services/community_service.dart'; // 커뮤니티 서비스 (API 호출 등)를 가져옵니다.
 
-// --- 데이터 모델 ---
-// 각 커뮤니티 정보를 담기 위한 간단한 데이터 클래스입니다.
-class CommunityInfo {
-  final int rank;
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String memberCount;
-
-  CommunityInfo({
-    required this.rank,
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.memberCount,
-  });
-}
 
 class CommunityExplorePage extends StatefulWidget {
   const CommunityExplorePage({super.key});
@@ -34,21 +19,23 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
     viewportFraction: 0.91, // 화면 너비의 91% 만큼 각 페이지가 보이도록 설정
   );
 
-  // --- Mock 데이터 ---
-  // 실제 앱에서는 서버에서 이 데이터를 가져와야 합니다.
-  final List<CommunityInfo> topCommunities = [
-    CommunityInfo(rank: 1, title: '대학교 빌런이 되지말자', description: '대학교에서 팀플 많은 사람들 모여라! 팀플 꿀팁 대방출', imageUrl: 'https://placehold.co/159x217', memberCount: '9,909'),
-    CommunityInfo(rank: 2, title: '스타트업 시작하는 사람들의 모임', description: '스타트업을 시작하며 겪었던 여러 실패들을 서로 공유하는 공간', imageUrl: 'https://placehold.co/159x217', memberCount: '8,513'),
-    CommunityInfo(rank: 3, title: '엄빠가 처음이라', description: '육아에서 시행착오를 겪은 부모들이 진솔한 경험담을 나누는 공간', imageUrl: 'https://placehold.co/159x217', memberCount: '8,112'),
-    CommunityInfo(rank: 4, title: '연애는 어렵조', description: '연애에서의 크고 작은 실패 경험을 나누며 위로와 조언을 주고받는 커뮤니티', imageUrl: 'https://placehold.co/159x217', memberCount: '6,953'),
-    CommunityInfo(rank: 5, title: '퇴사를 두려워 하지맙세', description: '퇴사가 아직 두려우신가요?\n퇴사를 두려워하지 맙시다!', imageUrl: 'https://placehold.co/159x217', memberCount: '6,478'),
-  ];
+  // REFACTOR: Add an instance of CommunityService and a Future to hold the data.
+  final CommunityService _communityService = CommunityService();
+  late Future<List<Community>> _topCommunitiesFuture;
   
   final List<Map<String, String>> communityList = [
     {'title': '인기가 필요한 사람들', 'description': '인기가 필요한 사람들', 'members': '300'},
     {'title': '이성과의 교류가 힘든 사람들의 모임', 'description': '이성과 대화하기 힘든 사람들에게 꿀팁을!', 'members': '300'},
     {'title': '건강관리에 진심인 사람 모이자', 'description': '운동, 영양제, 이너관리에 대한 모든걸 공유', 'members': '300'},
   ];
+
+  // REFACTOR: Fetch data when the widget is initialized.
+  @override
+  void initState() {
+    super.initState();
+    // Start fetching the data as soon as the page is loaded.
+    _topCommunitiesFuture = _communityService.getTop5Communities();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,9 +50,11 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
         child: Column(
           children: [
             SizedBox(height: 18 * scale),
-            _buildTopCommunityCarousel(scale),
-            SizedBox(height: 12 * scale),
-            _buildCarouselIndicator(scale),
+            // _buildTopCommunityCarousel(scale),
+            // SizedBox(height: 12 * scale),
+            // _buildCarouselIndicator(scale),
+  // REFACTOR: Use a FutureBuilder to handle loading/error/data states.
+            _buildTopCommunitySection(scale),
             SizedBox(height: 30 * scale),
             const Divider(color: Color(0xFFF4F4F4), thickness: 1.5, height: 1.5),
             SizedBox(height: 24 * scale),
@@ -120,14 +109,53 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
       ],
     );
   }
-
+  
   /// ## 상단 TOP 5 커뮤니티 배너 캐러셀
-  Widget _buildTopCommunityCarousel(double scale) {
+  // REFACTOR: This new helper widget builds the UI based on the Future's state.
+  /// ## Top Community Section with Loading/Error/Data states
+  Widget _buildTopCommunitySection(double scale) {
+    return FutureBuilder<List<Community>>(
+      future: _topCommunitiesFuture,
+      builder: (context, snapshot) {
+        // 1. While data is loading, show a spinner.
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Reserve space for the carousel and indicator to prevent layout shifts.
+          return SizedBox(
+            height: (212 * scale) + (12 * scale) + (6 * scale),
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // 2. If an error occurs, display an error message.
+        if (snapshot.hasError) {
+          return Center(child: Text('데이터를 불러오는데 실패했습니다: ${snapshot.error}'));
+        }
+
+        // 3. If data is empty or null, show a confirmation message.
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('TOP 5 커뮤니티가 없습니다.'));
+        }
+
+        // 4. When data is successfully fetched, build the UI.
+        final topCommunities = snapshot.data!;
+        return Column(
+          children: [
+            _buildTopCommunityCarousel(scale, topCommunities),
+            SizedBox(height: 12 * scale),
+            _buildCarouselIndicator(scale, topCommunities),
+          ],
+        );
+      },
+    );
+  }
+
+
+  Widget _buildTopCommunityCarousel(double scale, List<Community> communities) {
     return SizedBox(
       height: 212 * scale,
       child: PageView.builder(
         controller: _pageController,
-        itemCount: topCommunities.length,
+        itemCount: communities.length,
         onPageChanged: (index) {
           setState(() {
             _carouselCurrentPage = index;
@@ -135,8 +163,9 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
         },
         itemBuilder: (context, index) {
           return _TopCommunityCard(
-            info: topCommunities[index],
+            info: communities[index],
             scale: scale,
+            rank: index + 1, // 랭킹은 1부터 시작하므로 index + 1
           );
         },
       ),
@@ -144,10 +173,10 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
   }
 
   /// ## 캐러셀 인디케이터 (페이지 표시 점)
-  Widget _buildCarouselIndicator(double scale) {
+  Widget _buildCarouselIndicator(double scale, List<Community> communities) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(topCommunities.length, (index) {
+      children: List.generate(communities.length, (index) {
         return Container(
           width: 6 * scale,
           height: 6 * scale,
@@ -229,11 +258,14 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
 
 /// ## [컴포넌트] 상단 캐러셀에 들어갈 카드 위젯
 /// ## [컴포넌트] 상단 캐러셀에 들어갈 카드 위젯 (Overflow 해결)
+/// REFACTOR: The card widget is now updated to use the 'Community' model.
+
 class _TopCommunityCard extends StatelessWidget {
-  final CommunityInfo info;
+  final Community info;
+  final int rank;
   final double scale;
 
-  const _TopCommunityCard({required this.info, required this.scale});
+  const _TopCommunityCard({required this.info, required this.rank, required this.scale});
 
   @override
   Widget build(BuildContext context) {
@@ -262,11 +294,23 @@ class _TopCommunityCard extends StatelessWidget {
               bottomLeft: Radius.circular(12 * scale),
             ),
             child: Image.network(
-              info.imageUrl,
+              info.communityBanner ?? 'https://placehold.co/159x217/EFEFEF/9E9E9E?text=No+Image',
               width: 159 * scale,
               // ⚠️ [수정 1] 이미지 높이를 부모 컨테이너 높이에 맞춥니다.
               height: 212 * scale,
               fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(child: CircularProgressIndicator(color: Color(0xFF5F37CF)));
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 159 * scale,
+                  height: 212 * scale,
+                  color: Colors.grey[200],
+                  child: Icon(Icons.broken_image_outlined, color: Colors.grey[400]),
+                );
+              },
             ),
           ),
           // 오른쪽 텍스트 정보
@@ -286,7 +330,7 @@ class _TopCommunityCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(400),
                     ),
                     child: Text(
-                      '${info.rank}위',
+                      '$rank위',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14 * scale,
@@ -298,7 +342,7 @@ class _TopCommunityCard extends StatelessWidget {
                   SizedBox(height: 14 * scale),
                   // 커뮤니티 제목
                   Text(
-                    info.title,
+                    info.communityName,
                     style: TextStyle(
                       color: const Color(0xFF121212),
                       fontSize: 18 * scale,
@@ -315,7 +359,7 @@ class _TopCommunityCard extends StatelessWidget {
                   // Flexible 위젯이 남은 공간을 모두 차지하여 설명 텍스트가 유연하게 표시됩니다.
                   Flexible(
                     child: Text(
-                      info.description,
+                      info.announcement ?? '공지사항이 없습니다.',
                       style: TextStyle(
                         color: const Color(0xFF8E8E8E),
                         fontSize: 14 * scale,
@@ -431,7 +475,7 @@ class _CommunityListItem extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.forum_outlined, color: Colors.white, size: 30 * scale),
+                Icon(Icons.add, color: Colors.white, size: 30 * scale),
                 SizedBox(height: 8 * scale),
                 Container(
                    padding: EdgeInsets.symmetric(horizontal: 8 * scale, vertical: 2 * scale),
