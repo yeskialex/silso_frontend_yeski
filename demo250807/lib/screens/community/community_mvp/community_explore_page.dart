@@ -24,11 +24,8 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
   final CommunityService _communityService = CommunityService();
   late Future<List<Community>> _topCommunitiesFuture;
   
-  final List<Map<String, String>> communityList = [
-    {'title': '인기가 필요한 사람들', 'description': '인기가 필요한 사람들', 'members': '300'},
-    {'title': '이성과의 교류가 힘든 사람들의 모임', 'description': '이성과 대화하기 힘든 사람들에게 꿀팁을!', 'members': '300'},
-    {'title': '건강관리에 진심인 사람 모이자', 'description': '운동, 영양제, 이너관리에 대한 모든걸 공유', 'members': '300'},
-  ];
+  // REFACTOR: 전체 커뮤니티 목록을 위한 Future 상태 변수 추가
+  late Future<List<Community>> _allCommunitiesFuture;
 
   // REFACTOR: Fetch data when the widget is initialized.
   @override
@@ -36,6 +33,37 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
     super.initState();
     // Start fetching the data as soon as the page is loaded.
     _topCommunitiesFuture = _communityService.getTop5Communities();
+    // REFACTOR: Fetch all communities for the list view.
+    _fetchCommunityData();
+  }
+  // REFACTOR: 현재 필터에 맞춰 데이터를 다시 불러오는 메소드
+  void _fetchCommunityData() {
+    String sortBy;
+    bool descending;
+
+    switch (_activeFilter) {
+      case '최신순':
+        sortBy = 'createdAt';
+        descending = true;
+        break;
+      case '오래된 순':
+        sortBy = 'createdAt';
+        descending = false;
+        break;
+      case '인기순':
+      default:
+        sortBy = 'memberCount';
+        descending = true;
+        break;
+    }
+
+    // 상태를 업데이트하여 FutureBuilder가 새로운 Future를 사용하도록 합니다.
+    setState(() {
+      _allCommunitiesFuture = _communityService.getCommunities(
+        sortBy: sortBy,
+        descending: descending,
+      );
+    });
   }
 
   @override
@@ -208,6 +236,7 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
                   _activeFilter = filter;
                   // TODO: 필터에 따른 데이터 정렬 로직 구현
                 });
+                _fetchCommunityData();
               },
               child: Container(
                 padding: EdgeInsets.symmetric(
@@ -236,26 +265,47 @@ class _CommunityExplorePageState extends State<CommunityExplorePage> {
   }
 
   /// ## 전체 커뮤니티 목록
+  /// ## 전체 커뮤니티 목록 (REFACTORED)
   Widget _buildCommunityList(double scale) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 17 * scale),
-      child: ListView.separated(
-        shrinkWrap: true, // SingleChildScrollView 안에서 스크롤이 가능하도록 설정
-        physics: const NeverScrollableScrollPhysics(), // 부모 스크롤과 충돌 방지
-        itemCount: communityList.length,
-        itemBuilder: (context, index) {
-          return _CommunityListItem(
-            title: communityList[index]['title']!,
-            description: communityList[index]['description']!,
-            memberCount: communityList[index]['members']!,
-            scale: scale,
-          );
-        },
-        separatorBuilder: (context, index) => SizedBox(height: 6 * scale),
-      ),
+    return FutureBuilder<List<Community>>(
+      future: _allCommunitiesFuture,
+      builder: (context, snapshot) {
+        // 로딩 중일 때
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        // 에러 발생 시
+        if (snapshot.hasError) {
+          return Center(child: Text('목록을 불러오는데 실패했습니다: ${snapshot.error}'));
+        }
+        // 데이터가 없거나 비어있을 때
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('표시할 커뮤니티가 없습니다.'));
+        }
+
+        // 성공적으로 데이터를 가져왔을 때
+        final communities = snapshot.data!;
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 17 * scale),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: communities.length,
+            itemBuilder: (context, index) {
+              // Community 모델 객체를 아이템 위젯에 직접 전달합니다.
+              return _CommunityListItem(
+                community: communities[index],
+                scale: scale,
+              );
+            },
+            separatorBuilder: (context, index) => SizedBox(height: 6 * scale),
+          ),
+        );
+      },
     );
   }
 }
+
 
 /// ## [컴포넌트] 상단 캐러셀에 들어갈 카드 위젯
 /// ## [컴포넌트] 상단 캐러셀에 들어갈 카드 위젯 (Overflow 해결)
@@ -408,16 +458,121 @@ class _TopCommunityCard extends StatelessWidget {
 }
 
 /// ## [컴포넌트] 하단 리스트에 들어갈 아이템 위젯
+// class _CommunityListItem extends StatelessWidget {
+//   final String title;
+//   final String description;
+//   final String memberCount;
+//   final double scale;
+
+//   const _CommunityListItem({
+//     required this.title,
+//     required this.description,
+//     required this.memberCount,
+//     required this.scale,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       height: 85 * scale,
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         borderRadius: BorderRadius.circular(8 * scale),
+//         border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+//       ),
+//       child: Row(
+//         children: [
+//           // 왼쪽 텍스트 정보
+//           Expanded(
+//             child: Padding(
+//               padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 15 * scale),
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 mainAxisAlignment: MainAxisAlignment.center,
+//                 children: [
+//                   Text(
+//                     title,
+//                     style: TextStyle(
+//                       color: const Color(0xFF121212),
+//                       fontSize: 16 * scale,
+//                       fontFamily: 'Pretendard',
+//                       fontWeight: FontWeight.w600,
+//                     ),
+//                     overflow: TextOverflow.ellipsis,
+//                     maxLines: 1,
+//                   ),
+//                   const Spacer(),
+//                   Text(
+//                     description,
+//                     style: TextStyle(
+//                       color: const Color(0xFF8E8E8E),
+//                       fontSize: 14 * scale,
+//                       fontFamily: 'Pretendard',
+//                       fontWeight: FontWeight.w500,
+//                     ),
+//                     overflow: TextOverflow.ellipsis,
+//                     maxLines: 1,
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ),
+//           // 오른쪽 아이콘 및 멤버 수
+//           Container(
+//             width: 90 * scale,
+//             height: double.infinity,
+//             decoration: BoxDecoration(
+//               color: const Color(0xFF5F37CF),
+//               borderRadius: BorderRadius.only(
+//                 topRight: Radius.circular(7 * scale),
+//                 bottomRight: Radius.circular(7 * scale),
+//               ),
+//             ),
+//             child: Column(
+//               mainAxisAlignment: MainAxisAlignment.center,
+//               children: [
+//                 Icon(Icons.add, color: Colors.white, size: 30 * scale),
+//                 SizedBox(height: 8 * scale),
+//                 Container(
+//                    padding: EdgeInsets.symmetric(horizontal: 8 * scale, vertical: 2 * scale),
+//                    decoration: BoxDecoration(
+//                        borderRadius: BorderRadius.circular(400),
+//                        border: Border.all(color: Colors.white, width: 1)
+//                    ),
+//                    child: Row(
+//                      mainAxisSize: MainAxisSize.min,
+//                      children: [
+//                        Icon(Icons.person, color: Colors.white, size: 14 * scale),
+//                        SizedBox(width: 4 * scale),
+//                        Text(
+//                          '$memberCount명',
+//                          style: TextStyle(
+//                            color: Colors.white,
+//                            fontSize: 12 * scale,
+//                            fontFamily: 'Pretendard',
+//                            fontWeight: FontWeight.w500,
+//                          ),
+//                        ),
+//                      ],
+//                    ),
+//                 )
+//               ],
+//             ),
+//           )
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+/// ## [컴포넌트] 하단 리스트에 들어갈 아이템 위젯 (REFACTORED)
 class _CommunityListItem extends StatelessWidget {
-  final String title;
-  final String description;
-  final String memberCount;
+  // REFACTOR: Community 모델 객체를 직접 받도록 수정
+  final Community community;
   final double scale;
 
   const _CommunityListItem({
-    required this.title,
-    required this.description,
-    required this.memberCount,
+    required this.community,
     required this.scale,
   });
 
@@ -441,7 +596,7 @@ class _CommunityListItem extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    title,
+                    community.communityName, // REFACTOR: 모델 데이터 사용
                     style: TextStyle(
                       color: const Color(0xFF121212),
                       fontSize: 16 * scale,
@@ -453,7 +608,7 @@ class _CommunityListItem extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    description,
+                    community.announcement ?? '소개글이 없습니다.', // REFACTOR: 모델 데이터 사용
                     style: TextStyle(
                       color: const Color(0xFF8E8E8E),
                       fontSize: 14 * scale,
@@ -495,7 +650,7 @@ class _CommunityListItem extends StatelessWidget {
                        Icon(Icons.person, color: Colors.white, size: 14 * scale),
                        SizedBox(width: 4 * scale),
                        Text(
-                         '$memberCount명',
+                         '${community.memberCount}명', // REFACTOR: 모델 데이터 사용
                          style: TextStyle(
                            color: Colors.white,
                            fontSize: 12 * scale,
