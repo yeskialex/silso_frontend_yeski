@@ -164,19 +164,28 @@ class _CommunityFindPageState extends State<CommunityFindPage> {
           );
         }
 
-        // Filter out communities that user has already joined
-        final joinedIds = _joinedCommunities.map((c) => c.communityId).toSet();
-        final availableTopCommunities = snapshot.data!
-            .where((community) => !joinedIds.contains(community.communityId))
-            .take(5)
-            .toList();
+        // // Filter out communities that user has already joined
+        // final joinedIds = _joinedCommunities.map((c) => c.communityId).toSet();
+        // final availableTopCommunities = snapshot.data!
+        //     .where((community) => !joinedIds.contains(community.communityId))
+        //     .take(5)
+        //     .toList();
         
-        // Check if there are any available communities to show
-        if (availableTopCommunities.isEmpty) {
-          return const SizedBox(
-            height: 200,
-            child: Center(child: Text('모든 인기 커뮤니티에 이미 가입되어 있습니다!')),
-          );
+        // // Check if there are any available communities to show
+        // if (availableTopCommunities.isEmpty) {
+        //   return const SizedBox(
+        //     height: 200,
+        //     child: Center(child: Text('모든 인기 커뮤니티에 이미 가입되어 있습니다!')),
+        //   );
+        // }
+
+        // --- 수정된 부분(modify) ---
+        // 가입 여부 필터링 로직을 제거하고, snapshot에서 받아온 데이터를 그대로 사용합니다.
+        final topCommunities = snapshot.data!.take(5).toList();
+        
+        // 데이터가 없는 경우를 위한 방어 코드만 남겨둡니다.
+        if (topCommunities.isEmpty) {
+          return const SizedBox.shrink(); // 아무것도 표시하지 않음
         }
 
         return Column(
@@ -190,14 +199,14 @@ class _CommunityFindPageState extends State<CommunityFindPage> {
                     _currentPage = index;
                   });
                 },
-                itemCount: availableTopCommunities.length,
+                itemCount: topCommunities.length,
                 itemBuilder: (context, index) {
-                  return _buildTopCommunityCard(availableTopCommunities[index], index + 1);
+                  return _buildTopCommunityCard(topCommunities[index], index + 1);
                 },
               ),
             ),
             const SizedBox(height: 16),
-            _buildPageIndicators(availableTopCommunities.length),
+            _buildPageIndicators(topCommunities.length),
           ],
         );
       },
