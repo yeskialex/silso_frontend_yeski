@@ -482,7 +482,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  Widget _buildCourthouseCard() {
+Widget _buildCourthouseCard() {
     return Container(
       height: 101,
       decoration: BoxDecoration(
@@ -491,43 +491,50 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
       ),
       child: Row(
         children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
-                ),
-                child: Image.network(
-                  "https://placehold.co/153x101/777777/FFFFFF?text=Image",
-                  width: 80,
-                  height: 101,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Positioned(
-                top: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFC31A1A),
-                    borderRadius: BorderRadius.circular(400),
-                  ),
-                  child: const Text('Live', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
-          ),
+          // [수정] 이미지가 1/3을 차지하도록 Expanded와 flex: 1 적용
           Expanded(
+            flex: 1,
+            child: Stack(
+              // [수정] Stack의 자식이 Expanded 공간을 꽉 채우도록 설정
+              fit: StackFit.expand,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  ),
+                  child: Image.asset(
+                    "assets/images/community/judge_1.png",
+                    // [수정] fit: BoxFit.cover를 통해 이미지가 잘리지 않고 채워지도록 함
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC31A1A),
+                      borderRadius: BorderRadius.circular(400),
+                    ),
+                    child: const Text('Live', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // [수정] 텍스트 영역이 2/3를 차지하도록 flex: 2 적용
+          Expanded(
+            flex: 2,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('내가 그렇게 잘못함?', style: TextStyle(color: Color(0xFFFAFAFA), fontSize: 13, fontWeight: FontWeight.w600, height: 1.25)),
-                  const Text('참여자 342명', style: TextStyle(color: Color(0xFFC7C7C7), fontSize: 8, fontWeight: FontWeight.w600, height: 1.25)),
+                  const Text('내가 그렇게 잘못함?', style: TextStyle(color: Color(0xFFFAFAFA), fontSize: 14, fontWeight: FontWeight.w600, height: 1.25)),
+                  const Text('참여자 342명', style: TextStyle(color: Color(0xFFC7C7C7), fontSize: 10, fontWeight: FontWeight.w600, height: 1.25)),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
@@ -545,67 +552,100 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  Widget _buildCaseCarouselCard() {
+Widget _buildCaseCarouselCard() {
     return SizedBox(
       width: 157,
       height: 159,
       child: Stack(
+        alignment: Alignment.center,
         children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              height: 147,
-              decoration: const BoxDecoration(
-                color: Color(0xFF5F37CF),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(8),
-                  bottomRight: Radius.circular(8),
-                  topLeft: Radius.circular(4),
-                  topRight: Radius.circular(4),
-                ),
-              ),
+          // [추가] 가장 뒤에 깔리는 연한 보라색 종이 효과
+          Container(
+            width: 148,
+            height: 155,
+            decoration: BoxDecoration(
+              color: const Color(0xFF6037D0).withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
-          Positioned(
-            top: 0,
-            left: 8,
-            child: Container(
-              width: 50,
-              height: 12,
-              decoration: const BoxDecoration(
-                color: Color(0xFF3B2283),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(4),
-                  topRight: Radius.circular(4),
-                ),
-              ),
-            ),
-          ),
-          const Positioned.fill(
-            top: 30,
-            child: Padding(
-              padding: EdgeInsets.all(12.0),
-              child: Center(
-                child: Text(
-                  '내가 그렇게 잘못함?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFFFAFAFA),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+          // [추가] 중간에 끼워진 흰색 종이 효과
+          // Container(
+          //   width: 120,
+          //   height: 120,
+          //   decoration: BoxDecoration(
+          //     color: Colors.white,
+          //     borderRadius: BorderRadius.circular(8),
+          //     boxShadow: [
+          //       BoxShadow(
+          //         color: Colors.black.withOpacity(0.05),
+          //         spreadRadius: 1,
+          //         blurRadius: 4,
+          //         offset: const Offset(2, 2),
+          //       )
+          //     ],
+          //   ),
+          // ),
+          // 기존 보라색 폴더 UI (가장 위에 위치)
+          SizedBox(
+            width: 145,
+            height: 145,
+            child: Stack(
+              children: [
+                // 폴더 몸체
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    height: 135,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF6037D0),
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                    ),
                   ),
                 ),
-              ),
+                // 폴더 탭
+                Positioned(
+                  top: 0,
+                  left: 8,
+                  child: Container(
+                    width: 129,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+                // 텍스트 콘텐츠
+                const Positioned.fill(
+                  top: 25,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Center(
+                      child: Text(
+                        '내가 그렇게 잘못함?',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFFFAFAFA),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildFolderCard({
+ Widget _buildFolderCard({
     required Color folderColor,
     required Color borderColor,
     required String title,
@@ -614,9 +654,12 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     required bool isCase,
   }) {
     return SizedBox(
-      height: 160,
+      height: 140,
       child: Stack(
+        // [수정] 자식 위젯들을 중앙 정렬합니다.
+        alignment: Alignment.center,
         children: [
+          // 폴더의 뒷부분(탭)처럼 보이는 레이어
           Positioned(
             top: 0,
             left: 8,
@@ -624,16 +667,31 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
               width: MediaQuery.of(context).size.width - 245,
               height: 115,
               decoration: BoxDecoration(
-                color: isCase ? const Color(0xFFFAFAFA).withOpacity(0.1) : const Color(0xFF393939).withOpacity(0.8),
+                color: isCase ? const Color(0xFF6037D0).withOpacity(0.4) : const Color(0xFF393939).withOpacity(0.7),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
+
+          // [수정] 폴더에 끼워진 흰색 종이 부분
+          Positioned(
+            bottom: 5, // 메인 폴더보다 5px 위에 위치하여 살짝 보이게 함
+            child: Container(
+              width: MediaQuery.of(context).size.width - 48, // 메인 폴더보다 약간 좁게
+              height: 122,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAFAFA),
+                borderRadius: BorderRadius.circular(9),
+              ),
+            ),
+          ),
+
+          // 메인 폴더 (가장 앞 레이어)
           Positioned(
             bottom: 0,
             child: Container(
               width: MediaQuery.of(context).size.width - 32,
-              height: 122,
+              height: 122, // [수정] UI 균형을 위해 높이 원복
               padding: const EdgeInsets.fromLTRB(25, 20, 25, 15),
               decoration: BoxDecoration(
                 color: folderColor,
