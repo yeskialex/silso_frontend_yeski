@@ -382,30 +382,6 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     );
   }
 
-  /// 가입한 커뮤니티 목록을 스크롤 가능한 리스트로 빌드합니다.
-  Widget _buildMyCommunitiesScrollableList(double widthRatio, double heightRatio, List<Community> communities) {
-    return SingleChildScrollView(
-      // 중앙 버튼에 마지막 항목이 가려지지 않도록 하단에 충분한 여백을 추가합니다.
-      padding: EdgeInsets.only(
-        top: 40 * heightRatio,
-        left: 16 * widthRatio,
-        right: 16 * widthRatio,
-        bottom: 150 * heightRatio, // 하단 여유 공간 확보
-      ),
-      child: ListView.separated(
-        shrinkWrap: true, // 자식 위젯의 크기만큼만 차지하도록 설정
-        physics: const NeverScrollableScrollPhysics(), // 부모 스크롤과 충돌 방지
-        itemCount: communities.length,
-        separatorBuilder: (context, index) => SizedBox(height: 16 * heightRatio),
-        itemBuilder: (context, index) {
-          final community = communities[index];
-          // 기존의 커뮤니티 카드 위젯을 재사용합니다.
-          return _buildMyCommunityCard(widthRatio, heightRatio, community);
-        },
-      ),
-    );
-  }
-
   /// 가입한 커뮤니티 섹션을 빌드합니다.
   Widget _buildMyCommunitiesSection(double widthRatio, double heightRatio, List<Community> communities) {
     return Column(
@@ -488,29 +464,6 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     );
   }
 
-
-  /// Helper widget to show when the user has not joined any communities.
-  // Widget _buildEmptyMyTab(double widthRatio, double heightRatio) {
-  //   return SingleChildScrollView(
-  //     child: Container(
-  //       width: double.infinity,
-  //       color: const Color(0xFFFAFAFA),
-  //       padding: EdgeInsets.symmetric(horizontal: 16 * widthRatio),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.center,
-  //         children: [
-  //           SizedBox(height: 120 * heightRatio),
-  //           _buildEmptyState(widthRatio, heightRatio),
-  //           SizedBox(height: 124 * heightRatio),
-  //           _buildTop5Header(widthRatio),
-  //           SizedBox(height: 12 * heightRatio),
-  //           _buildTop5CommunityList(widthRatio, heightRatio),
-  //           SizedBox(height: 40 * heightRatio),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 
   /// Helper widget to display the list of joined communities.
   Widget _buildMyCommunitiesList(double widthRatio, double heightRatio, List<Community> communities) {

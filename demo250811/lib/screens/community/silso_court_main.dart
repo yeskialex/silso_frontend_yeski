@@ -71,8 +71,8 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
             // 로고와 페이지 제목
             Column(
               children: [
-                Image.network(
-                  "https://placehold.co/70x25/FFFFFF/121212.png?text=LOGO",
+                Image.asset(
+                  "assets/images/community/silso_court.png",
                   width: 70,
                   height: 25,
                 ),
@@ -100,7 +100,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
   Widget _buildBannerSection(Size screenSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24.0),
-      color: Colors.white, // 배너 영역 배경은 흰색
+      color: Color(0xFF1E1E1E), // 배너 영역 배경은 흰색
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -262,7 +262,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
         Text(
           title,
           style: TextStyle(
-            color: isDark ? const Color(0xFFFAFAFA) : const Color(0xFF121212),
+            color:  const Color(0xFFFAFAFA),
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -272,7 +272,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           Text(
             subtitle,
             style: TextStyle(
-              color: isDark ? const Color(0xFFC7C7C7) : const Color(0xFF555555),
+              color: const Color(0xFFC7C7C7) ,
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -292,7 +292,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
       child: Row(
         children: [
           _buildTrialCard(
-            imageUrl: "https://placehold.co/220x121/E8D5B5/000000?text=Trial+1",
+            imageUrl: "assets/images/community/judge_1.png",
             title: '여친이랑 헤어짐; 드루와',
             timeLeft: '판결까지 3시간 남음',
             participants: '현재 참여수 56명',
@@ -301,7 +301,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           ),
           const SizedBox(width: 8),
           _buildTrialCard(
-            imageUrl: "https://placehold.co/220x121/AEC6CF/000000?text=Trial+2",
+            imageUrl: "assets/images/community/judge_2.png",
             title: '상사한테 꾸중을 들었...',
             timeLeft: '판결까지 9시간 남음',
             participants: '현재 참여수 56명',
@@ -310,7 +310,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           ),
           const SizedBox(width: 8),
           _buildTrialCard(
-            imageUrl: "https://placehold.co/220x121/B39EB5/000000?text=Trial+3",
+            imageUrl: "assets/images/community/judge_1.png",
             title: '또 다른 재판 이야기',
             timeLeft: '판결까지 1일 남음',
             participants: '현재 참여수 102명',
@@ -341,7 +341,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               image: DecorationImage(
-                image: NetworkImage(imageUrl),
+                image: AssetImage(imageUrl),
                 fit: BoxFit.cover,
               ),
             ),
@@ -395,7 +395,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Color(0xFF121212),
+              color: Color(0xFFFAFAFA),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -424,7 +424,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
                 ),
                 child: Image.network(
                   "https://placehold.co/153x101/777777/FFFFFF?text=Image",
-                  width: 153,
+                  width: 80,
                   height: 101,
                   fit: BoxFit.cover,
                 ),
@@ -545,17 +545,18 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     return SizedBox(
       height: 160,
       child: Stack(
-        alignment: Alignment.center,
+        //alignment: Alignment.,
         children: [
           // 뒷 배경 종이
           Positioned(
             top: 0,
+            left: 8,
             child: Container(
-              width: 335,
-              height: 132,
+              width: MediaQuery.of(context).size.width - 245,
+              height: 115,
               decoration: BoxDecoration(
-                color: isCase ? const Color(0xFFFAFAFA).withOpacity(0.1) : const Color(0xFF393939).withOpacity(0.4),
-                borderRadius: BorderRadius.circular(4),
+                color: isCase ? const Color(0xFFFAFAFA).withOpacity(0.1) : const Color(0xFF393939).withOpacity(0.8),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
