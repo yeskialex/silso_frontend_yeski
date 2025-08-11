@@ -503,26 +503,46 @@ class _CommunityFindPageState extends State<CommunityFindPage> {
               
               child:  isJoined
               // CASE1 : "가입됨" 상태의 UI
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.check_circle_outline, // 체크 아이콘
-                        color: Color(0xFF8B5CF6),
-                        size: 32,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                          '${community.memberCount}명',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8B5CF6),
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Nanum Gothic',
+                ?  Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Plus Icon
+                  const Icon(
+                    Icons.check,
+                    color:  Color(0xFF8B5CF6),
+                    size: 32,
+                  ),
+                  const SizedBox(height: 8),
+                  // Member Count Pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color:  Color(0xFF8B5CF6).withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.person,
+                          size: 12,
+                          color:  Color(0xFF8B5CF6),
                         ),
-                      ),
-                    ],
-                  ) : 
+                        const SizedBox(width: 3),
+                        Text(
+                          '${community.memberCount}명',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color:  Color(0xFF8B5CF6),
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'Nanum Gothic',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ) : 
               //CASE2 :  "가입하기" 상태의 UI
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
