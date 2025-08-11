@@ -8,6 +8,7 @@ import 'community_search_page.dart'; // Korean UI 검색 페이지를 가져옵�
 import 'community_detail_page.dart'; // Korean UI 커뮤니티 상세 페이지를 가져옵니다.
 import 'community_find_page.dart'; // Korean UI 커뮤니티 찾아보기 페이지를 가져옵니다.
 import 'admin_add_community.dart'; // Admin add community page
+import 'silso_court_main.dart'; // Import for SilsoCourtPage
 
 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
@@ -181,10 +182,19 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
           children: [
             const SizedBox(height: 35), // 상단 여백
             // '실시간 재판소' 섹션
-            _buildSectionHeader(
-              title: '실시간 재판소',
-              subtitle: '실시간으로 재판에 참여해 투표해보세요!',
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SilsoCourtPage()),
+                );
+              },
+              child: _buildSectionHeader(
+                title: '실시간 재판소',
+                subtitle: '실시간으로 재판에 참여해 투표해보세요!',
+              ),
             ),
+
             const SizedBox(height: 26),
             // 가로로 스크롤되는 재판 카드 리스트
             _buildLiveTrialsList(screenSize),
@@ -382,30 +392,6 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     );
   }
 
-  /// 가입한 커뮤니티 목록을 스크롤 가능한 리스트로 빌드합니다.
-  Widget _buildMyCommunitiesScrollableList(double widthRatio, double heightRatio, List<Community> communities) {
-    return SingleChildScrollView(
-      // 중앙 버튼에 마지막 항목이 가려지지 않도록 하단에 충분한 여백을 추가합니다.
-      padding: EdgeInsets.only(
-        top: 40 * heightRatio,
-        left: 16 * widthRatio,
-        right: 16 * widthRatio,
-        bottom: 150 * heightRatio, // 하단 여유 공간 확보
-      ),
-      child: ListView.separated(
-        shrinkWrap: true, // 자식 위젯의 크기만큼만 차지하도록 설정
-        physics: const NeverScrollableScrollPhysics(), // 부모 스크롤과 충돌 방지
-        itemCount: communities.length,
-        separatorBuilder: (context, index) => SizedBox(height: 16 * heightRatio),
-        itemBuilder: (context, index) {
-          final community = communities[index];
-          // 기존의 커뮤니티 카드 위젯을 재사용합니다.
-          return _buildMyCommunityCard(widthRatio, heightRatio, community);
-        },
-      ),
-    );
-  }
-
   /// 가입한 커뮤니티 섹션을 빌드합니다.
   Widget _buildMyCommunitiesSection(double widthRatio, double heightRatio, List<Community> communities) {
     return Column(
@@ -488,29 +474,6 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     );
   }
 
-
-  /// Helper widget to show when the user has not joined any communities.
-  // Widget _buildEmptyMyTab(double widthRatio, double heightRatio) {
-  //   return SingleChildScrollView(
-  //     child: Container(
-  //       width: double.infinity,
-  //       color: const Color(0xFFFAFAFA),
-  //       padding: EdgeInsets.symmetric(horizontal: 16 * widthRatio),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.center,
-  //         children: [
-  //           SizedBox(height: 120 * heightRatio),
-  //           _buildEmptyState(widthRatio, heightRatio),
-  //           SizedBox(height: 124 * heightRatio),
-  //           _buildTop5Header(widthRatio),
-  //           SizedBox(height: 12 * heightRatio),
-  //           _buildTop5CommunityList(widthRatio, heightRatio),
-  //           SizedBox(height: 40 * heightRatio),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 
   /// Helper widget to display the list of joined communities.
   Widget _buildMyCommunitiesList(double widthRatio, double heightRatio, List<Community> communities) {
