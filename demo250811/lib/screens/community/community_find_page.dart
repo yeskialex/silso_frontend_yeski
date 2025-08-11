@@ -35,16 +35,18 @@ class _CommunityFindPageState extends State<CommunityFindPage> {
       final allCommunities = await _communityService.getAllCommunities();
       final joinedCommunities = await _communityService.getMyCommunities();
       
-      // Get IDs of joined communities for filtering
-      final joinedIds = joinedCommunities.map((c) => c.communityId).toSet();
+      //Purpose refactor :  To show all communites 
+      // // Get IDs of joined communities for filtering
+      // final joinedIds = joinedCommunities.map((c) => c.communityId).toSet();
       
-      // Filter out communities that user has already joined
-      final availableCommunities = allCommunities
-          .where((community) => !joinedIds.contains(community.communityId))
-          .toList();
+      // // Filter out communities that user has already joined
+      // final availableCommunities = allCommunities
+      //     .where((community) => !joinedIds.contains(community.communityId))
+      //     .toList();
       
       setState(() {
-        _sortedCommunities = List.from(availableCommunities);
+        // _sortedCommunities = List.from(availableCommunities);
+        _sortedCommunities = List.from(allCommunities); 
         _joinedCommunities = joinedCommunities;
         _isLoadingCommunities = false;
       });
@@ -425,13 +427,19 @@ class _CommunityFindPageState extends State<CommunityFindPage> {
   }
 
   Widget _buildCommunityListItem(Community community) {
+    // --- 이 부분이 수정되었습니다 ---
+    // 현재 아이템이 내가 가입한 커뮤니티 목록에 있는지 확인합니다.
+    // Set으로 변환하여 검색 성능을 높입니다.
+    final joinedIds = _joinedCommunities.map((c) => c.communityId).toSet();
+    final bool isJoined = joinedIds.contains(community.communityId);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       height: 96,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF8B5CF6), width: 1.5),
+        border: Border.all(color: isJoined ? const Color(0xFFDFD4FF) : const Color(0xFF8B5CF6), width: 1.5),
       ),
       child: Row(
         children: [
@@ -482,17 +490,41 @@ class _CommunityFindPageState extends State<CommunityFindPage> {
           
           // Right Section - Action Button (fills entire right side)
           GestureDetector(
-            onTap: () => _joinCommunityAndShowDialog(community),
+            onTap: isJoined ? null : () => _joinCommunityAndShowDialog(community),
             child: Container(
               width: 120,
-              decoration: const BoxDecoration(
-                color: Color(0xFF8B5CF6),
+              decoration: BoxDecoration(
+                color:  isJoined ? const Color(0xFFDFD4FF) : const Color(0xFF8B5CF6),
                 borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(10.5),
-                  bottomRight: Radius.circular(10.5),
+                topRight: Radius.circular(10.5),
+                bottomRight: Radius.circular(10.5),
                 ),
               ),
-              child: Column(
+              
+              child:  isJoined
+              // CASE1 : "가입됨" 상태의 UI
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline, // 체크 아이콘
+                        color: Color(0xFF8B5CF6),
+                        size: 32,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                          '${community.memberCount}명',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF8B5CF6),
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Nanum Gothic',
+                        ),
+                      ),
+                    ],
+                  ) : 
+              //CASE2 :  "가입하기" 상태의 UI
+              Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Plus Icon
