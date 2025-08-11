@@ -1,5 +1,23 @@
 import 'package:flutter/material.dart';
-import  'community_search_page.dart'; // Import for SilsoCourtPage
+import  'community_search_page.dart';
+
+// 카드 데이터를 관리하기 위한 간단한 클래스 정의
+class _TrialData {
+  final String imageUrl;
+  final String title;
+  final String timeLeft;
+  final String participants;
+  final bool isLive;
+
+  _TrialData({
+    required this.imageUrl,
+    required this.title,
+    required this.timeLeft,
+    required this.participants,
+    required this.isLive,
+  });
+}
+
 /// 메인 페이지 위젯입니다. (StatefulWidget)
 class SilsoCourtPage extends StatefulWidget {
   const SilsoCourtPage({super.key});
@@ -10,17 +28,47 @@ class SilsoCourtPage extends StatefulWidget {
 
 class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  // [수정] PageView를 위한 컨트롤러와 현재 페이지 인덱스 변수 추가
+  late PageController _pageController;
+  int _currentPage = 0;
+
+  // [수정] 카드 데이터를 리스트로 관리
+  final List<_TrialData> _trialDataList = [
+    _TrialData(
+      imageUrl: "assets/images/community/judge_1.png",
+      title: '여친이랑 헤어짐; 드루와',
+      timeLeft: '판결까지 3시간 남음',
+      participants: '현재 참여수 56명',
+      isLive: true,
+    ),
+    _TrialData(
+      imageUrl: "assets/images/community/judge_2.png",
+      title: '상사한테 꾸중을 들었...',
+      timeLeft: '판결까지 9시간 남음',
+      participants: '현재 참여수 56명',
+      isLive: true,
+    ),
+    _TrialData(
+      imageUrl: "assets/images/community/judge_1.png",
+      title: '또 다른 재판 이야기',
+      timeLeft: '판결까지 1일 남음',
+      participants: '현재 참여수 102명',
+      isLive: false,
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
-    // 탭 컨트롤러를 초기화합니다. (3개의 탭)
     _tabController = TabController(length: 3, vsync: this);
+    // [수정] PageController 초기화, viewportFraction으로 옆 카드 살짝 보이게 설정
+    _pageController = PageController(viewportFraction: 0.65);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _pageController.dispose(); // [수정] pageController 메모리 해제
     super.dispose();
   }
 
@@ -105,7 +153,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
                   MaterialPageRoute(builder: (context) => const ExploreSearchPage()),
                 );
               },
-            ), 
+            ),
           ],
         ),
       ),
@@ -113,11 +161,13 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
+
   /// Part 2: 실시간 재판소 배너 섹션을 생성하는 함수입니다.
+
   Widget _buildBannerSection(Size screenSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24.0),
-      color: Color(0xFF1E1E1E), // 배너 영역 배경은 흰색
+      color: const Color(0xFF1E1E1E), // 배너 영역 배경은 흰색
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -130,26 +180,47 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           ),
           const SizedBox(height: 16),
           _buildLiveTrialsList(screenSize),
+          const SizedBox(height: 16),
+          // [수정] 페이지 인디케이터 추가
+          _buildPageIndicators(_trialDataList.length),
         ],
       ),
     );
   }
-  
+
+  /// [추가] 페이지 인디케이터 위젯
+  Widget _buildPageIndicators(int length) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(length, (index) {
+        return Container(
+          width: 8,
+          height: 8,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _currentPage == index ? Color(0xFF6037D0) : Color(0xFF301D67),
+          ),
+        );
+      }),
+    );
+  }
+
   /// Part 3: 탭 바(Tab Bar) 위젯을 생성합니다.
+  /// [수정] 기존 '재판소', '사건', '판결ZIP' 탭 바의 스타일을 변경합니다.
   Widget _buildTabBar() {
-    return Container(
+    return SizedBox(
       height: 45,
-      decoration: BoxDecoration(
-        color: const Color(0xFF2D2D2D),
-        borderRadius: BorderRadius.circular(400),
-      ),
       child: TabBar(
         controller: _tabController,
-        labelColor: Colors.white,
-        unselectedLabelColor: const Color(0xFFC7C7C7),
-        indicator: BoxDecoration(
-            color: const Color(0xFF1E1E1E),
-            borderRadius: BorderRadius.circular(400),
+        labelColor: const Color(0xFF6037D0), // 활성 탭 색상
+        unselectedLabelColor: const Color(0xFFC7C7C7), // 비활성 탭 색상
+        // [수정] 인디케이터를 밑줄 스타일로 변경
+        indicator: const UnderlineTabIndicator(
+          borderSide: BorderSide(
+            color: Color(0xFF6037D0), // 밑줄 색상
+            width: 3.0, // 밑줄 두께
+          ),
         ),
         labelStyle: const TextStyle(
           fontSize: 16,
@@ -169,31 +240,32 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
       ),
     );
   }
-  
+
   /// Part 3: 탭 뷰(TabBarView) 위젯을 생성합니다.
   Widget _buildTabBarView() {
-    // TabBarView의 높이를 동적으로 조절하기 위해 SizedBox 사용
-    // 실제 앱에서는 내용에 따라 높이를 조절해야 합니다.
     return SizedBox(
-      height: 1200, // 더미 데이터에 맞춘 임시 높이
+      height: 1200,
       child: TabBarView(
         controller: _tabController,
-        physics: const NeverScrollableScrollPhysics(), // 탭뷰 자체 스크롤 비활성화
+        physics: const NeverScrollableScrollPhysics(),
         children: [
-          _buildCourthouseTab(), // 재판소 탭
-          _buildCasesTab(),       // 사건 탭
-          _buildVerdictZipTab(),  // 판결ZIP 탭
+          _buildCourthouseTab(),
+          _buildCasesTab(),
+          _buildVerdictZipTab(),
         ],
       ),
     );
   }
+
+
+
 
   /// Part 3.1: '재판소' 탭의 내용을 생성합니다.
   Widget _buildCourthouseTab() {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      itemCount: 5, // 더미 데이터 개수
+      itemCount: 5,
       itemBuilder: (context, index) => _buildCourthouseCard(),
       separatorBuilder: (context, index) => const SizedBox(height: 12),
     );
@@ -208,12 +280,11 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
         children: [
           _buildSectionHeader(title: '🔥 HOT한 사건', subtitle: '요즘 뜨는 사건은?', isDark: true),
           const SizedBox(height: 16),
-          // 가로 스크롤 카드 리스트
           SizedBox(
             height: 160,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: 3, // 더미 데이터 개수
+              itemCount: 3,
               itemBuilder: (context, index) => _buildCaseCarouselCard(),
               separatorBuilder: (context, index) => const SizedBox(width: 12),
             ),
@@ -223,11 +294,10 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           const SizedBox(height: 24),
           _buildSectionHeader(title: '최신 사건', subtitle: '따끈따끈한 사건이 왔어요', isDark: true),
           const SizedBox(height: 16),
-          // 세로 스크롤 카드 리스트
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: 4, // 더미 데이터 개수
+            itemCount: 4,
             itemBuilder: (context, index) => _buildFolderCard(
               folderColor: const Color(0xFF4B2CA4),
               borderColor: const Color(0xFFA38EDC),
@@ -254,7 +324,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5, // 더미 데이터 개수
+            itemCount: 5,
             itemBuilder: (context, index) => _buildFolderCard(
               folderColor: const Color(0xFF6B6B6B),
               borderColor: const Color(0xFFFAFAFA),
@@ -271,15 +341,14 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
 
   // --- Helper Widgets ---
 
-  /// 각 섹션의 헤더(제목, 부제목)를 생성하는 함수입니다.
   Widget _buildSectionHeader({required String title, String? subtitle, bool isDark = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: TextStyle(
-            color:  const Color(0xFFFAFAFA),
+          style: const TextStyle(
+            color:  Color(0xFFFAFAFA),
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -288,8 +357,8 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(
-              color: const Color(0xFFC7C7C7) ,
+            style: const TextStyle(
+              color: Color(0xFFC7C7C7) ,
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -300,46 +369,37 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
   }
 
   /// '실시간 재판소'의 가로 스크롤 리스트를 생성하는 함수입니다.
+  /// [수정] SingleChildScrollView -> PageView
   Widget _buildLiveTrialsList(Size screenSize) {
-    final cardWidth = screenSize.width * 0.55;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          _buildTrialCard(
-            imageUrl: "assets/images/community/judge_1.png",
-            title: '여친이랑 헤어짐; 드루와',
-            timeLeft: '판결까지 3시간 남음',
-            participants: '현재 참여수 56명',
-            isLive: true,
-            width: cardWidth,
-          ),
-          const SizedBox(width: 8),
-          _buildTrialCard(
-            imageUrl: "assets/images/community/judge_2.png",
-            title: '상사한테 꾸중을 들었...',
-            timeLeft: '판결까지 9시간 남음',
-            participants: '현재 참여수 56명',
-            isLive: true,
-            width: cardWidth,
-          ),
-          const SizedBox(width: 8),
-          _buildTrialCard(
-            imageUrl: "assets/images/community/judge_1.png",
-            title: '또 다른 재판 이야기',
-            timeLeft: '판결까지 1일 남음',
-            participants: '현재 참여수 102명',
-            isLive: false,
-            width: cardWidth,
-          ),
-        ],
+    return SizedBox(
+      height: 155, // 카드(121) + 제목(16) + 여백 등 고려한 높이
+      child: PageView.builder(
+        controller: _pageController,
+        itemCount: _trialDataList.length,
+        onPageChanged: (index) {
+          setState(() {
+            _currentPage = index;
+          });
+        },
+        itemBuilder: (context, index) {
+          final cardData = _trialDataList[index];
+          // PageView 아이템 간 간격을 주기 위해 Padding 사용
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: _buildTrialCard(
+              imageUrl: cardData.imageUrl,
+              title: cardData.title,
+              timeLeft: cardData.timeLeft,
+              participants: cardData.participants,
+              isLive: cardData.isLive,
+              width: screenSize.width, // 너비는 PageView가 제어하므로 최대값으로 설정
+            ),
+          );
+        },
       ),
     );
   }
 
-  /// '실시간 재판소' 카드를 생성하는 함수입니다.
   Widget _buildTrialCard({
     required String imageUrl,
     required String title,
@@ -422,7 +482,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  /// '재판소' 탭의 카드 위젯을 생성합니다.
   Widget _buildCourthouseCard() {
     return Container(
       height: 101,
@@ -485,15 +544,13 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
       ),
     );
   }
-  
-  /// '사건' 탭의 가로 스크롤 카드(Carousel Card)를 생성합니다.
+
   Widget _buildCaseCarouselCard() {
     return SizedBox(
       width: 157,
       height: 159,
       child: Stack(
         children: [
-          // Folder Body
           Positioned(
             left: 0,
             right: 0,
@@ -511,7 +568,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
               ),
             ),
           ),
-          // Folder Tab
           Positioned(
             top: 0,
             left: 8,
@@ -527,7 +583,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
               ),
             ),
           ),
-          // Content
           const Positioned.fill(
             top: 30,
             child: Padding(
@@ -550,7 +605,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  /// '사건'과 '판결ZIP' 탭에서 사용하는 공용 폴더 카드 위젯입니다.
   Widget _buildFolderCard({
     required Color folderColor,
     required Color borderColor,
@@ -562,9 +616,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     return SizedBox(
       height: 160,
       child: Stack(
-        //alignment: Alignment.,
         children: [
-          // 뒷 배경 종이
           Positioned(
             top: 0,
             left: 8,
@@ -577,11 +629,10 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
               ),
             ),
           ),
-          // 메인 폴더
           Positioned(
             bottom: 0,
             child: Container(
-              width: MediaQuery.of(context).size.width - 32, // 화면 너비에 맞게 조절
+              width: MediaQuery.of(context).size.width - 32,
               height: 122,
               padding: const EdgeInsets.fromLTRB(25, 20, 25, 15),
               decoration: BoxDecoration(
@@ -593,7 +644,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
                 children: [
                   Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
                   const Spacer(),
-                  if (isCase && timeLeft != null) // '사건' 탭용 위젯
+                  if (isCase && timeLeft != null)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -602,7 +653,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
                       ),
                       child: Text(timeLeft, style: TextStyle(color: borderColor, fontSize: 12, fontWeight: FontWeight.w600)),
                     ),
-                  if (!isCase && verdict != null) // '판결ZIP' 탭용 위젯
+                  if (!isCase && verdict != null)
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 4),
