@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import  'community_search_page.dart'; // Import for SilsoCourtPage
 /// 메인 페이지 위젯입니다. (StatefulWidget)
 class SilsoCourtPage extends StatefulWidget {
   const SilsoCourtPage({super.key});
@@ -67,8 +67,15 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // 뒤로가기 아이콘
-            const Icon(Icons.arrow_back_ios, color: Colors.white, size: 24),
-            // 로고와 페이지 제목
+            IconButton(
+              padding: EdgeInsets.zero, // IconButton의 기본 패딩 제거
+              constraints: const BoxConstraints(), // 아이콘 버튼의 최소 크기 제약 제거
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 24),
+              onPressed: () {
+                // 현재 화면을 닫고 이전 화면(community_main.dart)으로 돌아갑니다.
+                Navigator.of(context).pop();
+              },
+            ),            // 로고와 페이지 제목
             Column(
               children: [
                 Image.asset(
@@ -88,7 +95,17 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
               ],
             ),
             // 검색 아이콘
-            const Icon(Icons.search, color: Colors.white, size: 28),
+              IconButton(
+              padding: EdgeInsets.zero, // IconButton의 기본 패딩 제거
+              constraints: const BoxConstraints(), // 아이콘 버튼의 최소 크기 제약 제거
+              icon: const Icon(Icons.search, color: Colors.white, size: 24),
+              onPressed: () {
+                // 현재 화면을 닫고 이전 화면(community_main.dart)으로 돌아갑니다.
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const ExploreSearchPage()),
+                );
+              },
+            ), 
           ],
         ),
       ),
