@@ -213,12 +213,12 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
       height: 45,
       child: TabBar(
         controller: _tabController,
-        labelColor: const Color(0xFF6037D0), // 활성 탭 색상
-        unselectedLabelColor: const Color(0xFFC7C7C7), // 비활성 탭 색상
+        labelColor: const Color(0xFFFAFAFA), // 활성 탭 색상
+        unselectedLabelColor: const Color(0xFF2E2E2E), // 비활성 탭 색상
         // [수정] 인디케이터를 밑줄 스타일로 변경
         indicator: const UnderlineTabIndicator(
           borderSide: BorderSide(
-            color: Color(0xFF6037D0), // 밑줄 색상
+            color: Color(0xFFFAFAFA), // 밑줄 색상
             width: 3.0, // 밑줄 두께
           ),
         ),
