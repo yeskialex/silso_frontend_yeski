@@ -802,6 +802,8 @@ class _VoteModalState extends State<VoteModal> {
                       const Color(0xFF3146E6), VoteChoice.pros),
                   // --- UI Layer ---
                   _buildDocumentUi(modalWidth, modalHeight),
+                      // [NEW] Sliding folder animation layer
+                  _buildSlidingFolderAnimation(modalWidth, modalHeight),
                 ],
               ),
             ),
@@ -843,6 +845,7 @@ class _VoteModalState extends State<VoteModal> {
     // 테두리 위젯을 생성하는 헬퍼 함수
     Widget buildBorder(Widget child) {
       return Stack(
+        fit: StackFit.expand,
         children: [
           // 1. 테두리의 기본 갈색 배경
           Container(color: const Color(0xFF79673F)),
@@ -973,25 +976,83 @@ class _VoteModalState extends State<VoteModal> {
       ),
     );
   }
+
+  /// [NEW] Builds the sliding folder animation.
+  Widget _buildSlidingFolderAnimation(double modalWidth, double modalHeight) {
+    const double folderWidth = 214.0;
+    const double folderHeight = 166.0;
+
+    // 투표 결과에 따라 파일 색상을 결정합니다.
+    Color fileColor;
+    if (_voteChoice == VoteChoice.pros) {
+      fileColor = const Color(0xFF3146E6); // 찬성은 파란색
+    } else if (_voteChoice == VoteChoice.cons) {
+      fileColor = const Color(0xFFFF3838); // 반대는 빨간색
+    } else {
+      fileColor = Colors.transparent; // 투표 전에는 투명
+    }
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutBack, // 약간 튕기는 듯한 효과
+      // _isVoted 상태에 따라 화면 밖에서 중심으로 이동
+      top: _isVoted ? (modalHeight / 2 - folderHeight / 1.5) : -folderHeight,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 400),
+        // _isVoted 상태에 따라 투명에서 불투명으로 변경
+        opacity: _isVoted ? 1.0 : 0.0,
+        child: IgnorePointer( // 애니메이션 중 터치 방지
+          child: SizedBox(
+            width: folderWidth,
+            height: folderHeight,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // 색상이 변하는 파일 부분
+                Positioned(
+                  top: 23.46,
+                  child: Container(
+                    width: 190.57,
+                    height: 129.73,
+                    decoration: ShapeDecoration(
+                      color: fileColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2.93)),
+                    ),
+                  ),
+                ),
+                // 고정된 반투명 폴더 부분
+                Positioned(
+                  left: 0,
+                  top: 32.98,
+                  child: Container(
+                    width: 214.02,
+                    height: 145.13,
+                    decoration: ShapeDecoration(
+                      color: const Color(0xFF4B2CA4).withOpacity(0.9), // 반투명 효과
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.86)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 }
 
 
 /// [NEW] Custom Painter to draw a subtle pixel pattern on the background.
 class _PixelPatternPainter extends CustomPainter {
-  final Color dotColor; // 점의 색상을 외부에서 받아옴
-  final double step;   // 점의 간격(밀도)을 외부에서 받아옴
-
-  _PixelPatternPainter({
-    required this.dotColor,
-    this.step = 4.0, // 기본 간격은 4.0
-  });
+  final Color dotColor;
+  final double step;
+  _PixelPatternPainter({required this.dotColor, this.step = 4.0});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = dotColor
-      ..style = PaintingStyle.fill;
-
+    final paint = Paint()..color = dotColor..style = PaintingStyle.fill;
     for (double x = 0; x < size.width; x += step) {
       for (double y = 0; y < size.height; y += step) {
         canvas.drawRect(Rect.fromLTWH(x, y, 1, 1), paint);
@@ -1000,19 +1061,13 @@ class _PixelPatternPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-
-/// [NEW] Custom Clipper to create the folded corner shape.
 class _FoldedCornerClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
-    // Start from the bottom-left of the clip area, go to the top-right,
-    // then to the bottom-right, and close the path to form a triangle.
     path.moveTo(0, size.height);
     path.lineTo(size.width, 0);
     path.lineTo(size.width, size.height);
@@ -1022,4 +1077,141 @@ class _FoldedCornerClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+/// [NEW] An animated folder card widget.
+class AnimatedFolderCard extends StatefulWidget {
+  final Color folderColor;
+  final Color fileColor;
+  final String title;
+  final bool isCase;
+  final VoidCallback onAnimationComplete;
+
+  const AnimatedFolderCard({
+    super.key,
+    required this.folderColor,
+    required this.fileColor,
+    required this.title,
+    required this.isCase,
+    required this.onAnimationComplete,
+  });
+
+  @override
+  State<AnimatedFolderCard> createState() => _AnimatedFolderCardState();
+}
+
+class _AnimatedFolderCardState extends State<AnimatedFolderCard> {
+  bool _isTapped = false;
+
+  void _handleTap() {
+    // isCase가 아니거나 이미 탭된 상태면 아무것도 하지 않음
+    if (!widget.isCase || _isTapped) return;
+
+    setState(() {
+      _isTapped = true;
+    });
+
+    // 애니메이션이 끝난 후(0.5초 뒤) 모달을 띄우는 콜백 함수를 실행
+    Future.delayed(const Duration(milliseconds: 500), () {
+      widget.onAnimationComplete();
+      // 모달이 닫힌 후 다시 탭할 수 있도록 잠시 뒤 상태를 초기화
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if(mounted) {
+          setState(() {
+            _isTapped = false;
+          });
+        }
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const double cardWidth = 214.0;
+    const double cardHeight = 166.0;
+    
+    return GestureDetector(
+      onTap: _handleTap,
+      child: SizedBox(
+        width: cardWidth,
+        height: cardHeight,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // 파일 부분: AnimatedPositioned로 위치가 부드럽게 변함
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+              // _isTapped 상태에 따라 top 위치가 변경됨
+              top: _isTapped ? 23.46 : -85.0, // 시작 위치 -> 끝 위치
+              child: Container(
+                width: 190.57,
+                height: 129.73,
+                decoration: ShapeDecoration(
+                  color: widget.fileColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(2.93),
+                  ),
+                ),
+              ),
+            ),
+            // 고정된 폴더 부분
+            Positioned(
+              left: 0,
+              top: 32.98,
+              child: Container(
+                width: 214.02,
+                height: 145.13,
+                decoration: ShapeDecoration(
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(5.86),
+                      bottomRight: Radius.circular(5.86),
+                    ),
+                  ),
+                  shadows: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, -4),
+                    ),
+                  ]
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Container(
+                        decoration: ShapeDecoration(
+                          color: widget.folderColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5.86),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 폴더 안의 제목
+                    Positioned(
+                      left: 15,
+                      top: 25,
+                      right: 15,
+                      child: Text(
+                        widget.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
