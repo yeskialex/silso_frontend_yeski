@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import  'community_search_page.dart';
+import 'dart:math' as math; // Needed for PI constant
+import 'community_search_page.dart';
 
-// 카드 데이터를 관리하기 위한 간단한 클래스 정의
+// Card data class... (no changes here)
 class _TrialData {
   final String imageUrl;
   final String title;
@@ -18,7 +19,7 @@ class _TrialData {
   });
 }
 
-/// 메인 페이지 위젯입니다. (StatefulWidget)
+/// Main page widget... (no changes here)
 class SilsoCourtPage extends StatefulWidget {
   const SilsoCourtPage({super.key});
 
@@ -26,13 +27,13 @@ class SilsoCourtPage extends StatefulWidget {
   State<SilsoCourtPage> createState() => _SilsoCourtPageState();
 }
 
-class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProviderStateMixin {
+// Main page state... (no significant changes here, only in helper widgets)
+class _SilsoCourtPageState extends State<SilsoCourtPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  // [수정] PageView를 위한 컨트롤러와 현재 페이지 인덱스 변수 추가
   late PageController _pageController;
   int _currentPage = 0;
 
-  // [수정] 카드 데이터를 리스트로 관리
   final List<_TrialData> _trialDataList = [
     _TrialData(
       imageUrl: "assets/images/community/judge_1.png",
@@ -61,30 +62,32 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // [수정] PageController 초기화, viewportFraction으로 옆 카드 살짝 보이게 설정
     _pageController = PageController(viewportFraction: 0.65);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _pageController.dispose(); // [수정] pageController 메모리 해제
+    _pageController.dispose();
     super.dispose();
   }
+
+  // The rest of the _SilsoCourtPageState build methods are unchanged...
+  // build(), _buildAppBar(), _buildBannerSection(), etc. are the same as before.
+  // I'm omitting them here for brevity, but they are in your original file.
+  // The key changes are in the VoteModal widget and its helpers.
 
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
+      backgroundColor: Colors.black, // Added for consistent background
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Part 2: 상단 배너 섹션 (흰색 배경)
             _buildBannerSection(screenSize),
-
-            // Part 3: 탭 메뉴와 탭 콘텐츠 섹션
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -101,7 +104,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  /// Part 1: 커스텀 AppBar를 생성하는 함수입니다.
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: const Color(0xFF121212),
@@ -114,16 +116,13 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 뒤로가기 아이콘
             IconButton(
-              padding: EdgeInsets.zero, // IconButton의 기본 패딩 제거
-              constraints: const BoxConstraints(), // 아이콘 버튼의 최소 크기 제약 제거
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 24),
-              onPressed: () {
-                // 현재 화면을 닫고 이전 화면(community_main.dart)으로 돌아갑니다.
-                Navigator.of(context).pop();
-              },
-            ),            // 로고와 페이지 제목
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: const Icon(Icons.arrow_back_ios,
+                  color: Colors.white, size: 24),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
             Column(
               children: [
                 Image.asset(
@@ -142,15 +141,14 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
                 ),
               ],
             ),
-            // 검색 아이콘
-              IconButton(
-              padding: EdgeInsets.zero, // IconButton의 기본 패딩 제거
-              constraints: const BoxConstraints(), // 아이콘 버튼의 최소 크기 제약 제거
+            IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
               icon: const Icon(Icons.search, color: Colors.white, size: 24),
               onPressed: () {
-                // 현재 화면을 닫고 이전 화면(community_main.dart)으로 돌아갑니다.
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const ExploreSearchPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const ExploreSearchPage()),
                 );
               },
             ),
@@ -161,13 +159,10 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-
-  /// Part 2: 실시간 재판소 배너 섹션을 생성하는 함수입니다.
-
   Widget _buildBannerSection(Size screenSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24.0),
-      color: const Color(0xFF1E1E1E), // 배너 영역 배경은 흰색
+      color: const Color(0xFF1E1E1E),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -181,14 +176,12 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           const SizedBox(height: 16),
           _buildLiveTrialsList(screenSize),
           const SizedBox(height: 16),
-          // [수정] 페이지 인디케이터 추가
           _buildPageIndicators(_trialDataList.length),
         ],
       ),
     );
   }
 
-  /// [추가] 페이지 인디케이터 위젯
   Widget _buildPageIndicators(int length) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -199,39 +192,33 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _currentPage == index ? Color(0xFF6037D0) : Color(0xFF301D67),
+            color: _currentPage == index
+                ? const Color(0xFF6037D0)
+                : const Color(0xFF301D67),
           ),
         );
       }),
     );
   }
 
-  /// Part 3: 탭 바(Tab Bar) 위젯을 생성합니다.
-  /// [수정] 기존 '재판소', '사건', '판결ZIP' 탭 바의 스타일을 변경합니다.
   Widget _buildTabBar() {
     return SizedBox(
       height: 45,
       child: TabBar(
         controller: _tabController,
-        labelColor: const Color(0xFFFAFAFA), // 활성 탭 색상
-        unselectedLabelColor: const Color(0xFF2E2E2E), // 비활성 탭 색상
-        // [수정] 인디케이터를 밑줄 스타일로 변경
+        labelColor: const Color(0xFFFAFAFA),
+        unselectedLabelColor: const Color(0xFF2E2E2E),
         indicator: const UnderlineTabIndicator(
-          borderSide: BorderSide(
-            color: Color(0xFFFAFAFA), // 밑줄 색상
-            width: 3.0, // 밑줄 두께
-          ),
+          borderSide: BorderSide(color: Color(0xFFFAFAFA), width: 3.0),
         ),
         labelStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Pretendard',
-        ),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Pretendard'),
         unselectedLabelStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          fontFamily: 'Pretendard',
-        ),
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Pretendard'),
         tabs: const [
           Tab(text: '재판소'),
           Tab(text: '사건'),
@@ -241,7 +228,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  /// Part 3: 탭 뷰(TabBarView) 위젯을 생성합니다.
   Widget _buildTabBarView() {
     return SizedBox(
       height: 1200,
@@ -257,10 +243,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-
-
-
-  /// Part 3.1: '재판소' 탭의 내용을 생성합니다.
   Widget _buildCourthouseTab() {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
@@ -271,14 +253,16 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  /// Part 3.2: '사건' 탭의 내용을 생성합니다.
   Widget _buildCasesTab() {
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(title: '🔥 HOT한 사건', subtitle: '요즘 뜨는 사건은?', isDark: true),
+          _buildSectionHeader(
+              title: '✅ 통과된 사건',
+              subtitle: '조금있으면 재판이 시작되는 사건들이에요!',
+              isDark: true),
           const SizedBox(height: 16),
           SizedBox(
             height: 160,
@@ -292,7 +276,10 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           const SizedBox(height: 24),
           const Divider(color: Color(0xFF2D2D2D), thickness: 2),
           const SizedBox(height: 24),
-          _buildSectionHeader(title: '최신 사건', subtitle: '따끈따끈한 사건이 왔어요', isDark: true),
+          _buildSectionHeader(
+              title: '배심원 투표',
+              subtitle: '재판소에 입장하시기 전에, 판결을 위한 투표에 먼저 참여해 주세요!',
+              isDark: true),
           const SizedBox(height: 16),
           ListView.separated(
             shrinkWrap: true,
@@ -312,14 +299,16 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  /// Part 3.3: '판결ZIP' 탭의 내용을 생성합니다.
   Widget _buildVerdictZipTab() {
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(title: '완결된 판결', subtitle: '사람들은 어떤 판결을 내렸을까요?', isDark: true),
+          _buildSectionHeader(
+              title: '완결된 판결',
+              subtitle: '사람들은 어떤 판결을 내렸을까요?',
+              isDark: true),
           const SizedBox(height: 16),
           ListView.separated(
             shrinkWrap: true,
@@ -339,16 +328,15 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  // --- Helper Widgets ---
-
-  Widget _buildSectionHeader({required String title, String? subtitle, bool isDark = false}) {
+  Widget _buildSectionHeader(
+      {required String title, String? subtitle, bool isDark = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: const TextStyle(
-            color:  Color(0xFFFAFAFA),
+            color: Color(0xFFFAFAFA),
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -358,7 +346,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
           Text(
             subtitle,
             style: const TextStyle(
-              color: Color(0xFFC7C7C7) ,
+              color: Color(0xFFC7C7C7),
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -368,11 +356,9 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-  /// '실시간 재판소'의 가로 스크롤 리스트를 생성하는 함수입니다.
-  /// [수정] SingleChildScrollView -> PageView
   Widget _buildLiveTrialsList(Size screenSize) {
     return SizedBox(
-      height: 155, // 카드(121) + 제목(16) + 여백 등 고려한 높이
+      height: 155,
       child: PageView.builder(
         controller: _pageController,
         itemCount: _trialDataList.length,
@@ -383,7 +369,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
         },
         itemBuilder: (context, index) {
           final cardData = _trialDataList[index];
-          // PageView 아이템 간 간격을 주기 위해 Padding 사용
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: _buildTrialCard(
@@ -392,7 +377,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
               timeLeft: cardData.timeLeft,
               participants: cardData.participants,
               isLive: cardData.isLive,
-              width: screenSize.width, // 너비는 PageView가 제어하므로 최대값으로 설정
+              width: screenSize.width,
             ),
           );
         },
@@ -442,12 +427,17 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
                     right: 11,
                     top: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFC31A1A),
                         borderRadius: BorderRadius.circular(400),
                       ),
-                      child: const Text('Live', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                      child: const Text('Live',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600)),
                     ),
                   ),
                 Positioned(
@@ -482,7 +472,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage> with SingleTickerProvid
     );
   }
 
-Widget _buildCourthouseCard() {
+  Widget _buildCourthouseCard() {
     return Container(
       height: 101,
       decoration: BoxDecoration(
@@ -491,11 +481,9 @@ Widget _buildCourthouseCard() {
       ),
       child: Row(
         children: [
-          // [수정] 이미지가 1/3을 차지하도록 Expanded와 flex: 1 적용
           Expanded(
             flex: 1,
             child: Stack(
-              // [수정] Stack의 자식이 Expanded 공간을 꽉 채우도록 설정
               fit: StackFit.expand,
               children: [
                 ClipRRect(
@@ -505,7 +493,6 @@ Widget _buildCourthouseCard() {
                   ),
                   child: Image.asset(
                     "assets/images/community/judge_1.png",
-                    // [수정] fit: BoxFit.cover를 통해 이미지가 잘리지 않고 채워지도록 함
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -513,18 +500,22 @@ Widget _buildCourthouseCard() {
                   top: 12,
                   left: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFFC31A1A),
                       borderRadius: BorderRadius.circular(400),
                     ),
-                    child: const Text('Live', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                    child: const Text('Live',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
             ),
           ),
-          // [수정] 텍스트 영역이 2/3를 차지하도록 flex: 2 적용
           Expanded(
             flex: 2,
             child: Padding(
@@ -533,15 +524,31 @@ Widget _buildCourthouseCard() {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('내가 그렇게 잘못함?', style: TextStyle(color: Color(0xFFFAFAFA), fontSize: 14, fontWeight: FontWeight.w600, height: 1.25)),
-                  const Text('참여자 342명', style: TextStyle(color: Color(0xFFC7C7C7), fontSize: 10, fontWeight: FontWeight.w600, height: 1.25)),
+                  const Text('내가 그렇게 잘못함?',
+                      style: TextStyle(
+                          color: Color(0xFFFAFAFA),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25)),
+                  const Text('참여자 342명',
+                      style: TextStyle(
+                          color: Color(0xFFC7C7C7),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25)),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     decoration: BoxDecoration(
                       border: Border.all(color: const Color(0xFF5F37CF)),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text('판결까지 2시간 남음', style: TextStyle(color: Color(0xFF5F37CF), fontSize: 10, fontWeight: FontWeight.w600, height: 1.5)),
+                    child: const Text('판결까지 2시간 남음',
+                        style: TextStyle(
+                            color: Color(0xFF5F37CF),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5)),
                   ),
                 ],
               ),
@@ -552,14 +559,13 @@ Widget _buildCourthouseCard() {
     );
   }
 
-Widget _buildCaseCarouselCard() {
+  Widget _buildCaseCarouselCard() {
     return SizedBox(
       width: 157,
       height: 159,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // [추가] 가장 뒤에 깔리는 연한 보라색 종이 효과
           Container(
             width: 148,
             height: 155,
@@ -568,30 +574,11 @@ Widget _buildCaseCarouselCard() {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          // [추가] 중간에 끼워진 흰색 종이 효과
-          // Container(
-          //   width: 120,
-          //   height: 120,
-          //   decoration: BoxDecoration(
-          //     color: Colors.white,
-          //     borderRadius: BorderRadius.circular(8),
-          //     boxShadow: [
-          //       BoxShadow(
-          //         color: Colors.black.withOpacity(0.05),
-          //         spreadRadius: 1,
-          //         blurRadius: 4,
-          //         offset: const Offset(2, 2),
-          //       )
-          //     ],
-          //   ),
-          // ),
-          // 기존 보라색 폴더 UI (가장 위에 위치)
           SizedBox(
             width: 145,
             height: 145,
             child: Stack(
               children: [
-                // 폴더 몸체
                 Positioned(
                   left: 0,
                   right: 0,
@@ -604,7 +591,6 @@ Widget _buildCaseCarouselCard() {
                     ),
                   ),
                 ),
-                // 폴더 탭
                 Positioned(
                   top: 0,
                   left: 8,
@@ -620,7 +606,6 @@ Widget _buildCaseCarouselCard() {
                     ),
                   ),
                 ),
-                // 텍스트 콘텐츠
                 const Positioned.fill(
                   top: 25,
                   child: Padding(
@@ -645,7 +630,19 @@ Widget _buildCaseCarouselCard() {
       ),
     );
   }
- Widget _buildFolderCard({
+
+  void _showVoteModal(BuildContext context, String title, bool isCase) {
+    if (!isCase) return;
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.7),
+      builder: (BuildContext context) {
+        return VoteModal(caseTitle: title);
+      },
+    );
+  }
+
+  Widget _buildFolderCard({
     required Color folderColor,
     required Color borderColor,
     required String title,
@@ -653,80 +650,567 @@ Widget _buildCaseCarouselCard() {
     String? verdict,
     required bool isCase,
   }) {
-    return SizedBox(
-      height: 140,
-      child: Stack(
-        // [수정] 자식 위젯들을 중앙 정렬합니다.
-        alignment: Alignment.center,
+    return InkWell(
+      onTap: () => _showVoteModal(context, title, isCase),
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        height: 140,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Positioned(
+              top: 0,
+              left: 8,
+              child: Container(
+                width: MediaQuery.of(context).size.width - 245,
+                height: 115,
+                decoration: BoxDecoration(
+                  color: isCase
+                      ? const Color(0xFF6037D0).withOpacity(0.4)
+                      : const Color(0xFF393939).withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 5,
+              child: Container(
+                width: MediaQuery.of(context).size.width - 48,
+                height: 122,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAFAFA),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              child: Container(
+                width: MediaQuery.of(context).size.width - 32,
+                height: 122,
+                padding: const EdgeInsets.fromLTRB(25, 20, 25, 15),
+                decoration: BoxDecoration(
+                  color: folderColor,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600)),
+                    const Spacer(),
+                    if (isCase && timeLeft != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: borderColor),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(timeLeft,
+                            style: TextStyle(
+                                color: borderColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    if (!isCase && verdict != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF3838),
+                          border: Border.all(color: borderColor),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(verdict,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: borderColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600)),
+                      )
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- [NEW AND REFACTORED WIDGETS] ---
+
+enum VoteChoice { none, pros, cons }
+
+class VoteModal extends StatefulWidget {
+  final String caseTitle;
+  const VoteModal({super.key, required this.caseTitle});
+
+  @override
+  State<VoteModal> createState() => _VoteModalState();
+}
+
+class _VoteModalState extends State<VoteModal> {
+  VoteChoice _voteChoice = VoteChoice.none;
+  bool _isVoted = false;
+
+  void _handleVote(VoteChoice choice) {
+    if (_isVoted) return;
+    setState(() {
+      _voteChoice = choice;
+      _isVoted = true;
+    });
+
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    });
+  }
+
+  /// [REFACTORED] The main build method for the modal.
+  /// It now uses a Column to place the buttons below the document.
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final modalWidth = screenSize.width * 0.9;
+    final modalHeight = screenSize.height * 0.6; // Adjusted for better layout
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // 폴더의 뒷부분(탭)처럼 보이는 레이어
-          Positioned(
-            top: 0,
-            left: 8,
-            child: Container(
-              width: MediaQuery.of(context).size.width - 245,
-              height: 115,
-              decoration: BoxDecoration(
-                color: isCase ? const Color(0xFF6037D0).withOpacity(0.4) : const Color(0xFF393939).withOpacity(0.7),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-
-          // [수정] 폴더에 끼워진 흰색 종이 부분
-          Positioned(
-            bottom: 5, // 메인 폴더보다 5px 위에 위치하여 살짝 보이게 함
-            child: Container(
-              width: MediaQuery.of(context).size.width - 48, // 메인 폴더보다 약간 좁게
-              height: 122,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFAFAFA),
-                borderRadius: BorderRadius.circular(9),
-              ),
-            ),
-          ),
-
-          // 메인 폴더 (가장 앞 레이어)
-          Positioned(
-            bottom: 0,
-            child: Container(
-              width: MediaQuery.of(context).size.width - 32,
-              height: 122, // [수정] UI 균형을 위해 높이 원복
-              padding: const EdgeInsets.fromLTRB(25, 20, 25, 15),
-              decoration: BoxDecoration(
-                color: folderColor,
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          // This flexible container holds the document and the animations
+          Flexible(
+            child: SizedBox(
+              width: modalWidth,
+              height: modalHeight,
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
-                  const Spacer(),
-                  if (isCase && timeLeft != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: borderColor),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(timeLeft, style: TextStyle(color: borderColor, fontSize: 12, fontWeight: FontWeight.w600)),
-                    ),
-                  if (!isCase && verdict != null)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF3838),
-                        border: Border.all(color: borderColor),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(verdict, textAlign: TextAlign.center, style: TextStyle(color: borderColor, fontSize: 14, fontWeight: FontWeight.w600)),
-                    )
+                  // --- Animation Layers (Restored) ---
+                  _buildAnimatedFile(modalHeight, modalWidth,
+                      const Color(0xFFFF3838), VoteChoice.cons),
+                  _buildAnimatedFile(modalHeight, modalWidth,
+                      const Color(0xFF3146E6), VoteChoice.pros),
+                  // --- UI Layer ---
+                  _buildDocumentUi(modalWidth, modalHeight),
+                      // [NEW] Sliding folder animation layer
+                  _buildSlidingFolderAnimation(modalWidth, modalHeight),
                 ],
               ),
             ),
           ),
+          // --- Vote Buttons (Moved outside the document) ---
+          const SizedBox(height: 20), // Spacing
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: modalWidth * 0.05),
+            child: _buildVoteButtons(),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedFile(
+      double mHeight, double mWidth, Color color, VoteChoice choice) {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOutCubic,
+      top: _voteChoice == choice ? 0 : mHeight,
+      child: Container(
+        width: mWidth,
+        height: mHeight,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+    );
+  }
+
+  /// [REFACTORED] Builds the document UI using a Stack for a "pixel layout"
+  /// and a ClipPath for the folded corner effect.
+  Widget _buildDocumentUi(double width, double height) {
+    const double borderWidth = 12.0;
+    const double foldSize = 50.0;
+
+    // 테두리 위젯을 생성하는 헬퍼 함수
+    Widget buildBorder(Widget child) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          // 1. 테두리의 기본 갈색 배경
+          Container(color: const Color(0xFF79673F)),
+          // 2. 테두리 위에 겹쳐질 어두운 픽셀 패턴
+          CustomPaint(
+            painter: _PixelPatternPainter(
+              dotColor: Colors.black.withOpacity(0.1), // 테두리 패턴은 조금 더 진하게
+              step: 3.0, // 테두리 패턴은 조금 더 촘촘하게
+            ),
+            child: Container(), // CustomPaint가 전체 영역을 차지하도록 함
+          ),
+          child, // 추가적인 자식 위젯이 있을 경우를 위함 (현재는 사용 안함)
+        ],
+      );
+    }
+
+    return Stack(
+      children: [
+        // Layer 1: 문서의 기본 배경색
+        Container(color: const Color(0xFFF2E3BC)),
+        
+        // Layer 2: 배경 위에 겹쳐질 옅은 픽셀 패턴
+        CustomPaint(
+          size: Size(width, height),
+          painter: _PixelPatternPainter(
+            dotColor: Colors.black.withOpacity(0.05),
+          ),
+        ),
+
+        // Layer 3: 접힌 코너 효과
+        Positioned(
+          bottom: 0,
+          right: 0,
+          width: foldSize,
+          height: foldSize,
+          child: ClipPath(
+            clipper: _FoldedCornerClipper(),
+            child: Container(color: const Color(0xFFD4C0A1)), // 접힌 부분의 색
+          ),
+        ),
+
+        // Layer 4: 픽셀 패턴이 적용된 테두리들
+        Positioned(
+          left: 0, top: 0, bottom: 0,
+          child: SizedBox(width: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        Positioned(
+          right: 0, top: 0, bottom: 0,
+          child: SizedBox(width: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        Positioned(
+          left: 0, top: 0, right: 0,
+          child: SizedBox(height: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        Positioned(
+          left:  0, bottom: 0, right: 0,
+          child: SizedBox(height: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        
+        // Layer 5: 메인 콘텐츠
+        Padding(
+          padding: const EdgeInsets.all(borderWidth + 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 15),
+              Container(width: double.infinity, height: 1, color: const Color(0xFFE0C898)),
+              const SizedBox(height: 20),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Text(
+                    '카페에서 친구들이랑 모이기로 했는데\n먼저 와 있던 두 명이 나란히 앉아서 아이스라떼 마시고 있더라.\n남자는 여사친 빨대 정리해주고, 여자는 남사친 머리에 먼지 떼주고...\n딱 봐도 커플 분위기였는데 정작 본인들은 “10년 된 친구”래.\n\n근데 말이 되냐?\n그렇게 자연스럽게 다정한 사이가 진짜 아무 사이 아니라고?\n\n내 친구랑 나 10년 친구인데\n서로 컵도 안 만짐 ㅋㅋㅋ\n진심 있는 거 같지 않냐 ?',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                      height: 1.6,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const SizedBox(width: 40), // Spacer for centering title
+          const Text('사건', style: TextStyle(color: Color(0xFF5E4E2C), fontSize: 24, fontFamily: 'Pretendard', fontWeight: FontWeight.w700)),
+          const Text('1/1', style: TextStyle(color: Color(0xFFA68A54), fontSize: 16, fontFamily: 'Pretendard', fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildVoteButtons() {
+    if (_isVoted) {
+      return Container(
+        height: 44, // Maintain same height as buttons for smooth UI
+        alignment: Alignment.center,
+        child: Text(
+          _voteChoice == VoteChoice.pros ? '찬성 투표 완료' : '반대 투표 완료',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: _voteChoice == VoteChoice.pros ? const Color(0xFF3146E6) : const Color(0xFFFF3838),
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          Expanded(child: ElevatedButton(onPressed: () => _handleVote(VoteChoice.cons), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF3838).withOpacity(0.9), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 8)), child: const Text('반대', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)))),
+          const SizedBox(width: 12),
+          Expanded(child: ElevatedButton(onPressed: () => _handleVote(VoteChoice.pros), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3146E6), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 8)), child: const Text('찬성', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)))),
+        ],
+      ),
+    );
+  }
+
+  /// [NEW] Builds the sliding folder animation.
+  Widget _buildSlidingFolderAnimation(double modalWidth, double modalHeight) {
+    const double folderWidth = 214.0;
+    const double folderHeight = 166.0;
+
+    // 투표 결과에 따라 파일 색상을 결정합니다.
+    Color fileColor;
+    if (_voteChoice == VoteChoice.pros) {
+      fileColor = const Color(0xFF3146E6); // 찬성은 파란색
+    } else if (_voteChoice == VoteChoice.cons) {
+      fileColor = const Color(0xFFFF3838); // 반대는 빨간색
+    } else {
+      fileColor = Colors.transparent; // 투표 전에는 투명
+    }
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutBack, // 약간 튕기는 듯한 효과
+      // _isVoted 상태에 따라 화면 밖에서 중심으로 이동
+      top: _isVoted ? (modalHeight / 2 - folderHeight / 1.5) : -folderHeight,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 400),
+        // _isVoted 상태에 따라 투명에서 불투명으로 변경
+        opacity: _isVoted ? 1.0 : 0.0,
+        child: IgnorePointer( // 애니메이션 중 터치 방지
+          child: SizedBox(
+            width: folderWidth,
+            height: folderHeight,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // 색상이 변하는 파일 부분
+                Positioned(
+                  top: 23.46,
+                  child: Container(
+                    width: 190.57,
+                    height: 129.73,
+                    decoration: ShapeDecoration(
+                      color: fileColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2.93)),
+                    ),
+                  ),
+                ),
+                // 고정된 반투명 폴더 부분
+                Positioned(
+                  left: 0,
+                  top: 32.98,
+                  child: Container(
+                    width: 214.02,
+                    height: 145.13,
+                    decoration: ShapeDecoration(
+                      color: const Color(0xFF4B2CA4).withOpacity(0.9), // 반투명 효과
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.86)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+}
+
+
+/// [NEW] Custom Painter to draw a subtle pixel pattern on the background.
+class _PixelPatternPainter extends CustomPainter {
+  final Color dotColor;
+  final double step;
+  _PixelPatternPainter({required this.dotColor, this.step = 4.0});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = dotColor..style = PaintingStyle.fill;
+    for (double x = 0; x < size.width; x += step) {
+      for (double y = 0; y < size.height; y += step) {
+        canvas.drawRect(Rect.fromLTWH(x, y, 1, 1), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _FoldedCornerClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(0, size.height);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+/// [NEW] An animated folder card widget.
+class AnimatedFolderCard extends StatefulWidget {
+  final Color folderColor;
+  final Color fileColor;
+  final String title;
+  final bool isCase;
+  final VoidCallback onAnimationComplete;
+
+  const AnimatedFolderCard({
+    super.key,
+    required this.folderColor,
+    required this.fileColor,
+    required this.title,
+    required this.isCase,
+    required this.onAnimationComplete,
+  });
+
+  @override
+  State<AnimatedFolderCard> createState() => _AnimatedFolderCardState();
+}
+
+class _AnimatedFolderCardState extends State<AnimatedFolderCard> {
+  bool _isTapped = false;
+
+  void _handleTap() {
+    // isCase가 아니거나 이미 탭된 상태면 아무것도 하지 않음
+    if (!widget.isCase || _isTapped) return;
+
+    setState(() {
+      _isTapped = true;
+    });
+
+    // 애니메이션이 끝난 후(0.5초 뒤) 모달을 띄우는 콜백 함수를 실행
+    Future.delayed(const Duration(milliseconds: 500), () {
+      widget.onAnimationComplete();
+      // 모달이 닫힌 후 다시 탭할 수 있도록 잠시 뒤 상태를 초기화
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if(mounted) {
+          setState(() {
+            _isTapped = false;
+          });
+        }
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const double cardWidth = 214.0;
+    const double cardHeight = 166.0;
+    
+    return GestureDetector(
+      onTap: _handleTap,
+      child: SizedBox(
+        width: cardWidth,
+        height: cardHeight,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // 파일 부분: AnimatedPositioned로 위치가 부드럽게 변함
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+              // _isTapped 상태에 따라 top 위치가 변경됨
+              top: _isTapped ? 23.46 : -85.0, // 시작 위치 -> 끝 위치
+              child: Container(
+                width: 190.57,
+                height: 129.73,
+                decoration: ShapeDecoration(
+                  color: widget.fileColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(2.93),
+                  ),
+                ),
+              ),
+            ),
+            // 고정된 폴더 부분
+            Positioned(
+              left: 0,
+              top: 32.98,
+              child: Container(
+                width: 214.02,
+                height: 145.13,
+                decoration: ShapeDecoration(
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(5.86),
+                      bottomRight: Radius.circular(5.86),
+                    ),
+                  ),
+                  shadows: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, -4),
+                    ),
+                  ]
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Container(
+                        decoration: ShapeDecoration(
+                          color: widget.folderColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5.86),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 폴더 안의 제목
+                    Positioned(
+                      left: 15,
+                      top: 25,
+                      right: 15,
+                      child: Text(
+                        widget.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
