@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math; // Needed for PI constant
 import '../screens/community/community_search_page.dart';
+import '../services/court_service.dart';
+import 'add_court.dart';
+
 
 // Card data class... (no changes here)
 class _TrialData {
@@ -29,10 +32,13 @@ class SilsoCourtPage extends StatefulWidget {
 
 // Main page state... (no significant changes here, only in helper widgets)
 class _SilsoCourtPageState extends State<SilsoCourtPage>
-    with SingleTickerProviderStateMixin {
+  with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late PageController _pageController;
   int _currentPage = 0;
+
+  final CourtService _courtService = CourtService();
+  late Stream<List<CourtSessionData>> _historySessionsStream;
 
   final List<_TrialData> _trialDataList = [
     _TrialData(
@@ -63,6 +69,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _pageController = PageController(viewportFraction: 0.65);
+    _historySessionsStream = _courtService.getCompletedCourtSessions();
   }
 
   @override
@@ -207,7 +214,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
       child: TabBar(
         controller: _tabController,
         labelColor: const Color(0xFFFAFAFA),
-        unselectedLabelColor: const Color(0xFF2E2E2E),
+        unselectedLabelColor: const Color(0xFF6B6B6B),
         indicator: const UnderlineTabIndicator(
           borderSide: BorderSide(color: Color(0xFFFAFAFA), width: 3.0),
         ),
@@ -274,7 +281,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
             ),
           ),
           const SizedBox(height: 24),
-          const Divider(color: Color(0xFF2D2D2D), thickness: 2),
+          const Divider(color: Color(0xFF6B6B6B), thickness: 2),
           const SizedBox(height: 24),
           _buildSectionHeader(
               title: '배심원 투표',
@@ -300,31 +307,87 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
   }
 
   Widget _buildVerdictZipTab() {
-    return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(
-              title: '완결된 판결',
-              subtitle: '사람들은 어떤 판결을 내렸을까요?',
-              isDark: true),
-          const SizedBox(height: 16),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5,
-            itemBuilder: (context, index) => _buildFolderCard(
-              folderColor: const Color(0xFF6B6B6B),
-              borderColor: const Color(0xFFFAFAFA),
-              title: '빨리 들어와봐. 내기 중임.',
-              verdict: '반대',
-              isCase: false,
+    return StreamBuilder<List<CourtSessionData>>(
+      stream: _historySessionsStream,
+      builder: (context, snapshot) {
+        // Handle loading state
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+              child:
+                  CircularProgressIndicator(color: Color(0xFF6037D0)));
+        }
+
+        // Handle error state
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Error: ${snapshot.error}',
+              style: const TextStyle(color: Colors.red),
             ),
-            separatorBuilder: (context, index) => const SizedBox(height: 24),
+          );
+        }
+
+        // Handle empty or no data state
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(
+            child: Text(
+              '완결된 판결이 없습니다.',
+              style: TextStyle(color: Color(0xFFC7C7C7), fontSize: 16),
+            ),
+          );
+        }
+
+        // Handle success state
+        final completedSessions = snapshot.data!;
+
+        return SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionHeader(
+                  title: '완결된 판결',
+                  subtitle: '사람들은 어떤 판결을 내렸을까요?',
+                  isDark: true),
+              const SizedBox(height: 16),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: completedSessions.length,
+                itemBuilder: (context, index) {
+                  final session = completedSessions[index];
+
+                  // Convert verdict from English to Korean
+                  String verdictText;
+                  switch (session.resultWin) {
+                    case 'guilty':
+                      verdictText = '반대';
+                      break;
+                    case 'not_guilty':
+                      verdictText = '찬성';
+                      break;
+                    case 'tie':
+                      verdictText = '무승부';
+                      break;
+                    default:
+                      verdictText = '결과 없음';
+                  }
+
+                  return _buildFolderCard(
+                    folderColor: const Color(0xFF6B6B6B),
+                    borderColor: const Color(0xFFFAFAFA),
+                    title: session.title, // Use dynamic title
+                    verdict: verdictText, // Use dynamic verdict
+                    isCase: false,
+                  );
+                },
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 24),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -642,6 +705,17 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
+  Color _getVerdictColor(String? verdict) {
+    switch (verdict) {
+      case '반대':
+        return const Color(0xFFFF3838); // Red for "Cons"
+      case '찬성':
+        return const Color(0xFF3146E6); // Blue for "Pros"
+      default:
+        return const Color(0xFFC7C7C7); // Gray for "Tie" or other cases
+    }
+  }
+
   Widget _buildFolderCard({
     required Color folderColor,
     required Color borderColor,
@@ -667,7 +741,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
                 decoration: BoxDecoration(
                   color: isCase
                       ? const Color(0xFF6037D0).withOpacity(0.4)
-                      : const Color(0xFF393939).withOpacity(0.7),
+                      : const Color.fromARGB(255, 107, 107, 107).withOpacity(0.7),
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
@@ -721,16 +795,20 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF3838),
+                          // The complex if-else is now a clean function call
+                          color: _getVerdictColor(verdict),
                           border: Border.all(color: borderColor),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(verdict,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: borderColor,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600)),
+                        child: Text(
+                          verdict,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: borderColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       )
                   ],
                 ),
@@ -742,8 +820,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 }
-
-// --- [NEW AND REFACTORED WIDGETS] ---
 
 enum VoteChoice { none, pros, cons }
 
@@ -801,7 +877,7 @@ class _VoteModalState extends State<VoteModal> {
                       const Color(0xFF3146E6), VoteChoice.pros),
                   // --- UI Layer ---
                   _buildDocumentUi(modalWidth, modalHeight),
-                      // [NEW] Sliding folder animation layer
+                      //  Sliding folder animation layer
                   _buildSlidingFolderAnimation(modalWidth, modalHeight),
                 ],
               ),
@@ -835,7 +911,7 @@ class _VoteModalState extends State<VoteModal> {
     );
   }
 
-  /// [REFACTORED] Builds the document UI using a Stack for a "pixel layout"
+  ///  Builds the document UI using a Stack for a "pixel layout"
   /// and a ClipPath for the folded corner effect.
   Widget _buildDocumentUi(double width, double height) {
     const double borderWidth = 12.0;
@@ -976,7 +1052,7 @@ class _VoteModalState extends State<VoteModal> {
     );
   }
 
-  /// [REFACTORED] 고정된 폴더 안으로 파일이 들어가는 애니메이션
+  /// 고정된 폴더 안으로 파일이 들어가는 애니메이션
   Widget _buildSlidingFolderAnimation(double modalWidth, double modalHeight) {
     const double folderWidth = 214.0;
     const double folderHeight = 166.0;
