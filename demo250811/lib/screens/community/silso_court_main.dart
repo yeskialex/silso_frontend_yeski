@@ -834,18 +834,77 @@ class _VoteModalState extends State<VoteModal> {
     );
   }
 
-  /// [REFACTORED] Builds the document UI using a CustomPainter for the border.
+  /// [REFACTORED] Builds the document UI using a Stack for a "pixel layout"
+  /// and a ClipPath for the folded corner effect.
   Widget _buildDocumentUi(double width, double height) {
-    return Container(
-      width: width,
-      height: height,
-      color: const Color(0xFFF2E3BC), // Paper background color
-      child: CustomPaint(
-        // Use a CustomPainter for the complex border
-        painter: _DocumentBorderPainter(),
-        child: Padding(
-          // Add padding to keep content inside the border
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 40),
+    const double borderWidth = 12.0;
+    const double foldSize = 50.0;
+
+    // 테두리 위젯을 생성하는 헬퍼 함수
+    Widget buildBorder(Widget child) {
+      return Stack(
+        children: [
+          // 1. 테두리의 기본 갈색 배경
+          Container(color: const Color(0xFF79673F)),
+          // 2. 테두리 위에 겹쳐질 어두운 픽셀 패턴
+          CustomPaint(
+            painter: _PixelPatternPainter(
+              dotColor: Colors.black.withOpacity(0.1), // 테두리 패턴은 조금 더 진하게
+              step: 3.0, // 테두리 패턴은 조금 더 촘촘하게
+            ),
+            child: Container(), // CustomPaint가 전체 영역을 차지하도록 함
+          ),
+          child, // 추가적인 자식 위젯이 있을 경우를 위함 (현재는 사용 안함)
+        ],
+      );
+    }
+
+    return Stack(
+      children: [
+        // Layer 1: 문서의 기본 배경색
+        Container(color: const Color(0xFFF2E3BC)),
+        
+        // Layer 2: 배경 위에 겹쳐질 옅은 픽셀 패턴
+        CustomPaint(
+          size: Size(width, height),
+          painter: _PixelPatternPainter(
+            dotColor: Colors.black.withOpacity(0.05),
+          ),
+        ),
+
+        // Layer 3: 접힌 코너 효과
+        Positioned(
+          bottom: 0,
+          right: 0,
+          width: foldSize,
+          height: foldSize,
+          child: ClipPath(
+            clipper: _FoldedCornerClipper(),
+            child: Container(color: const Color(0xFFD4C0A1)), // 접힌 부분의 색
+          ),
+        ),
+
+        // Layer 4: 픽셀 패턴이 적용된 테두리들
+        Positioned(
+          left: 0, top: 0, bottom: 0,
+          child: SizedBox(width: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        Positioned(
+          right: 0, top: 0, bottom: 0,
+          child: SizedBox(width: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        Positioned(
+          left: 0, top: 0, right: 0,
+          child: SizedBox(height: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        Positioned(
+          left:  0, bottom: 0, right: 0,
+          child: SizedBox(height: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        
+        // Layer 5: 메인 콘텐츠
+        Padding(
+          padding: const EdgeInsets.all(borderWidth + 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -867,11 +926,10 @@ class _VoteModalState extends State<VoteModal> {
                   ),
                 ),
               ),
-              // Note: Vote buttons are no longer here.
             ],
           ),
         ),
-      ),
+      ],
     );
   }
   
@@ -917,48 +975,51 @@ class _VoteModalState extends State<VoteModal> {
   }
 }
 
-/// [NEW] Custom Painter for the decorative document border.
-/// This class draws the complex shape you designed in a responsive way.
-class _DocumentBorderPainter extends CustomPainter {
+
+/// [NEW] Custom Painter to draw a subtle pixel pattern on the background.
+class _PixelPatternPainter extends CustomPainter {
+  final Color dotColor; // 점의 색상을 외부에서 받아옴
+  final double step;   // 점의 간격(밀도)을 외부에서 받아옴
+
+  _PixelPatternPainter({
+    required this.dotColor,
+    this.step = 4.0, // 기본 간격은 4.0
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    const strokeWidth = 11.84;
-
-    final borderPaint = Paint()
-      ..color = const Color(0xFF79673F)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-    
-    // Draw main border lines
-    canvas.drawLine(Offset(strokeWidth / 2, 0), Offset(strokeWidth / 2, h), borderPaint); // Left
-    canvas.drawLine(Offset(w - strokeWidth / 2, 0), Offset(w - strokeWidth / 2, h * 0.75), borderPaint); // Right
-    canvas.drawLine(Offset(0, strokeWidth / 2), Offset(w, strokeWidth / 2), borderPaint); // Top
-
-    // Draw the complex bottom-right corner
-    final cornerPath = Path();
-    cornerPath.moveTo(w * 0.73, h - strokeWidth / 2); // Start point
-    cornerPath.lineTo(w - strokeWidth / 2, h - strokeWidth / 2); // Bottom horizontal line
-    cornerPath.lineTo(w - strokeWidth / 2, h); // Short vertical line
-    canvas.drawPath(cornerPath, borderPaint);
-
-    final cornerPaint = Paint()
-      ..color = const Color(0xFF79673F)
+    final paint = Paint()
+      ..color = dotColor
       ..style = PaintingStyle.fill;
 
-    // Draw the small squares for the corner detail
-    // These values are calculated as proportions of the original design
-    canvas.drawRect(Rect.fromLTWH(w * 0.73, h * 0.939, 12.91, 12.91), cornerPaint);
-    canvas.drawRect(Rect.fromLTWH(w * 0.77, h * 0.91, 11.84, 11.84), cornerPaint);
-    canvas.drawRect(Rect.fromLTWH(w * 0.80, h * 0.879, 12.91, 12.91), cornerPaint);
-    canvas.drawRect(Rect.fromLTWH(w * 0.84, h * 0.848, 12.91, 12.91), cornerPaint);
-    canvas.drawRect(Rect.fromLTWH(w * 0.88, h * 0.819, 11.84, 11.84), cornerPaint);
-    canvas.drawRect(Rect.fromLTWH(w * 0.92, h * 0.788, 12.91, 12.91), cornerPaint);
+    for (double x = 0; x < size.width; x += step) {
+      for (double y = 0; y < size.height; y += step) {
+        canvas.drawRect(Rect.fromLTWH(x, y, 1, 1), paint);
+      }
+    }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return false;
   }
+}
+
+
+/// [NEW] Custom Clipper to create the folded corner shape.
+class _FoldedCornerClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    // Start from the bottom-left of the clip area, go to the top-right,
+    // then to the bottom-right, and close the path to form a triangle.
+    path.moveTo(0, size.height);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
