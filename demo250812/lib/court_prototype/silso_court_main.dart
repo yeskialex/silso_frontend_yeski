@@ -773,7 +773,6 @@ class _VoteModalState extends State<VoteModal> {
     });
   }
 
-  /// [REFACTORED] The main build method for the modal.
   /// It now uses a Column to place the buttons below the document.
   @override
   Widget build(BuildContext context) {
@@ -992,16 +991,15 @@ class _VoteModalState extends State<VoteModal> {
       fileColor = Colors.transparent; // 투표 전에는 투명
     }
 
-    // 화면 중앙에 폴더를 배치하기 위한 top 위치 계산
     final double folderTopPosition = (modalHeight / 2 - folderHeight / 1.5);
 
     return IgnorePointer( // 애니메이션 중 터치 방지
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // 2. 움직이는 파일 UI
+          // 1. 움직이는 파일 UI
           AnimatedPositioned(
-            duration: const Duration(milliseconds: 500),
+            duration: const Duration(milliseconds: 1000),
             curve: Curves.easeOutCubic,
             // _isVoted 상태에 따라 화면 밖(-folderHeight)에서 폴더 안(folderTopPosition)으로 이동
             top: _isVoted ? folderTopPosition : -folderHeight,
@@ -1028,31 +1026,32 @@ class _VoteModalState extends State<VoteModal> {
             ),
           ),
 
-          // 1. 고정된 폴더 UI (항상 중앙에 위치)
-          Positioned(
-            top: folderTopPosition,
-            child: SizedBox(
-              width: folderWidth,
-              height: folderHeight,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Positioned(
-                    left: 0,
-                    top: 32.98,
-                    child: Container(
-                      width: 214.02,
-                      height: 145.13,
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFF4B2CA4).withOpacity(0.9), // 반투명 폴더
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.86)),
+          // 2. 고정된 폴더 UI (항상 중앙에 위치)
+          if (_isVoted)
+            Positioned(
+              top: folderTopPosition,
+              child: SizedBox(
+                width: folderWidth,
+                height: folderHeight,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 32.98,
+                      child: Container(
+                        width: 214.02,
+                        height: 145.13,
+                        decoration: ShapeDecoration(
+                          color: const Color(0xFF4B2CA4).withOpacity(0.9), // 반투명 폴더
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.86)),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
 
         ],
@@ -1061,7 +1060,7 @@ class _VoteModalState extends State<VoteModal> {
   }
 }
 
-/// [NEW] Custom Painter to draw a subtle pixel pattern on the background.
+///Custom Painter to draw a subtle pixel pattern on the background.
 class _PixelPatternPainter extends CustomPainter {
   final Color dotColor;
   final double step;
@@ -1096,7 +1095,7 @@ class _FoldedCornerClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-/// [NEW] An animated folder card widget.
+///  An animated folder card widget.
 class AnimatedFolderCard extends StatefulWidget {
   final Color folderColor;
   final Color fileColor;
