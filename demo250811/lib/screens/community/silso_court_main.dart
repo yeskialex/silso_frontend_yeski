@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math; // Needed for PI constant
 import 'community_search_page.dart';
 
-// 카드 데이터를 관리하기 위한 간단한 클래스 정의
+// Card data class... (no changes here)
 class _TrialData {
   final String imageUrl;
   final String title;
@@ -18,7 +19,7 @@ class _TrialData {
   });
 }
 
-/// 메인 페이지 위젯입니다. (StatefulWidget)
+/// Main page widget... (no changes here)
 class SilsoCourtPage extends StatefulWidget {
   const SilsoCourtPage({super.key});
 
@@ -26,6 +27,7 @@ class SilsoCourtPage extends StatefulWidget {
   State<SilsoCourtPage> createState() => _SilsoCourtPageState();
 }
 
+// Main page state... (no significant changes here, only in helper widgets)
 class _SilsoCourtPageState extends State<SilsoCourtPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
@@ -70,11 +72,17 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     super.dispose();
   }
 
+  // The rest of the _SilsoCourtPageState build methods are unchanged...
+  // build(), _buildAppBar(), _buildBannerSection(), etc. are the same as before.
+  // I'm omitting them here for brevity, but they are in your original file.
+  // The key changes are in the VoteModal widget and its helpers.
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
+      backgroundColor: Colors.black, // Added for consistent background
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
         child: Column(
@@ -96,7 +104,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  /// Part 1: 커스텀 AppBar를 생성하는 함수입니다.
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: const Color(0xFF121212),
@@ -152,7 +159,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  /// Part 2: 실시간 재판소 배너 섹션을 생성하는 함수입니다.
   Widget _buildBannerSection(Size screenSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -195,7 +201,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  /// Part 3: 탭 바(Tab Bar) 위젯을 생성합니다.
   Widget _buildTabBar() {
     return SizedBox(
       height: 45,
@@ -223,7 +228,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  /// Part 3: 탭 뷰(TabBarView) 위젯을 생성합니다.
   Widget _buildTabBarView() {
     return SizedBox(
       height: 1200,
@@ -239,7 +243,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  /// Part 3.1: '재판소' 탭의 내용을 생성합니다.
   Widget _buildCourthouseTab() {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
@@ -250,7 +253,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  /// Part 3.2: '사건' 탭의 내용을 생성합니다.
   Widget _buildCasesTab() {
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
@@ -297,7 +299,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  /// Part 3.3: '판결ZIP' 탭의 내용을 생성합니다.
   Widget _buildVerdictZipTab() {
     return SingleChildScrollView(
       physics: const NeverScrollableScrollPhysics(),
@@ -326,8 +327,6 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
       ),
     );
   }
-
-  // --- Helper Widgets ---
 
   Widget _buildSectionHeader(
       {required String title, String? subtitle, bool isDark = false}) {
@@ -632,23 +631,17 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  /// [REFACTORED] Shows the voting modal pop-up.
   void _showVoteModal(BuildContext context, String title, bool isCase) {
-    // Only show the modal for cards in the 'Cases' tab.
     if (!isCase) return;
-
     showDialog(
       context: context,
-      // Use a semi-transparent barrier to dim the background.
       barrierColor: Colors.black.withOpacity(0.7),
       builder: (BuildContext context) {
-        // Return the new VoteModal widget.
         return VoteModal(caseTitle: title);
       },
     );
   }
 
-  /// [REFACTORED] This card is now interactive.
   Widget _buildFolderCard({
     required Color folderColor,
     required Color borderColor,
@@ -658,9 +651,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     required bool isCase,
   }) {
     return InkWell(
-      // Add tap functionality.
       onTap: () => _showVoteModal(context, title, isCase),
-      // Set a border radius for the ripple effect to match the card shape.
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
         height: 140,
@@ -752,15 +743,12 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
   }
 }
 
-// --- [NEW WIDGET] The Modal for Voting ---
+// --- [NEW AND REFACTORED WIDGETS] ---
 
-/// An enum to manage the user's voting choice.
 enum VoteChoice { none, pros, cons }
 
-/// A stateful widget for the interactive voting modal.
 class VoteModal extends StatefulWidget {
   final String caseTitle;
-
   const VoteModal({super.key, required this.caseTitle});
 
   @override
@@ -771,16 +759,13 @@ class _VoteModalState extends State<VoteModal> {
   VoteChoice _voteChoice = VoteChoice.none;
   bool _isVoted = false;
 
-  /// Handles the voting logic and triggers the animation.
   void _handleVote(VoteChoice choice) {
-    if (_isVoted) return; // Prevent voting more than once
-
+    if (_isVoted) return;
     setState(() {
       _voteChoice = choice;
       _isVoted = true;
     });
 
-    // After the animation plays, close the modal automatically.
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) {
         Navigator.of(context).pop();
@@ -788,57 +773,55 @@ class _VoteModalState extends State<VoteModal> {
     });
   }
 
+  /// [REFACTORED] The main build method for the modal.
+  /// It now uses a Column to place the buttons below the document.
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    // Make dimensions responsive based on screen width.
-    final modalWidth = screenSize.width * 0.85;
-    // Maintain a consistent aspect ratio for the height.
-    final modalHeight = modalWidth * 1.25;
+    final modalWidth = screenSize.width * 0.9;
+    final modalHeight = screenSize.height * 0.6; // Adjusted for better layout
 
     return Dialog(
-      backgroundColor: Colors.transparent, // Make default background transparent
+      backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(10),
-      child: SizedBox(
-        width: modalWidth,
-        height: modalHeight,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // --- Animation Layers ---
-            // These are positioned off-screen and slide in when a vote is cast.
-
-            // Red "File" for 'Cons' vote.
-            _buildAnimatedFile(
-              modalHeight,
-              modalWidth,
-              const Color(0xFFFF3838), // Red
-              VoteChoice.cons,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // This flexible container holds the document and the animations
+          Flexible(
+            child: SizedBox(
+              width: modalWidth,
+              height: modalHeight,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // --- Animation Layers (Restored) ---
+                  _buildAnimatedFile(modalHeight, modalWidth,
+                      const Color(0xFFFF3838), VoteChoice.cons),
+                  _buildAnimatedFile(modalHeight, modalWidth,
+                      const Color(0xFF3146E6), VoteChoice.pros),
+                  // --- UI Layer ---
+                  _buildDocumentUi(modalWidth, modalHeight),
+                ],
+              ),
             ),
-            // Blue "File" for 'Pros' vote.
-            _buildAnimatedFile(
-              modalHeight,
-              modalWidth,
-              const Color(0xFF3146E6), // Blue
-              VoteChoice.pros,
-            ),
-
-            // --- UI Layer ---
-            // This is the main document UI, placed on top of the animation layers.
-            _buildDocumentUi(modalWidth, modalHeight),
-          ],
-        ),
+          ),
+          // --- Vote Buttons (Moved outside the document) ---
+          const SizedBox(height: 20), // Spacing
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: modalWidth * 0.05),
+            child: _buildVoteButtons(),
+          ),
+        ],
       ),
     );
   }
 
-  /// Builds the animated container that slides in.
   Widget _buildAnimatedFile(
       double mHeight, double mWidth, Color color, VoteChoice choice) {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOutCubic,
-      // If this choice was selected, move to top: 0. Otherwise, hide it at the bottom.
       top: _voteChoice == choice ? 0 : mHeight,
       child: Container(
         width: mWidth,
@@ -851,51 +834,47 @@ class _VoteModalState extends State<VoteModal> {
     );
   }
 
-  /// Builds the main content of the modal, styled like a case document.
+  /// [REFACTORED] Builds the document UI using a CustomPainter for the border.
   Widget _buildDocumentUi(double width, double height) {
     return Container(
       width: width,
       height: height,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF2E3BC), // Paper background color
-        border: Border.all(color: const Color(0xFF79673F), width: 10), // Frame
-        borderRadius: BorderRadius.circular(4),
-      ),
-      padding: EdgeInsets.symmetric(
-          horizontal: width * 0.06, vertical: height * 0.05),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 15),
-          Container(
-            width: double.infinity,
-            height: 1,
-            color: const Color(0xFFE0C898),
-          ), // Divider
-          const SizedBox(height: 20),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Text(
-                '카페에서 친구들이랑 모이기로 했는데\n먼저 와 있던 두 명이 나란히 앉아서 아이스라떼 마시고 있더라.\n남자는 여사친 빨대 정리해주고, 여자는 남사친 머리에 먼지 떼주고...\n딱 봐도 커플 분위기였는데 정작 본인들은 “10년 된 친구”래.\n\n근데 말이 되냐?\n그렇게 자연스럽게 다정한 사이가 진짜 아무 사이 아니라고?\n\n내 친구랑 나 10년 친구인데\n서로 컵도 안 만짐 ㅋㅋㅋ\n진심 있는 거 같지 않냐 ?',
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                  height: 1.6,
+      color: const Color(0xFFF2E3BC), // Paper background color
+      child: CustomPaint(
+        // Use a CustomPainter for the complex border
+        painter: _DocumentBorderPainter(),
+        child: Padding(
+          // Add padding to keep content inside the border
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 15),
+              Container(width: double.infinity, height: 1, color: const Color(0xFFE0C898)),
+              const SizedBox(height: 20),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Text(
+                    '카페에서 친구들이랑 모이기로 했는데\n먼저 와 있던 두 명이 나란히 앉아서 아이스라떼 마시고 있더라.\n남자는 여사친 빨대 정리해주고, 여자는 남사친 머리에 먼지 떼주고...\n딱 봐도 커플 분위기였는데 정작 본인들은 “10년 된 친구”래.\n\n근데 말이 되냐?\n그렇게 자연스럽게 다정한 사이가 진짜 아무 사이 아니라고?\n\n내 친구랑 나 10년 친구인데\n서로 컵도 안 만짐 ㅋㅋㅋ\n진심 있는 거 같지 않냐 ?',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                      height: 1.6,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              // Note: Vote buttons are no longer here.
+            ],
           ),
-          const SizedBox(height: 20),
-          _buildVoteButtons(),
-        ],
+        ),
       ),
     );
   }
-
-  /// Builds the header with the '사건' title.
+  
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -903,32 +882,14 @@ class _VoteModalState extends State<VoteModal> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const SizedBox(width: 40), // Spacer for centering title
-          const Text(
-            '사건',
-            style: TextStyle(
-              color: Color(0xFF5E4E2C),
-              fontSize: 24,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const Text(
-            '1/1',
-            style: TextStyle(
-              color: Color(0xFFA68A54),
-              fontSize: 16,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          const Text('사건', style: TextStyle(color: Color(0xFF5E4E2C), fontSize: 24, fontFamily: 'Pretendard', fontWeight: FontWeight.w700)),
+          const Text('1/1', style: TextStyle(color: Color(0xFFA68A54), fontSize: 16, fontFamily: 'Pretendard', fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
-
-  /// Builds the voting buttons or a confirmation message after voting.
+  
   Widget _buildVoteButtons() {
-    // If user has already voted, show a confirmation message.
     if (_isVoted) {
       return Container(
         height: 44, // Maintain same height as buttons for smooth UI
@@ -938,49 +899,66 @@ class _VoteModalState extends State<VoteModal> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: _voteChoice == VoteChoice.pros
-                ? const Color(0xFF3146E6)
-                : const Color(0xFFFF3838),
+            color: _voteChoice == VoteChoice.pros ? const Color(0xFF3146E6) : const Color(0xFFFF3838),
           ),
         ),
       );
     }
-    // Otherwise, show the voting buttons.
     return SizedBox(
       height: 44,
       child: Row(
         children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => _handleVote(VoteChoice.cons),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF3838).withOpacity(0.9),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-              ),
-              child: const Text('반대',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            ),
-          ),
+          Expanded(child: ElevatedButton(onPressed: () => _handleVote(VoteChoice.cons), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF3838).withOpacity(0.9), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 8)), child: const Text('반대', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)))),
           const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => _handleVote(VoteChoice.pros),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3146E6),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-              ),
-              child: const Text('찬성',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-            ),
-          ),
+          Expanded(child: ElevatedButton(onPressed: () => _handleVote(VoteChoice.pros), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3146E6), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.symmetric(vertical: 8)), child: const Text('찬성', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)))),
         ],
       ),
     );
+  }
+}
+
+/// [NEW] Custom Painter for the decorative document border.
+/// This class draws the complex shape you designed in a responsive way.
+class _DocumentBorderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    const strokeWidth = 11.84;
+
+    final borderPaint = Paint()
+      ..color = const Color(0xFF79673F)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    
+    // Draw main border lines
+    canvas.drawLine(Offset(strokeWidth / 2, 0), Offset(strokeWidth / 2, h), borderPaint); // Left
+    canvas.drawLine(Offset(w - strokeWidth / 2, 0), Offset(w - strokeWidth / 2, h * 0.75), borderPaint); // Right
+    canvas.drawLine(Offset(0, strokeWidth / 2), Offset(w, strokeWidth / 2), borderPaint); // Top
+
+    // Draw the complex bottom-right corner
+    final cornerPath = Path();
+    cornerPath.moveTo(w * 0.73, h - strokeWidth / 2); // Start point
+    cornerPath.lineTo(w - strokeWidth / 2, h - strokeWidth / 2); // Bottom horizontal line
+    cornerPath.lineTo(w - strokeWidth / 2, h); // Short vertical line
+    canvas.drawPath(cornerPath, borderPaint);
+
+    final cornerPaint = Paint()
+      ..color = const Color(0xFF79673F)
+      ..style = PaintingStyle.fill;
+
+    // Draw the small squares for the corner detail
+    // These values are calculated as proportions of the original design
+    canvas.drawRect(Rect.fromLTWH(w * 0.73, h * 0.939, 12.91, 12.91), cornerPaint);
+    canvas.drawRect(Rect.fromLTWH(w * 0.77, h * 0.91, 11.84, 11.84), cornerPaint);
+    canvas.drawRect(Rect.fromLTWH(w * 0.80, h * 0.879, 12.91, 12.91), cornerPaint);
+    canvas.drawRect(Rect.fromLTWH(w * 0.84, h * 0.848, 12.91, 12.91), cornerPaint);
+    canvas.drawRect(Rect.fromLTWH(w * 0.88, h * 0.819, 11.84, 11.84), cornerPaint);
+    canvas.drawRect(Rect.fromLTWH(w * 0.92, h * 0.788, 12.91, 12.91), cornerPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
   }
 }
