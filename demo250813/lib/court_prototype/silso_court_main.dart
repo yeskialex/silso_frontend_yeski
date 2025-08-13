@@ -79,8 +79,8 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToCaseVoting(),
-        backgroundColor: const Color(0xFF5F37CF),
-        foregroundColor: Colors.white,
+        backgroundColor:   Colors.black.withOpacity(0.6),
+        foregroundColor: const Color(0xFFDFD4FF),
         icon: const Icon(Icons.add_circle_outline),
         label: const Text(
           '사건 제출',
