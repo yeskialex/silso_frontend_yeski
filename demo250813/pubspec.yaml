@@ -65,6 +65,7 @@ dependencies:
   # State management for court prototype
   provider: ^6.1.1
   intl: ^0.20.2
+  google_fonts: ^6.3.0
 
 dev_dependencies:
   flutter_test:

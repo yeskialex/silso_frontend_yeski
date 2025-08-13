@@ -25,6 +25,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
   late TabController _tabController;
   late PageController _pageController;
   int _currentPage = 0;
+  final ScrollController _scrollController = ScrollController(); // ✅ 이 부분을 추가합니다.
 
   final CourtService _courtService = CourtService();
   final CaseService _caseService = CaseService();
@@ -59,6 +60,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
       backgroundColor: Colors.black, // Added for consistent background
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
+        controller: _scrollController, // ✅ 이 부분을 추가합니다.
         child: Column(
           children: [
             _buildBannerSection(screenSize),
@@ -68,7 +70,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
                 children: [
                   _buildTabBar(),
                   const SizedBox(height: 24),
-                  _buildTabBarView(),
+                  _buildTabBarView(context),
                 ],
               ),
             ),
@@ -77,8 +79,8 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToCaseVoting(),
-        backgroundColor: const Color(0xFF5F37CF),
-        foregroundColor: Colors.white,
+        backgroundColor:   Colors.black.withOpacity(0.6),
+        foregroundColor: const Color(0xFFDFD4FF),
         icon: const Icon(Icons.add_circle_outline),
         label: const Text(
           '사건 제출',
@@ -116,11 +118,21 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
             ),
             Column(
               children: [
-                Image.asset(
-                  "assets/images/community/silso_court.png",
-                  width: 70,
-                  height: 25,
-                ),
+                    GestureDetector(
+                      onTap: () {
+                        // ✅ 탭을 최상단으로 스크롤하고 데이터를 새로고침합니다.
+                        _scrollController.animateTo(
+                          0.0,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Image.asset(
+                        "assets/images/community/silso_court.png",
+                        width: 70,
+                        height: 25,
+                      ),
+                    ),
                 const SizedBox(height: 5),
                 const Text(
                   '실시간 재판소',
@@ -227,20 +239,25 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  Widget _buildTabBarView() {
-    return SizedBox(
-      height: 1200,
-      child: TabBarView(
-        controller: _tabController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          _buildCourthouseTab(),
-          _buildCasesTab(),
-          _buildVerdictZipTab(),
-        ],
-      ),
-    );
-  }
+Widget _buildTabBarView(BuildContext context) {
+  // 전체 화면 높이에서 상단 TabBar의 높이 (예: 56) 등을 제외하여 계산
+  final screenHeight = MediaQuery.of(context).size.height;
+  final tabBarHeight = 56; // TabBar의 높이를 가정
+  final adjustedHeight = screenHeight - tabBarHeight;
+
+  return SizedBox(
+    height: adjustedHeight,
+    child: TabBarView(
+      controller: _tabController,
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        _buildCourthouseTab(),
+        _buildCasesTab(),
+        _buildVerdictZipTab(),
+      ],
+    ),
+  );
+}
 
   Widget _buildCourthouseTab() {
     return StreamBuilder<List<CourtSessionData>>(
@@ -439,14 +456,13 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-   Widget _buildVerdictZipTab() {
+  Widget _buildVerdictZipTab() {
     return StreamBuilder<List<CourtSessionData>>(
       stream: _historySessionsStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-              child:
-                  CircularProgressIndicator(color: Color(0xFF6037D0)));
+              child: CircularProgressIndicator(color: Color(0xFF6037D0)));
         }
 
         if (snapshot.hasError) {
@@ -469,53 +485,38 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
 
         final completedSessions = snapshot.data!;
 
-        return SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionHeader(
-                  title: '완결된 판결',
-                  subtitle: '사람들은 어떤 판결을 내렸을까요?',
-                  isDark: true),
-              const SizedBox(height: 16),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: completedSessions.length,
-                itemBuilder: (context, index) {
-                  final session = completedSessions[index];
+        return ListView.separated(
+          // padding을 추가하여 상단 섹션 헤더를 대체하고, 레이아웃을 통일합니다.
+          padding: const EdgeInsets.only(top: 16),
+          itemCount: completedSessions.length,
+          itemBuilder: (context, index) {
+            final session = completedSessions[index];
 
-                  String verdictText;
-                  switch (session.resultWin) {
-                    case 'guilty':
-                      verdictText = '반대';
-                      break;
-                    case 'not_guilty':
-                      verdictText = '찬성';
-                      break;
-                    case 'tie':
-                      verdictText = '무승부';
-                      break;
-                    default:
-                      verdictText = '결과 없음';
-                  }
+            String verdictText;
+            switch (session.resultWin) {
+              case 'guilty':
+                verdictText = '반대';
+                break;
+              case 'not_guilty':
+                verdictText = '찬성';
+                break;
+              case 'tie':
+                verdictText = '무승부';
+                break;
+              default:
+                verdictText = '결과 없음';
+            }
 
-                  return _buildFolderCard(
-                    folderColor: const Color(0xFF6B6B6B),
-                    borderColor: const Color(0xFFFAFAFA),
-                    title: session.title,
-                    verdict: verdictText,
-                    isCase: false,
-                    // [#MODIFIED] Pass the correct onTap callback for showing results
-                    onTap: () => _showResultModal(context, session, false),
-                  );
-                },
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 24),
-              ),
-            ],
-          ),
+            return _buildFolderCard(
+              folderColor: const Color(0xFF6B6B6B),
+              borderColor: const Color(0xFFFAFAFA),
+              title: session.title,
+              verdict: verdictText,
+              isCase: false,
+              onTap: () => _showResultModal(context, session, false),
+            );
+          },
+          separatorBuilder: (context, index) => const SizedBox(height: 24),
         );
       },
     );
@@ -1369,12 +1370,16 @@ class _VoteResultModalState extends State<VoteResultModal> {
     );
   }
 
-  // Vote result bar inspired by court_history.dart
+   // Vote result bar inspired by court_history.dart
   Widget _buildVoteResultBar(CourtSessionData session) {
     final guiltyVotes = session.guiltyVotes;
     final notGuiltyVotes = session.notGuiltyVotes;
     final totalVotes = guiltyVotes + notGuiltyVotes;
     final guiltyRatio = totalVotes > 0 ? guiltyVotes / totalVotes : 0.5;
+
+    // Percentage calculation
+    final guiltyPercentage = totalVotes > 0 ? (guiltyVotes / totalVotes * 100).toStringAsFixed(0) : '50';
+    final notGuiltyPercentage = totalVotes > 0 ? (notGuiltyVotes / totalVotes * 100).toStringAsFixed(0) : '50';
 
     return Column(
       children: [
@@ -1408,7 +1413,7 @@ class _VoteResultModalState extends State<VoteResultModal> {
                     ),
                   ),
                 ),
-              // Vote count labels
+              // Vote count labels (now showing percentages)
               Positioned.fill(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1416,13 +1421,13 @@ class _VoteResultModalState extends State<VoteResultModal> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '$guiltyVotes',
+                        '$guiltyPercentage%',
                         style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white,
                         ),
                       ),
                       Text(
-                        '$notGuiltyVotes',
+                        '$notGuiltyPercentage%',
                         style: const TextStyle(
                           fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white,
                         ),
@@ -1440,8 +1445,8 @@ class _VoteResultModalState extends State<VoteResultModal> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-               Text('반대', style: TextStyle(color: Color(0xFFFF3838), fontWeight: FontWeight.bold)),
-               Text('찬성', style: TextStyle(color: Color(0xFF3146E6), fontWeight: FontWeight.bold)),
+              Text('반대', style: TextStyle(color: Color(0xFFFF3838), fontWeight: FontWeight.bold)),
+              Text('찬성', style: TextStyle(color: Color(0xFF3146E6), fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -1591,6 +1596,7 @@ class _FoldedCornerClipper extends CustomClipper<Path> {
     path.close();
     return path;
   }
+
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
