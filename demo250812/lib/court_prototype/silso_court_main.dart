@@ -667,18 +667,16 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
                   top: 25,
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Center(
-                      child: Text(
+                       child: Text(
                         '내가 그렇게 잘못함?',
-                        textAlign: TextAlign.center,
+                        textAlign: TextAlign.start,
                         style: TextStyle(
                           color: Color(0xFFFAFAFA),
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ),
+                   ),
                 ),
               ],
             ),
@@ -763,7 +761,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
                 width: MediaQuery.of(context).size.width - 48,
                 height: 122,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFAFAFA),
+                  color:  const Color(0xFFFAFAFA), // 투표결과 따라서 색상 변경이 되도록 250813 - need fix 
                   borderRadius: BorderRadius.circular(9),
                 ),
               ),
@@ -1020,7 +1018,7 @@ class _VoteModalState extends State<VoteModal> {
                         width: 214.02,
                         height: 145.13,
                         decoration: ShapeDecoration(
-                          color: const Color(0xFF4B2CA4).withOpacity(0.9),
+                          color: const Color(0xFF4B2CA4),   
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.86)),
                         ),
                       ),
