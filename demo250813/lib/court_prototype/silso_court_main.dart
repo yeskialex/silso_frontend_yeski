@@ -25,6 +25,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
   late TabController _tabController;
   late PageController _pageController;
   int _currentPage = 0;
+  final ScrollController _scrollController = ScrollController(); // ✅ 이 부분을 추가합니다.
 
   final CourtService _courtService = CourtService();
   final CaseService _caseService = CaseService();
@@ -59,6 +60,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
       backgroundColor: Colors.black, // Added for consistent background
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
+        controller: _scrollController, // ✅ 이 부분을 추가합니다.
         child: Column(
           children: [
             _buildBannerSection(screenSize),
@@ -116,11 +118,21 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
             ),
             Column(
               children: [
-                Image.asset(
-                  "assets/images/community/silso_court.png",
-                  width: 70,
-                  height: 25,
-                ),
+                    GestureDetector(
+                      onTap: () {
+                        // ✅ 탭을 최상단으로 스크롤하고 데이터를 새로고침합니다.
+                        _scrollController.animateTo(
+                          0.0,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Image.asset(
+                        "assets/images/community/silso_court.png",
+                        width: 70,
+                        height: 25,
+                      ),
+                    ),
                 const SizedBox(height: 5),
                 const Text(
                   '실시간 재판소',
@@ -1584,6 +1596,7 @@ class _FoldedCornerClipper extends CustomClipper<Path> {
     path.close();
     return path;
   }
+
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
