@@ -161,7 +161,7 @@ class _CourtChatInputState extends State<CourtChatInput> {
         children: [
           // Message type toggle buttons // -> 
           _buildChatTypeSwitcher1(widthRatio), // 전환 case1 - sliding button
-          _buildChatTypeSwitcher2(widthRatio),
+          _buildChatTypeSwitcher2(widthRatio), // 전환 case2 - icon button
 
           // Row(
           //   children: [
