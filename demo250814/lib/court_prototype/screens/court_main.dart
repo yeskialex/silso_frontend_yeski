@@ -14,6 +14,7 @@ import '../services/court_service.dart';
 import '../models/court_chat_message.dart';
 import '../models/court_session_model.dart';
 import '../config/court_config.dart';
+import '../models/case_model.dart'; 
 
 // Main screen of the Court app
 class CourtPrototypeScreen extends StatelessWidget {
@@ -71,6 +72,7 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
   int _silenceCountdown = 0;
   String? _silenceMessageId;
   bool _isImagePopupVisible = false; // ✅ 이 상태 변수를 추가합니다. ('정숙' 애니메이션)
+  late CaseModel _caseModel;
 
 
   @override
@@ -81,6 +83,8 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
       _sessionUpdateStream = _courtService.getCourtSessionStream(widget.courtSession!.id);
       _isInitialized = true;
       
+      _caseModel = _createCaseModelFromSession(widget.courtSession!);
+
       // Show session description popup after build is complete
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showSessionDescriptionDialog();
@@ -88,6 +92,27 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
     }
   }
 
+  CaseModel _createCaseModelFromSession(CourtSessionData session) {
+    // CourtSessionData의 필드를 사용하여 CaseModel 객체를 생성합니다.
+    return CaseModel(
+      id: session.caseId,
+      title: session.title,
+      description: session.description,
+      category: session.category,
+      creatorId: session.creatorId,
+      creatorName: 'Unknown', // creatorName은 session에 없으므로 임의로 설정
+      createdAt: session.dateCreated,
+      status: CaseStatus.promoted, // 법정에서는 promoted 상태로 가정
+      totalVotes: session.initialVotingResults['totalVotes'] ?? 0,
+      guiltyVotes: session.guiltyVotes,
+      notGuiltyVotes: session.notGuiltyVotes,
+      guiltyPercentage: session.initialVotingResults['guiltyPercentage'] ?? 0.0,
+      controversyScore: 0.0,
+      promotionPriority: 0.0,
+      voters: [],
+      metadata: session.metadata,
+    );
+  }
 
   void _handleSendMessage(ChatController controller) {
     if (_textController.text.isNotEmpty) {
@@ -801,6 +826,7 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
                                 controller: _textController,
                                 onSend: (message, messageType) => _sendCourtChatMessage(message, messageType),
                                 isEnabled: !_isSilenced,
+                                caseModel: _caseModel,
                               ),
                             )
                           : KeyboardAwarePositioned(
