@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/court_chat_message.dart';
 
+// popup court info 
+import '../widgets/case_card_widget.dart';
+
+
 // Chat input widget with guilty/not guilty toggle
 class CourtChatInput extends StatefulWidget {
   final TextEditingController controller;
@@ -119,9 +123,9 @@ class _CourtChatInputState extends State<CourtChatInput> {
       icon: Icon(
         iconData,
         color: iconColor,
-        size: 30 * widthRatio,
+        size: 35 * widthRatio,
       ),
-      onPressed: () {
+       onPressed: () {
         setState(() {
           // 상태를 변경하여 아이콘을 전환합니다.
           _selectedMessageType = _selectedMessageType == ChatMessageType.notGuilty
@@ -148,7 +152,7 @@ class _CourtChatInputState extends State<CourtChatInput> {
         vertical: 1 * widthRatio,
       ),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.9),
+        color: Colors.black.withValues(alpha: 0.9), // gradiation 부여 
         border: Border(
           top: BorderSide(
             color: Colors.white.withValues(alpha: 0.2),
@@ -187,8 +191,17 @@ class _CourtChatInputState extends State<CourtChatInput> {
           SizedBox(height: 0.5 * widthRatio),
           // Text input with send button
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center, // 이 속성을 추가합니다.
             children: [
-              Expanded(
+              Column(
+                children: [
+                  _buildChatTypeSwitcher2(widthRatio),
+                  SizedBox(
+                    height: 20 * widthRatio, // 버튼과 입력 필드 사이의 간격 (text 입력을 위한 세로 layout을 위한 여백)
+                  ),
+                ],
+              ), // 전환 case1 - sliding button
+              Expanded( // color 흰색으로, 
                 child: TextField(
                   controller: widget.controller,
                   enabled: widget.isEnabled,
@@ -226,7 +239,7 @@ class _CourtChatInputState extends State<CourtChatInput> {
                 ),
               ),
               SizedBox(width: 8 * widthRatio),
-              // Send button
+              // Send button -> open detail docs 
               GestureDetector(
                 onTap: widget.isEnabled ? _handleSend : null,
                 child: Container(
@@ -268,7 +281,7 @@ class _CourtChatInputState extends State<CourtChatInput> {
           _selectedMessageType = type;
         });
       },
-      child: AnimatedContainer(
+      child: AnimatedContainer( // layout 현재 유지 
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
         padding: EdgeInsets.symmetric(

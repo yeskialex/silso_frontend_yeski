@@ -120,9 +120,9 @@ extension ChatMessageTypeExtension on ChatMessageType {
   int get colorValue {
     switch (this) {
       case ChatMessageType.guilty:
-        return 0xFFFF4444; // Red for guilty
+        return 0xFFFF3838; // Red for guilty
       case ChatMessageType.notGuilty:
-        return 0xFF4CAF50; // Green for not guilty
+        return 0xFF3146E6; // Green for not guilty
       case ChatMessageType.system:
         return 0xFF9E9E9E; // Gray for system messages
     }

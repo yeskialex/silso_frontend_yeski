@@ -343,9 +343,9 @@ extension CaseVoteTypeExtension on CaseVoteType {
   int get colorValue {
     switch (this) {
       case CaseVoteType.guilty:
-        return 0xFFFF4444; // Red for guilty
+        return 0xFFFF3838; // Red for guilty
       case CaseVoteType.notGuilty:
-        return 0xFF4CAF50; // Green for not guilty
+        return 0xFF3146E6; // Green for not guilty
     }
   }
 }

@@ -216,10 +216,10 @@ class TransparentBackgroundScaleBar extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Background (not guilty color - green)
+            // Background (not guilty color - blue)
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                color: const Color(0xFF3146E6).withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
@@ -360,7 +360,7 @@ class TransparentBackgroundVoteControlRow extends StatelessWidget {
             width: 80,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50).withValues(alpha: 0.8),
+              color: const Color(0xFF3146E6).withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(22),
               boxShadow: const [
                 BoxShadow(

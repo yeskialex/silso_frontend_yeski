@@ -72,52 +72,66 @@ class CourtChatMessageWidget extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Message type badge
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 6 * widthRatio,
-                      vertical: 2 * widthRatio,
-                    ),
-                    decoration: BoxDecoration(
-                      color: messageColor,
-                      borderRadius: BorderRadius.circular(8 * widthRatio),
-                    ),
-                    child: Text(
-                      message.messageType.shortName,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10 * widthRatio,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                  ),
+                  // // Message type badge
+                  // Container(
+                  //   padding: EdgeInsets.symmetric(
+                  //     horizontal: 6 * widthRatio,
+                  //     vertical: 2 * widthRatio,
+                  //   ),
+                  //   decoration: BoxDecoration(
+                  //     color: messageColor,
+                  //     borderRadius: BorderRadius.circular(8 * widthRatio),
+                  //   ),
+                  //   child: Text(
+                  //     message.messageType.shortName,
+                  //     style: TextStyle(
+                  //       color: Colors.white,
+                  //       fontSize: 10 * widthRatio,
+                  //       fontWeight: FontWeight.w600,
+                  //       fontFamily: 'Pretendard',
+                  //     ),
+                  //   ),
+                  // ),
                   
-                  SizedBox(width: 6 * widthRatio),
+                  // SizedBox(width: 6 * widthRatio),
                   
                   // Sender name
-                  Text(
-                    isCurrentUser ? 'You' : message.senderName,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 12 * widthRatio,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Pretendard',
+                  // 새로운 텍스트 박스 UI를 적용한 부분
+                  Container(
+                    height: 21,
+                    // width는 텍스트 길이에 맞춰 자동으로 조절되도록 제거합니다.
+                    clipBehavior: Clip.antiAlias,
+                    decoration: ShapeDecoration(
+                      // messageColor를 사용하여 배경색을 동적으로 설정합니다.
+                      color: messageColor, 
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
-                  ),
-                  
-                  // Delete button for own messages
-                  if (isCurrentUser && onDelete != null) ...[
-                    SizedBox(width: 8 * widthRatio),
-                    GestureDetector(
-                      onTap: onDelete,
-                      child: Icon(
-                        Icons.delete_outline,
-                        color: Colors.white.withValues(alpha: 0.5),
-                        size: 16 * widthRatio,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      child: Text(
+                        isCurrentUser ? '사용자' : message.senderName,
+                        style: TextStyle(
+                          color: const Color(0xFFFAFAFA),
+                          fontSize: 14,
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w600,
+                          height: 1.43,
+                        ),
                       ),
                     ),
-                  ],
+                  )
+                  // // Delete button for own messages
+                  // if (isCurrentUser && onDelete != null) ...[
+                  //   SizedBox(width: 8 * widthRatio),
+                  //   GestureDetector(
+                  //     onTap: onDelete,
+                  //     child: Icon(
+                  //       Icons.delete_outline,
+                  //       color: Colors.white.withValues(alpha: 0.5),
+                  //       size: 16 * widthRatio,
+                  //     ),
+                  //   ),
+                  // ],
                 ],
               ),
             ),
@@ -129,13 +143,11 @@ class CourtChatMessageWidget extends StatelessWidget {
                 vertical: 12 * widthRatio,
               ),
               decoration: BoxDecoration(
-                color: isGuiltyMessage 
-                    ? messageColor.withValues(alpha: 0.8)
-                    : messageColor.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(18 * widthRatio),
+                color: const Color(0xFFFAFAFA),
+                borderRadius: BorderRadius.circular(16 * widthRatio),
                 border: Border.all(
-                  color: messageColor.withValues(alpha: 0.3),
-                  width: 1,
+                  color: messageColor,
+                  width: 2,
                 ),
               ),
               child: Column(
@@ -145,7 +157,7 @@ class CourtChatMessageWidget extends StatelessWidget {
                   Text(
                     message.message,
                     style: TextStyle(
-                      color: Colors.white,
+                      color:const Color(0xFF121212),
                       fontSize: 16 * widthRatio,
                       fontWeight: FontWeight.w400,
                       fontFamily: 'Pretendard',
@@ -154,17 +166,6 @@ class CourtChatMessageWidget extends StatelessWidget {
                   ),
                   
                   SizedBox(height: 6 * widthRatio),
-                  
-                  // Timestamp
-                  Text(
-                    _formatTimestamp(message.timestamp),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 11 * widthRatio,
-                      fontWeight: FontWeight.w400,
-                      fontFamily: 'Pretendard',
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -174,21 +175,4 @@ class CourtChatMessageWidget extends StatelessWidget {
     );
   }
 
-  // Format timestamp for display
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else {
-      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
-    }
-  }
 }
