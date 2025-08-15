@@ -25,29 +25,31 @@ class CourtChatInput extends StatefulWidget {
   State<CourtChatInput> createState() => _CourtChatInputState();
 }
 
-class _CourtChatInputState extends State<CourtChatInput> {
+class _CourtChatInputState extends State<CourtChatInput> with WidgetsBindingObserver {
   ChatMessageType _selectedMessageType = ChatMessageType.notGuilty;
   bool _isKeyboardVisible = false;
-  late FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
-    _focusNode.addListener(_onFocusChange);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  void _onFocusChange() {
-    setState(() {
-      _isKeyboardVisible = _focusNode.hasFocus;
-    });
+  @override
+  void didChangeMetrics() {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final newValue = bottomInset > 0.0;
+    if (_isKeyboardVisible != newValue) {
+      setState(() {
+        _isKeyboardVisible = newValue;
+      });
+    }
   }
 
   void _handleSend() {
@@ -72,45 +74,54 @@ void _showCaseCardDialog() {
       // Use a custom dialog with a close button and the new document UI
       return Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
           children: [
-              // Add a close button
-                Positioned(
-                  top: 0,
-                  right: 12,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Color(0xFFA68A54)),
-                    onPressed: () => Navigator.of(context).pop(),
+            SizedBox(
+              width: modalWidth,
+              height: modalHeight,
+              child: _buildDocumentUi(
+                width: modalWidth,
+                height: modalHeight,
+                title: widget.caseModel.title,
+                content: Text(
+                  widget.caseModel.description.isNotEmpty
+                      ? widget.caseModel.description
+                      : "이 사건에 대한 상세 내용이 없습니다.",
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w500,
+                    height: 1.6,
                   ),
                 ),
-            Stack(
-              children: [
-                SizedBox(
-                  width: modalWidth,
-                  height: modalHeight,
-                  child: _buildDocumentUi(
-                    width: modalWidth,
-                    height: modalHeight,
-                    title: widget.caseModel.title,
-                    content: Text(
-                      widget.caseModel.description.isNotEmpty
-                          ? widget.caseModel.description
-                          : "이 사건에 대한 상세 내용이 없습니다.",
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 14,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                        height: 1.6,
-                      ),
+                pageInfo: '1/1',
+              ),
+            ),
+            // Add a close button
+            Positioned(
+              top: -8,
+              right: -8,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => Navigator.of(context).pop(),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      shape: BoxShape.circle,
                     ),
-                    pageInfo: '1/1',
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
-
-              ],
+              ),
             ),
           ],
         ),
@@ -119,27 +130,42 @@ void _showCaseCardDialog() {
   );
 }
 
-  Widget _buildChatTypeSwitcher(double widthRatio) {
+  Widget _buildChatTypeSwitcher(double switcherIconSize) {
     // 선택된 타입에 따라 아이콘과 색상을 결정합니다.
     final IconData iconData = Icons.sync;  
     final Color iconColor = _selectedMessageType == ChatMessageType.notGuilty
         ? const Color(0xFF5F37CF)
         : const Color(0xFFE93D40);
 
-    return IconButton(
-      icon: Icon(
-        iconData,
-        color: iconColor,
-        size: 35 * widthRatio,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            // 상태를 변경하여 아이콘을 전환합니다.
+            _selectedMessageType = _selectedMessageType == ChatMessageType.notGuilty
+                ? ChatMessageType.guilty
+                : ChatMessageType.notGuilty;
+          });
+        },
+        borderRadius: BorderRadius.circular(switcherIconSize / 2),
+        child: Container(
+          width: switcherIconSize + 12,
+          height: switcherIconSize + 12,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: iconColor.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            iconData,
+            color: iconColor,
+            size: switcherIconSize,
+          ),
+        ),
       ),
-       onPressed: () {
-        setState(() {
-          // 상태를 변경하여 아이콘을 전환합니다.
-          _selectedMessageType = _selectedMessageType == ChatMessageType.notGuilty
-              ? ChatMessageType.guilty
-              : ChatMessageType.notGuilty;
-        });
-      },
     );
   }
 
@@ -154,14 +180,29 @@ void _showCaseCardDialog() {
             child: Text(
               title,
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Color(0xFF5E4E2C), fontSize: 24, fontFamily: 'Pretendard', fontWeight: FontWeight.w700)
+              style: const TextStyle(
+                color: Color(0xFF5E4E2C), 
+                fontSize: 20, 
+                fontFamily: 'Pretendard', 
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
             ),
           ),
           SizedBox(
             width: 40,
-            child: Text(pageInfo, textAlign: TextAlign.right, style: const TextStyle(color: Color(0xFFA68A54), fontSize: 16, fontFamily: 'Pretendard', fontWeight: FontWeight.w600)),
+            child: Text(
+              pageInfo, 
+              textAlign: TextAlign.right, 
+              style: const TextStyle(
+                color: Color(0xFFA68A54), 
+                fontSize: 14, 
+                fontFamily: 'Pretendard', 
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -255,17 +296,26 @@ void _showCaseCardDialog() {
 
   @override
   Widget build(BuildContext context) {
-    // Responsive design calculations
+    // Improved responsive design calculations
     const double baseWidth = 393.0;
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     final double widthRatio = screenWidth / baseWidth;
+    
+    // Clamp width ratio for better sizing control
+    final double clampedWidthRatio = widthRatio.clamp(0.8, 1.4);
+    
+    // Define consistent button sizes
+    const double buttonSize = 44.0; // Standard touch target size
+    const double iconSize = 20.0;
+    const double switcherIconSize = 28.0;
 
     return  Container(
       // 고정된 높이를 제거하여 내용에 맞게 자동 조절되도록 합니다.
       // height: 100 * widthRatio,
       padding: EdgeInsets.symmetric(
-        horizontal: 4 * widthRatio,
-        vertical: 1 * widthRatio,
+        horizontal: (8 * clampedWidthRatio).clamp(6.0, 12.0),
+        vertical: (8 * clampedWidthRatio).clamp(6.0, 10.0),
       ),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.9), // gradiation 부여 
@@ -284,9 +334,9 @@ void _showCaseCardDialog() {
             children: [
               Column(
                 children: [
-                  _buildChatTypeSwitcher(widthRatio),
+                  _buildChatTypeSwitcher(switcherIconSize),
                   SizedBox(
-                    height: 20 * widthRatio, // 버튼과 입력 필드 사이의 간격 (text 입력을 위한 세로 layout을 위한 여백)
+                    height: 16, // Fixed spacing instead of scaled
                   ),
                 ],
               ), // 전환 case1 - sliding button
@@ -295,63 +345,73 @@ void _showCaseCardDialog() {
               Expanded( // color 흰색으로, 
                 child: TextField(
                   controller: widget.controller,
-                  focusNode: _focusNode,
                   enabled: widget.isEnabled,
                   maxLines: 1,
                   maxLength: 200,
                   style: TextStyle(
                     color: Colors.black54,
-                    fontSize: 16 * widthRatio,
+                    fontSize: (16 * clampedWidthRatio).clamp(14.0, 18.0),
                     fontFamily: 'Pretendard',
                   ),
                   decoration: InputDecoration(
                     hintText: 'Share your ${_selectedMessageType.displayName.toLowerCase()} argument...',
                     hintStyle: TextStyle(
                       color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 16 * widthRatio,
+                      fontSize: (16 * clampedWidthRatio).clamp(14.0, 18.0),
                       fontFamily: 'Pretendard',
                     ),
                     filled: true,
                     fillColor: Colors.black54.withValues(alpha: 0.3),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24 * widthRatio),
+                      borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12 * widthRatio,
-                      vertical: 2 * widthRatio,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                     counterStyle: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12 * widthRatio,
+                      fontSize: (12 * clampedWidthRatio).clamp(10.0, 14.0),
                       fontFamily: 'Pretendard',
                     ),
                   ),
                   onSubmitted: (_) => _handleSend(),
                 ),
               ),
-              SizedBox(width: 8 * widthRatio),
+              const SizedBox(width: 12),
 
               // Switch between send and docs icon based on keyboard visibility
-              GestureDetector(
-                onTap: widget.isEnabled 
-                    ? (_isKeyboardVisible ? _handleSend : _showCaseCardDialog) 
-                    : null,
-                child: Container(
-                  width: 30 * widthRatio,
-                  height: 30 * widthRatio,
-                  decoration: BoxDecoration(
-                    color: _isKeyboardVisible
-                        ? (widget.isEnabled 
-                            ? Color(_selectedMessageType.colorValue) 
-                            : Colors.grey)
-                        : const Color(0xFF5F37CF),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _isKeyboardVisible ? Icons.send : Icons.document_scanner,
-                    color: Colors.white,
-                    size: 16 * widthRatio,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: widget.isEnabled 
+                      ? (_isKeyboardVisible ? _handleSend : _showCaseCardDialog) 
+                      : null,
+                  borderRadius: BorderRadius.circular(buttonSize / 2),
+                  child: Container(
+                    width: buttonSize,
+                    height: buttonSize,
+                    decoration: BoxDecoration(
+                      color: _isKeyboardVisible
+                          ? (widget.isEnabled 
+                              ? Color(_selectedMessageType.colorValue) 
+                              : Colors.grey)
+                          : const Color(0xFF5F37CF),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      _isKeyboardVisible ? Icons.send : Icons.document_scanner,
+                      color: Colors.white,
+                      size: iconSize,
+                    ),
                   ),
                 ),
               ),

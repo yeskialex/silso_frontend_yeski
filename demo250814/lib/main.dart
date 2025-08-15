@@ -13,9 +13,7 @@ import 'screens/community/initial_profile/intro_community_splash2.dart';
 import 'screens/community/initial_profile/category_selection_screen.dart';
 import 'screens/community/initial_profile/profile_information_screen.dart';
 import 'screens/community/initial_profile/policy_agreement_screen.dart';
-
  
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
