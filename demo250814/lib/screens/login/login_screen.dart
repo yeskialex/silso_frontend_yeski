@@ -182,20 +182,63 @@ fit: BoxFit.contain, // 또는 BoxFit.fill 등 필요에 따라 조절
               spacing: 16 * widthRatio,
               children: [
                 // 카카오 로그인 버튼
-GestureDetector( // 필요에 따라 감싸서 탭 이벤트를 처리
-onTap: _handleKakaoSignInWithImage, // 이미지 탭 시 실행될 함수 (3번에서 구현)
-child: Image.asset(
-'assets/images/kakao_signin/kakao_login_large_wide.png', // .png 이미지 경로
-fit: BoxFit.fitWidth, // 필요에 따라 이미지의 fit 속성 조절
-),
-),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _isLoading ? null : _handleKakaoSignInWithImage,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      height: 52, // 일관된 버튼 높이
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/images/kakao_signin/kakao_login_large_wide.png',
+                          fit: BoxFit.cover, // 높이에 맞춰 이미지 조정
+                          width: double.infinity,
+                          height: 52,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 // 구글 로그인 버튼
-                 GestureDetector(
-                  onTap: _isLoading ? null : _handleGoogleSignInWithImage,
-                  child: Image.asset(
-                    // AppAssetProvider를 사용하여 반응형 경로를 가져옵니다.
-                    'assets/images/google_signin/web_neutral_sq_ctn@4x.png', // .png 이미지 경로),
-                    fit: BoxFit.fitWidth,
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _isLoading ? null : _handleGoogleSignInWithImage,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      height: 52, // 일관된 버튼 높이
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/images/google_signin/web_neutral_sq_ctn@4x.png',
+                           fit: BoxFit.cover, // 높이에 맞춰 이미지 조정
+                          width: double.infinity,
+                          height: 52,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 // Apple 로그인 버튼 (더미)

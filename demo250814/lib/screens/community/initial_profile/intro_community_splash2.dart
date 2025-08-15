@@ -71,17 +71,6 @@ class _IntroCommunitySplashState extends State<IntroCommunitySplash> {
             ),
           ),
           
-          // Loading indicator
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: screenHeight * 0.25,
-            child: const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-          ),
         ],
       ),
     );
