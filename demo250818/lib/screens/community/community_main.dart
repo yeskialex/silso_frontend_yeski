@@ -9,10 +9,7 @@ import 'community_detail_page.dart'; // Korean UI 커뮤니티 상세 페이지�
 import 'community_find_page.dart'; // Korean UI 커뮤니티 찾아보기 페이지를 가져옵니다.
 import 'admin_add_community.dart'; // Admin add community page
 import '../../court_prototype/silso_court_main.dart'; // Import for SilsoCourtPage
-import '../../court_prototype/services/court_service.dart';
-import '../../court_prototype/models/court_session_model.dart';
-
-
+import '../../widgets/custom_bottom_navigation.dart'; 
 // 커뮤니티 화면을 구성하는 메인 위젯입니다. (StatefulWidget으로 변경)
 class CommunityMainTabScreenMycom extends StatefulWidget {
   const CommunityMainTabScreenMycom({super.key});
@@ -26,7 +23,6 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   String _selectedTab = 'MAIN';
   final CommunityService _communityService = CommunityService();
   final AuthService _authService = AuthService();
-  final CourtService _courtService = CourtService();
   // HOT 게시물을 비동기적으로 불러오기 위한 Future 변수
   late Future<List<Map<String, dynamic>>> _hotPostsFuture;
   late Future<List<Post>> _generalPostsFuture; // 종합 게시판 게시물
@@ -35,14 +31,6 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   late Future<List<Community>> _top5CommunitiesFuture;
   late Stream<List<Community>> _recommendedCommunitiesStream; // 추천 커뮤니티를 위한 Stream
   late Future<List<String>> _userInterestsFuture; // 사용자 관심사를 위한 Future
-  
-  // Court sessions stream
-  Stream<List<CourtSessionData>>? _liveSessionsStream;
-  
-  // Lazy getter for live sessions stream
-  Stream<List<CourtSessionData>> get liveSessionsStream {
-    return _liveSessionsStream ??= _courtService.getLiveCourtSessions();
-  }
 
   // 카테고리 ID와 표시 형식 매핑
   static const Map<String, Map<String, String>> _categoryMapping = {
@@ -179,6 +167,9 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
             ? _buildMainTabContent()
             : _buildMyTabContent(),
       ),
+      bottomNavigationBar: const CustomBottomNavigation(
+        currentIndex: 0, // Community 탭이 선택된 상태
+      ), 
     );
   }
 
@@ -917,8 +908,8 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
                   end: Alignment.bottomCenter,
                   colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.2),
-                      Colors.black.withValues(alpha: 0.7), // 더 어둡게 해서 텍스트 가독성 향상
+                      Colors.black.withOpacity(0.2),
+                      Colors.black.withOpacity(0.7), // 더 어둡게 해서 텍스트 가독성 향상
                   ]
               )
           ),
@@ -1317,72 +1308,42 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
 
   // '실시간 재판소'의 가로 스크롤 리스트를 생성하는 함수입니다.
   Widget _buildLiveTrialsList(Size screenSize) {
-    return StreamBuilder<List<CourtSessionData>>(
-      stream: liveSessionsStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox(
-            height: 155,
-            child: Center(
-              child: CircularProgressIndicator(color: Color(0xFF5F37CF)),
-            ),
-          );
-        }
-        
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return SizedBox(
-            height: 155,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.gavel,
-                    color: Colors.grey.withValues(alpha: 0.5),
-                    size: 32,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '진행 중인 재판이 없습니다',
-                    style: TextStyle(
-                      color: Colors.grey.withValues(alpha: 0.7),
-                      fontSize: 14,
-                      fontFamily: 'Pretendard',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-        
-        final liveSessions = snapshot.data!;
-        final cardWidth = screenSize.width * 0.55;
-        
-        return SizedBox(
-          height: 155,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: liveSessions.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final session = liveSessions[index];
-              return GestureDetector(
-                onTap: () => _navigateToCourtSession(session),
-                child: _buildTrialCard(
-                  imageUrl: "assets/images/community/judge_${(index % 2) + 1}.png",
-                  title: session.title,
-                  timeLeft: _formatTimeLeft(session.timeLeft),
-                  participants: '현재 참여수 ${session.currentLiveMembers}명',
-                  isLive: session.isLive,
-                  width: cardWidth,
-                ),
-              );
-            },
+    // 화면 너비의 절반보다 약간 크게 카드의 너비를 설정하여 옆의 카드가 살짝 보이게 합니다.
+    final cardWidth = screenSize.width * 0.55;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      // 스크롤 끝에 도달했을 때 시각적 효과를 제거합니다.
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: [
+          _buildTrialCard(
+            imageUrl: "assets/images/community/judge_1.png",
+            title: '여친이랑 헤어짐; 드루와',
+            timeLeft: '판결까지 3시간 남음',
+            participants: '현재 참여수 56명',
+            isLive: true,
+            width: cardWidth,
           ),
-        );
-      },
+          const SizedBox(width: 8),
+          _buildTrialCard(
+            imageUrl: "assets/images/community/judge_2.png",
+            title: '상사한테 꾸중을 들었...',
+            timeLeft: '판결까지 9시간 남음',
+            participants: '현재 참여수 56명',
+            isLive: true,
+            width: cardWidth,
+          ),
+          const SizedBox(width: 8),
+          _buildTrialCard(
+            imageUrl: "assets/images/community/judge_1.png",
+            title: '또 다른 재판 이야기',
+            timeLeft: '판결까지 1일 남음',
+            participants: '현재 참여수 102명',
+            isLive: false,
+            width: cardWidth,
+          ),
+        ],
+      ),
     );
   }
 
@@ -1564,26 +1525,6 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
         ),
       ],
     );
-  }
-
-  // Navigate to court session screen
-  void _navigateToCourtSession(CourtSessionData session) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const SilsoCourtPage(),
-      ),
-    );
-  }
-
-  // Format time left for display
-  String _formatTimeLeft(Duration duration) {
-    if (duration.inHours > 0) {
-      return '판결까지 ${duration.inHours}시간 남음';
-    } else if (duration.inMinutes > 0) {
-      return '판결까지 ${duration.inMinutes}분 남음';
-    } else {
-      return '곧 종료';
-    }
   }
 }
 

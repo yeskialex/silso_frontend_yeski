@@ -5,6 +5,8 @@ import '../../models/magazine_model.dart';
 import '../../services/today_question_service.dart';
 import '../../services/magazine_service.dart';
 import '../../widgets/cached_network_image_widget.dart';
+import '../../widgets/custom_bottom_navigation.dart';
+
 
 class ContentsMainPage extends StatefulWidget {
   const ContentsMainPage({super.key});
@@ -125,6 +127,9 @@ class _ContentsMainPageState extends State<ContentsMainPage> {
             _buildSilsoMagazineSection(widthRatio),
           ],
         ),
+      ),
+      bottomNavigationBar: const CustomBottomNavigation(
+        currentIndex: 1, // Contents 탭이 선택된 상태
       ),
     );
   }
