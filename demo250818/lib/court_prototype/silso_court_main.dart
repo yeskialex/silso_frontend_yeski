@@ -79,7 +79,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.black, // Added for consistent background
+      backgroundColor: Color(0xFF3c0f20), // Added for consistent background
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
         child: Column(
@@ -176,7 +176,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
   Widget _buildBannerSection(Size screenSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24.0),
-      color: const Color(0xFF1E1E1E),
+      color: const Color(0xFF121212),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -631,7 +631,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
         final liveSessions = snapshot.data!;
         
         return SizedBox(
-          height: 155,
+          height: 155 * 1.35,
           child: PageView.builder(
             controller: _pageController,
             itemCount: liveSessions.length,
@@ -663,92 +663,103 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  Widget _buildTrialCard({
-    required String imageUrl,
-    required String title,
-    required String timeLeft,
-    required String participants,
-    required bool isLive,
-    required double width,
-  }) {
-    return SizedBox(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 121,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              image: DecorationImage(
-                image: AssetImage(imageUrl),
-                fit: BoxFit.cover,
+Widget _buildTrialCard({
+  required String imageUrl,
+  required String title,
+  required String timeLeft,
+  required String participants,
+  required bool isLive,
+  required double width,
+}) {
+  final double widthRatio = width / 393.0  ;
+  //final double newWidth = width;
+  final double newHeight = 165; // 155 * 1.35 = 209px 컨테이너에 맞춰 카드 높이 증가
+
+  return SizedBox(
+    width: widthRatio,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: newHeight , // 높이 값 유지
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            // decoration을 사용할 경우, border나 color를 제외하고 이미지를 제거합니다.
+          ),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  imageUrl,
+                  height: newHeight, // Container의 높이와 동일하게 설정
+                  width: width,
+                  fit: BoxFit.cover, // 이미지 비율을 유지하며 컨테이너를 꽉 채웁니다.
+                ),
               ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  left: 11,
-                  top: 12,
-                  child: Text(
-                    timeLeft,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                    ),
+              // 기존의 Positioned 위젯들
+              Positioned(
+                left: 11,
+                top: 12,
+                child: Text(
+                  timeLeft,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                   ),
                 ),
-                if (isLive)
-                  Positioned(
-                    right: 11,
-                    top: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFC31A1A),
-                        borderRadius: BorderRadius.circular(400),
-                      ),
-                      child: const Text('Live',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ),
+              ),
+              if (isLive)
                 Positioned(
                   right: 11,
-                  bottom: 12,
-                  child: Text(
-                    participants,
-                    style: const TextStyle(
-                      color: Color(0xFFBBBBBB),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                  top: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC31A1A),
+                      borderRadius: BorderRadius.circular(400),
                     ),
+                    child: const Text('Live',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600)),
                   ),
                 ),
-              ],
-            ),
+              Positioned(
+                right: 11,
+                bottom: 12,
+                child: Text(
+                  participants,
+                  style: const TextStyle(
+                    color: Color(0xFFBBBBBB),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 7),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFFAFAFA),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          title,
+          maxLines: 2, // 카드 높이 증가로 2줄 표시 가능
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Color(0xFFFAFAFA),
+            fontSize: 17, // 폰트 크기 증가
+            fontWeight: FontWeight.w600,
+            height: 1.3, // 줄간격 추가
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildCourthouseCard(CourtSessionData session) {
     return GestureDetector(
@@ -756,8 +767,9 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
       child: Container(
         height: 101,
         decoration: BoxDecoration(
-          color: const Color(0xFF2D2D2D),
+          color: Colors.black54,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFffc832)), // **이 부분을 추가해주세요.**
         ),
         child: Row(
           children: [
@@ -966,6 +978,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     required bool isCase,
     required VoidCallback onTap,
   }) {
+    
     return InkWell(
       onTap: onTap, // Use the passed onTap callback
       borderRadius: BorderRadius.circular(12),
