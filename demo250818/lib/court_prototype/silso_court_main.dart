@@ -9,6 +9,7 @@ import 'models/court_session_model.dart';
 import 'screens/add_case_screen.dart';
 import 'screens/court_main.dart' as court_main;
 import 'config/court_config.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 
 // Removed unused _TrialData class since we now use real data
@@ -27,6 +28,9 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
   late TabController _tabController;
   late PageController _pageController;
   int _currentPage = 0;
+  
+  // CarouselSlider 컨트롤러 추가
+  final CarouselSliderController _carouselController = CarouselSliderController();
 
   final CourtService _courtService = CourtService();
   final CaseService _caseService = CaseService();
@@ -79,7 +83,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.black, // Added for consistent background
+      backgroundColor: const Color(0xFF1E1E1E), // Added for consistent background
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
         child: Column(
@@ -176,7 +180,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
   Widget _buildBannerSection(Size screenSize) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24.0),
-      color: const Color(0xFF1E1E1E),
+      color: const Color(0xFF121212),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -206,15 +210,39 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(sessionCount, (index) {
-            return Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _currentPage == index
-                    ? const Color(0xFF6037D0)
-                    : const Color(0xFF301D67),
+            final isActive = _currentPage == index;
+            return GestureDetector(
+              onTap: () => _carouselController.animateToPage(index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                width: isActive ? 24 : 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  color: isActive
+                      ? const Color(0xFF6037D0)
+                      : const Color(0xFF301D67),
+                  boxShadow: isActive ? [
+                    BoxShadow(
+                      color: const Color(0xFF6037D0).withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ] : null,
+                ),
+                child: isActive ? Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6037D0),
+                        const Color(0xFF8B5CF6),
+                      ],
+                    ),
+                  ),
+                ) : null,
               ),
             );
           }),
@@ -592,10 +620,16 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     return StreamBuilder<List<CourtSessionData>>(
       stream: liveSessionsStream,
       builder: (context, snapshot) {
+        // 반응형 높이 계산
+        final double baseHeight = 155.0;
+        final double scaleFactor = (screenSize.width / 393.0).clamp(0.8, 1.2);
+        final double containerHeight = (baseHeight * 1.35 * scaleFactor).clamp(180.0, 250.0);
+        final double cardHeight = (baseHeight * scaleFactor).clamp(140.0, 200.0);
+        
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox(
-            height: 155,
-            child: Center(
+          return SizedBox(
+            height: containerHeight,
+            child: const Center(
               child: CircularProgressIndicator(color: Color(0xFF6037D0)),
             ),
           );
@@ -603,7 +637,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
         
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return SizedBox(
-            height: 155,
+            height: containerHeight,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -611,14 +645,14 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
                   Icon(
                     Icons.gavel,
                     color: Colors.white.withOpacity(0.5),
-                    size: 32,
+                    size: 32 * scaleFactor,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8 * scaleFactor),
                   Text(
                     '진행 중인 재판이 없습니다',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
-                      fontSize: 14,
+                      fontSize: 14 * scaleFactor,
                       fontFamily: 'Pretendard',
                     ),
                   ),
@@ -630,29 +664,48 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
         
         final liveSessions = snapshot.data!;
         
-        return SizedBox(
-          height: 155,
-          child: PageView.builder(
-            controller: _pageController,
+        return Container(
+          height: containerHeight,
+          child: CarouselSlider.builder(
+            carouselController: _carouselController,
+            options: CarouselOptions(
+              height: cardHeight,
+              autoPlay: true,
+              autoPlayInterval: const Duration(seconds: 4),
+              autoPlayAnimationDuration: const Duration(milliseconds: 1000),
+              autoPlayCurve: Curves.easeInOutCubic,
+              enlargeCenterPage: true,
+              enlargeFactor: 0.2, // 약간 줄여서 overflow 방지
+              viewportFraction: 0.7, // 조금 늘려서 카드가 더 크게 보이도록
+              onPageChanged: (index, reason) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+            ),
             itemCount: liveSessions.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-            itemBuilder: (context, index) {
+            itemBuilder: (context, index, realIndex) {
               final session = liveSessions[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              return Container(
+                margin: EdgeInsets.symmetric(horizontal: 6.0 * scaleFactor),
                 child: GestureDetector(
                   onTap: () => _navigateToCourtSession(session),
-                  child: _buildTrialCard(
-                    imageUrl: "assets/images/community/judge_${(index % 2) + 1}.png",
-                    title: session.title,
-                    timeLeft: _formatTimeLeft(session.timeLeft),
-                    participants: '현재 참여수 ${session.currentLiveMembers}명',
-                    isLive: session.isLive,
-                    width: screenSize.width,
+                  child: AnimatedScale(
+                    scale: _currentPage == index ? 1.0 : 0.96,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: _buildTrialCard(
+                        imageUrl: "assets/images/community/judge_${(index % 2) + 1}.png",
+                        title: session.title,
+                        timeLeft: _formatTimeLeft(session.timeLeft),
+                        participants: '현재 참여수 ${session.currentLiveMembers}명',
+                        isLive: session.isLive,
+                        width: screenSize.width * 0.7, // 고정된 너비로 overflow 방지
+                        maxHeight: cardHeight, // 최대 높이 제한
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -663,30 +716,50 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     );
   }
 
-  Widget _buildTrialCard({
-    required String imageUrl,
-    required String title,
-    required String timeLeft,
-    required String participants,
-    required bool isLive,
-    required double width,
-  }) {
-    return SizedBox(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 121,
+Widget _buildTrialCard({
+  required String imageUrl,
+  required String title,
+  required String timeLeft,
+  required String participants,
+  required bool isLive,
+  required double width,
+  double? maxHeight, // 최대 높이 제한 매개변수 추가
+}) {
+  final double widthRatio = width / 393.0;
+  final double baseHeight = 165.0;
+  final double actualHeight = maxHeight != null 
+      ? (maxHeight * 0.85).clamp(120.0, baseHeight) // maxHeight의 85%로 텍스트 영역 고려
+      : baseHeight;
+
+  return Container(
+    width: width,
+    constraints: BoxConstraints(
+      maxHeight: maxHeight ?? double.infinity,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min, // overflow 방지
+      children: [
+        Flexible(
+          flex: 4, // 이미지 영역에 더 많은 공간 할당
+          child: Container(
+            height: actualHeight,
+            width: width,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              image: DecorationImage(
-                image: AssetImage(imageUrl),
-                fit: BoxFit.cover,
-              ),
             ),
             child: Stack(
               children: [
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                // 시간 정보
                 Positioned(
                   left: 11,
                   top: 12,
@@ -700,13 +773,13 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
                     ),
                   ),
                 ),
+                // Live 표시
                 if (isLive)
                   Positioned(
                     right: 11,
                     top: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFC31A1A),
                         borderRadius: BorderRadius.circular(400),
@@ -718,6 +791,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
                               fontWeight: FontWeight.w600)),
                     ),
                   ),
+                // 참여자 수
                 Positioned(
                   right: 11,
                   bottom: 12,
@@ -734,21 +808,29 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
               ],
             ),
           ),
-          const SizedBox(height: 7),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFFFAFAFA),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+        ),
+        // 텍스트 영역
+        Flexible(
+          flex: 1,
+          child: Container(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: const Color(0xFFFAFAFA),
+                fontSize: maxHeight != null ? 15 : 17, // 제한된 높이에서는 폰트 크기 조정
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildCourthouseCard(CourtSessionData session) {
     return GestureDetector(
@@ -756,8 +838,9 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
       child: Container(
         height: 101,
         decoration: BoxDecoration(
-          color: const Color(0xFF2D2D2D),
+          color: Colors.black54,
           borderRadius: BorderRadius.circular(12),
+          //border: Border.all(color: const Color(0xFFffc832)), // **이 부분을 추가해주세요.**
         ),
         child: Row(
           children: [
@@ -924,7 +1007,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     if (!isCase || caseModel == null) return;
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.7),
+      barrierColor: Colors.black,//.withOpacity(0.7),
       builder: (BuildContext context) {
         return VoteModal(caseModel: caseModel, caseService: _caseService);
       },
@@ -966,6 +1049,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     required bool isCase,
     required VoidCallback onTap,
   }) {
+    
     return InkWell(
       onTap: onTap, // Use the passed onTap callback
       borderRadius: BorderRadius.circular(12),

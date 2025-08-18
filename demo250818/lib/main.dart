@@ -17,6 +17,8 @@ import 'screens/community/initial_profile/category_selection_screen.dart';
 import 'screens/community/initial_profile/profile_information_screen.dart';
 import 'screens/community/initial_profile/policy_agreement_screen.dart';
  
+import 'dummy.dart'; 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -51,7 +53,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => SplashScreen(),
+        '/': (context) =>  SplashScreen(),
         '/login': (context) => const LoginScreen(), // Korean UI
         '/after-login-splash': (context) => const AfterLoginSplashScreen(), // Korean UI
         '/temporary-home': (context) => const TemporaryHomePage(), // Temporary home
