@@ -145,7 +145,7 @@ class _ContentsMainPageState extends State<ContentsMainPage> {
           // silso logo
           Image.asset(
             'assets/images/silso_logo/black_silso_logo.png',
-            height: 20 * widthRatio,
+            height: 25 * widthRatio,
             fit: BoxFit.contain,
           ),
           SizedBox(width: 8 * widthRatio),
@@ -154,7 +154,7 @@ class _ContentsMainPageState extends State<ContentsMainPage> {
             '컨텐츠',
             style: TextStyle(
               color: Colors.black,
-              fontSize: 16 * widthRatio,
+              fontSize: 22 * widthRatio,
               fontWeight: FontWeight.w600,
               fontFamily: 'Pretendard',
             ),

@@ -264,7 +264,7 @@ class _MyPageMainState extends State<MyPageMain> with SingleTickerProviderStateM
         title: Text(
           '프로필',
           style: TextStyle(
-            fontSize: 18 * widthRatio,
+            fontSize: 22 * widthRatio,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF121212),
             fontFamily: 'Pretendard',
