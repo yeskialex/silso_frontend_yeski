@@ -3,7 +3,6 @@ import '../models/court_chat_message.dart';
 
 // popup court info 
 import '../models/case_model.dart'; // Add this import for CaseModel
-import 'case_card_widget.dart'; // Add this import for CaseCardWidget
 
 
 // Chat input widget with guilty/not guilty toggle
@@ -28,28 +27,97 @@ class CourtChatInput extends StatefulWidget {
 class _CourtChatInputState extends State<CourtChatInput> with WidgetsBindingObserver {
   ChatMessageType _selectedMessageType = ChatMessageType.notGuilty;
   bool _isKeyboardVisible = false;
+  late FocusNode _textFieldFocusNode;
+  double _lastKnownKeyboardHeight = 0.0;
 
   @override
   void initState() {
     super.initState();
+    _textFieldFocusNode = FocusNode();
+    _textFieldFocusNode.addListener(_onFocusChange);
     WidgetsBinding.instance.addObserver(this);
+    
+    // Post frame callback to get initial keyboard state
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateKeyboardVisibility();
+    });
   }
 
   @override
   void dispose() {
+    _textFieldFocusNode.removeListener(_onFocusChange);
+    _textFieldFocusNode.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  @override
-  void didChangeMetrics() {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final newValue = bottomInset > 0.0;
-    if (_isKeyboardVisible != newValue) {
-      setState(() {
-        _isKeyboardVisible = newValue;
+  void _onFocusChange() {
+    // When focus changes, schedule a check for keyboard visibility
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateKeyboardVisibility();
+        
+        // If focus is lost, ensure keyboard dismissed state is handled
+        if (!_textFieldFocusNode.hasFocus && _isKeyboardVisible) {
+          // Schedule another check after focus animation completes
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (mounted) {
+              _updateKeyboardVisibility();
+            }
+          });
+        }
       });
     }
+  }
+
+  void _updateKeyboardVisibility() {
+    if (!mounted) return;
+    
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final bool keyboardIsVisible = bottomInset > 0.0;
+    
+    // Only update if there's a significant change (> 1 pixel to avoid floating point issues)
+    if ((_isKeyboardVisible != keyboardIsVisible) || 
+        (bottomInset - _lastKnownKeyboardHeight).abs() > 1.0) {
+      
+      // Check if keyboard is being dismissed
+      final bool keyboardDismissed = _isKeyboardVisible && !keyboardIsVisible;
+      
+      setState(() {
+        _isKeyboardVisible = keyboardIsVisible;
+        _lastKnownKeyboardHeight = bottomInset;
+      });
+      
+      // Handle keyboard dismissal - reset icon state
+      if (keyboardDismissed) {
+        _handleKeyboardDismissed();
+      }
+    }
+  }
+
+  void _handleKeyboardDismissed() {
+    // Reset focus when keyboard is dismissed
+    if (_textFieldFocusNode.hasFocus) {
+      _textFieldFocusNode.unfocus();
+    }
+    
+    // Schedule a rebuild after the keyboard animation is complete
+    // This ensures the icon switches back to document_scanner properly
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        setState(() {
+          // This setState ensures the icon updates after keyboard dismissal
+        });
+      }
+    });
+  }
+
+  @override
+  void didChangeMetrics() {
+    // Use post frame callback to ensure MediaQuery has updated values
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateKeyboardVisibility();
+    });
   }
 
   void _handleSend() {
@@ -60,12 +128,36 @@ class _CourtChatInputState extends State<CourtChatInput> with WidgetsBindingObse
     }
   }
 
+  void _handleIconTap() {
+    if (!widget.isEnabled) return;
+    
+    if (_isKeyboardVisible || _textFieldFocusNode.hasFocus) {
+      // If keyboard is visible or text field is focused, send message
+      _handleSend();
+    } else {
+      // If keyboard is not visible, show case dialog
+      _showCaseCardDialog();
+    }
+  }
+
+  void _dismissKeyboard() {
+    if (_textFieldFocusNode.hasFocus) {
+      _textFieldFocusNode.unfocus();
+      // Force a rebuild after keyboard dismiss
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
+  }
+
   // New method to show the case card dialog
 void _showCaseCardDialog() {
   // [#MODIFIED] Use a custom Dialog with the document UI
   showDialog(
     context: context,
-    barrierColor: Colors.black.withOpacity(0.7),
+    barrierColor: Colors.black.withValues(alpha: 0.7),
     builder: (BuildContext context) {
       final screenSize = MediaQuery.of(context).size;
       final modalWidth = screenSize.width * 0.9;
@@ -227,7 +319,7 @@ void _showCaseCardDialog() {
           Container(color: const Color(0xFF79673F)),
           CustomPaint(
             painter: _PixelPatternPainter(
-              dotColor: Colors.black.withOpacity(0.1),
+              dotColor: Colors.black.withValues(alpha: 0.1),
               step: 3.0,
             ),
             child: Container(),
@@ -243,7 +335,7 @@ void _showCaseCardDialog() {
         CustomPaint(
           size: Size(width, height),
           painter: _PixelPatternPainter(
-            dotColor: Colors.black.withOpacity(0.05),
+            dotColor: Colors.black.withValues(alpha: 0.05),
           ),
         ),
         Positioned(
@@ -310,22 +402,30 @@ void _showCaseCardDialog() {
     const double iconSize = 20.0;
     const double switcherIconSize = 28.0;
 
-    return  Container(
-      // 고정된 높이를 제거하여 내용에 맞게 자동 조절되도록 합니다.
-      // height: 100 * widthRatio,
-      padding: EdgeInsets.symmetric(
-        horizontal: (8 * clampedWidthRatio).clamp(6.0, 12.0),
-        vertical: (8 * clampedWidthRatio).clamp(6.0, 10.0),
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9), // gradiation 부여 
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.2),
-            width: 1,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        // Dismiss keyboard when tapping outside text field
+        if (_isKeyboardVisible || _textFieldFocusNode.hasFocus) {
+          _dismissKeyboard();
+        }
+      },
+      child: Container(
+        // 고정된 높이를 제거하여 내용에 맞게 자동 조절되도록 합니다.
+        // height: 100 * widthRatio,
+        padding: EdgeInsets.symmetric(
+          horizontal: (8 * clampedWidthRatio).clamp(6.0, 12.0),
+          vertical: (8 * clampedWidthRatio).clamp(6.0, 10.0),
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.9), // gradiation 부여 
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withValues(alpha: 0.2),
+              width: 1,
+            ),
           ),
         ),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,  
         children: [
@@ -345,6 +445,7 @@ void _showCaseCardDialog() {
               Expanded( // color 흰색으로, 
                 child: TextField(
                   controller: widget.controller,
+                  focusNode: _textFieldFocusNode,
                   enabled: widget.isEnabled,
                   maxLines: 1,
                   maxLength: 200,
@@ -385,15 +486,15 @@ void _showCaseCardDialog() {
               Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: widget.isEnabled 
-                      ? (_isKeyboardVisible ? _handleSend : _showCaseCardDialog) 
-                      : null,
+                  onTap: widget.isEnabled ? _handleIconTap : null,
                   borderRadius: BorderRadius.circular(buttonSize / 2),
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
                     width: buttonSize,
                     height: buttonSize,
                     decoration: BoxDecoration(
-                      color: _isKeyboardVisible
+                      color: (_isKeyboardVisible || _textFieldFocusNode.hasFocus)
                           ? (widget.isEnabled 
                               ? Color(_selectedMessageType.colorValue) 
                               : Colors.grey)
@@ -407,10 +508,14 @@ void _showCaseCardDialog() {
                         ),
                       ],
                     ),
-                    child: Icon(
-                      _isKeyboardVisible ? Icons.send : Icons.document_scanner,
-                      color: Colors.white,
-                      size: iconSize,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        (_isKeyboardVisible || _textFieldFocusNode.hasFocus) ? Icons.send : Icons.document_scanner,
+                        key: ValueKey(_isKeyboardVisible || _textFieldFocusNode.hasFocus),
+                        color: Colors.white,
+                        size: iconSize,
+                      ),
                     ),
                   ),
                 ),
@@ -418,6 +523,7 @@ void _showCaseCardDialog() {
             ],
           ),
         ],
+      ),
       ),
     );
   }
