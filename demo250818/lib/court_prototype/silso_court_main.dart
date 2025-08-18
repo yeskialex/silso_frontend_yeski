@@ -83,7 +83,7 @@ class _SilsoCourtPageState extends State<SilsoCourtPage>
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Color(0xFF3c0f20), // Added for consistent background
+      backgroundColor: const Color(0xFF1E1E1E), // Added for consistent background
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
         child: Column(
@@ -840,7 +840,7 @@ Widget _buildTrialCard({
         decoration: BoxDecoration(
           color: Colors.black54,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFffc832)), // **이 부분을 추가해주세요.**
+          //border: Border.all(color: const Color(0xFFffc832)), // **이 부분을 추가해주세요.**
         ),
         child: Row(
           children: [
@@ -1007,7 +1007,7 @@ Widget _buildTrialCard({
     if (!isCase || caseModel == null) return;
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.7),
+      barrierColor: Colors.black,//.withOpacity(0.7),
       builder: (BuildContext context) {
         return VoteModal(caseModel: caseModel, caseService: _caseService);
       },
