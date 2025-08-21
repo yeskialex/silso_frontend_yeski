@@ -180,6 +180,37 @@ Widget _buildInputField({
   );
 }
 
+// 기본 버튼 위젯을 만드는 함수
+Widget _buildPrimaryButton({
+  required String text,
+  required VoidCallback? onPressed,
+}) {
+  return Container(
+    width: 360 * widthRatio,
+    height: 52 * heightRatio,
+    child: ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF5F37CF),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12 * widthRatio),
+        ),
+        padding: EdgeInsets.symmetric(vertical: 14 * heightRatio),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 18 * widthRatio,
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w600,
+          height: 1.23,
+        ),
+      ),
+    ),
+  );
+}
 
 // lib/screens/login_screen.dart 파일의 build 메서드
 
@@ -293,6 +324,41 @@ Widget build(BuildContext context) {
                     return null;
                   },
                 ),
+
+                SizedBox(height: 32 * heightRatio), // 입력 필드와 버튼 사이 간격 추가
+
+                // 회원가입 버튼
+                if (_isSignUp) // _isSignUp이 true일 때만 이 버튼을 표시
+                  _buildPrimaryButton(
+                    text: '회원가입',
+                    onPressed: _isLoading ? null : _signInWithEmail,
+                  ),
+
+                // 로그인 버튼
+                if (!_isSignUp) // _isSignUp이 false일 때만 이 버튼을 표시
+                  _buildPrimaryButton(
+                    text: '로그인',
+                    onPressed: _isLoading ? null : _signInWithEmail,
+                  ),
+
+                // '로그인'과 '회원가입' 모드 전환 버튼
+                SizedBox(height: 16 * heightRatio),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isSignUp = !_isSignUp;
+                    });
+                  },
+                  child: Text(
+                    _isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입',
+                    style: TextStyle(
+                      color: const Color(0xFF5F37CF),
+                      fontSize: 14 * widthRatio,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
               ],
             ),
           ),
@@ -301,7 +367,7 @@ Widget build(BuildContext context) {
        // 비회원으로 구경하기 버튼
         Positioned(
           left: 136 * widthRatio,
-          top: 500 * heightRatio,
+          top: 570 * heightRatio,
           child: GestureDetector(
             onTap: _isLoading ? null : _signInAnonymously,
             child: Column(
