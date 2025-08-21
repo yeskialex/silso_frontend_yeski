@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import 'phone_confirm.dart';
- 
+import 'mypet_select.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -15,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  bool _isSignUp = false;
+  // bool _isSignUp = false;
   late double widthRatio;
   late double heightRatio;
 
@@ -46,17 +47,6 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      if (_isSignUp) {
-        await _authService.createUserWithEmailAndPassword(
-          email: _emailController.text + '@silso.com',
-          password: _passwordController.text,
-        );
-      } else {
-        await _authService.signInWithEmailAndPassword(
-          email: _emailController.text + '@silso.com',
-          password: _passwordController.text,
-        );
-      }
       
       if (mounted) {
         // 로그인 성공 시 PhoneConfirmScreen으로 이동 (isFromLogin: true)
@@ -66,6 +56,16 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       }
+
+      if (!mounted) {
+        // 로그인  실패 시 PhoneConfirmScreen으로 이동 (isFromLogin: true)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
+          ),
+        );
+      }
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // 익명 로그인 시에도 PhoneConfirmScreen으로 이동 (회원가입 플로우)
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
+            builder: (context) => const  MyPetSelect(),
           ),
         );
       }
@@ -348,16 +348,15 @@ Widget build(BuildContext context) {
 
                 SizedBox(height: 32 * heightRatio), // 입력 필드와 버튼 사이 간격 추가
 
-                // 회원가입 버튼
-                if (_isSignUp) // _isSignUp이 true일 때만 이 버튼을 표시
-                  _buildPrimaryButton(
-                    text: '회원가입',
-                    onPressed: _isLoading ? null : _signInWithPhone,
-                  ),
+                // // 회원가입 버튼
+                // if (_isSignUp) // _isSignUp이 true일 때만 이 버튼을 표시
+                //   _buildPrimaryButton(
+                //     text: '회원가입',
+                //     onPressed: _isLoading ? null : _signInWithPhone,
+                //   ),
 
                 // 로그인 버튼
-                if (!_isSignUp) // _isSignUp이 false일 때만 이 버튼을 표시
-                  _buildPrimaryButton(
+                   _buildPrimaryButton(
                     text: '로그인',
                     onPressed: _isLoading ? null : _signInWithPhone,
                   ),
@@ -392,11 +391,17 @@ Widget build(BuildContext context) {
                 ),
                 
                 SizedBox(width: 40 * widthRatio), // 버튼 간 간격
-                // 이메일 로그인 
+                // 전화번호 로그인 
                 _buildCircularButton(
-                  onTap: _isLoading ? null : _signInWithPhone,
+                onTap: _isLoading ? null : () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
+                    ),
+                  );
+                },
                   backgroundColor: Color(0xFFE0E0E0),
-                  iconData: Icons.phone, // 구글 원형 로고 이미지 경로
+                  iconData: Icons.phone, // 전화 로고 이미지 경로
                   iconColor: Color(0xFF8E8E8E)
                 ),
               ],
@@ -497,5 +502,6 @@ Widget build(BuildContext context) {
       }
     }
   }
+
 }
 
