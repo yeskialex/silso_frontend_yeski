@@ -47,12 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       if (_isSignUp) {
         await _authService.createUserWithEmailAndPassword(
-          email: _emailController.text,
+          email: _emailController.text + '@silso.com',
           password: _passwordController.text,
         );
       } else {
         await _authService.signInWithEmailAndPassword(
-          email: _emailController.text,
+          email: _emailController.text + '@silso.com',
           password: _passwordController.text,
         );
       }
@@ -316,16 +316,7 @@ Widget build(BuildContext context) {
                 // 이메일 입력 필드
                 _buildInputField(
                   controller: _emailController,
-                  hintText: '이메일',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '이메일을 입력해 주세요.';
-                    }
-                    if (!value.contains('@')) {
-                      return '유효한 이메일 형식이 아닙니다.';
-                    }
-                    return null;
-                  },
+                  hintText: '아이디',
                 ),
                 SizedBox(height: 16 * heightRatio),
                 // 비밀번호 입력 필드

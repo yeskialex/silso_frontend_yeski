@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'category_selection_screen.dart'; 
+import '../community/community_main.dart'; 
 
 class AfterSignupSplash extends StatefulWidget {
   const AfterSignupSplash({super.key});
@@ -19,7 +19,7 @@ class _AfterSignupSplashState extends State<AfterSignupSplash> {
       if (mounted) {
         // 2. Change the navigation destination to CommunityMainTabScreenMycom.
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const CategorySelectionScreen()),
+          MaterialPageRoute(builder: (context) => const CommunityMainTabScreenMycom()),
         );
       }
     });

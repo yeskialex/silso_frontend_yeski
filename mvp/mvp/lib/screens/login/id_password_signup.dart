@@ -52,7 +52,7 @@ class _IDPasswordSignUpScreenState extends State<IDPasswordSignUpScreen> {
       final currentUser = auth.currentUser;
       
       // 'users' 컬렉션에서 해당 아이디를 사용하는 문서 검색
-      final result = await firestore.collection('users').where('profile.id', isEqualTo: id).limit(1).get();
+      final result = await firestore.collection('users').where('authentication.id', isEqualTo: id).limit(1).get();
 
       if (result.docs.isEmpty) {
         // 중복되는 ID가 없으면 사용 가능
@@ -180,7 +180,7 @@ void _onNext() async {
         'uid': currentUserId,
        },
       'authentication': {
-        'id': _idController.text,
+        'id': _idController.text + '@silso.com',  // email 형식 활용
         'password' : _passwordController.text, 
         'hasPhoneAuth': true,
         'hasEmailPassword': true,
@@ -228,7 +228,7 @@ void _onNext() async {
       ),
     );
     
-    Navigator.of(context).pushReplacementNamed('/after-signup');
+    Navigator.of(context).pushReplacementNamed('/login-splash');
 
   } on FirebaseAuthException catch (e) {
     // Firebase Auth 에러 처리

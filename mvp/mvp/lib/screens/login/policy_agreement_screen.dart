@@ -213,7 +213,7 @@ class _PolicyAgreementScreenState extends State<PolicyAgreementScreen>
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const myPetSelect()), // 마이팻 select 
+                    MaterialPageRoute(builder: (context) => const MyPetSelect()), // 마이팻 select 
                     (route) => route.settings.name == '/temporary-home',
                   );
                 },

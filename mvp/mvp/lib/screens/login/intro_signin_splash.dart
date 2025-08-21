@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'category_selection_screen.dart'; 
 
 
 class SigininSplashScreen extends StatefulWidget {
@@ -17,8 +18,10 @@ class _SigininSplashScreenState extends State<SigininSplashScreen> {
     // pushReplacementNamed를 사용하여 이 화면이 네비게이션 스택에서 제거되도록 합니다.
     Timer(const Duration(seconds: 3), () {
       if (mounted) { // 위젯이 여전히 화면에 있는지 확인합니다.
-        Navigator.of(context).pushReplacementNamed('/category-selection'); // 전화번호 인증 -> <conditional> 아이디 & 비밀번호 -> <conditional> 회원가입완료 ->  <conditional> 카테고리선택 -> <conditional> 실팻 고르기 -> 로그인 완료
-      }
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const CategorySelectionScreen()),
+        );      
+        }
     }); 
   }
 
