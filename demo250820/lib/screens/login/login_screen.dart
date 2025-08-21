@@ -96,11 +96,40 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-Widget _buildCircularButton({
+ Widget _buildCircularButton({
   required VoidCallback? onTap,
   required Color backgroundColor,
-  required String imagePath,
+  String? imagePath,
+  IconData? iconData,
+  Color? iconColor,
 }) {
+  // 에러 방지: 두 매개변수 중 하나만 제공되었는지 확인
+  assert(imagePath != null || iconData != null, 'Either imagePath or iconData must be provided.');
+  assert(imagePath == null || iconData == null, 'Cannot provide both imagePath and iconData.');
+
+  // 버튼 내부에 표시할 위젯을 결정
+  Widget content;
+  if (imagePath != null) {
+    // 이미지 경로가 제공된 경우 Image 위젯 사용
+    content = ClipOval(
+      child: Image.asset(
+        imagePath,
+        fit: BoxFit.cover,
+        width: 72 * widthRatio,
+        height: 72 * widthRatio,
+      ),
+    );
+  } else {
+    // 아이콘 데이터가 제공된 경우 Icon 위젯 사용
+    content = Center(
+      child: Icon(
+        iconData,
+        color: iconColor,
+        size: 32 * widthRatio,
+      ),
+    );
+  }
+
   return Material(
     color: Colors.transparent,
     child: InkWell(
@@ -120,19 +149,11 @@ Widget _buildCircularButton({
             ),
           ],
         ),
-        child:ClipOval(
-        child: Image.asset(
-          imagePath,
-          fit: BoxFit.cover,
-          width: 72 * widthRatio,
-          height: 72 * widthRatio,
-        ),
-      ),
+        child: content, // 동적으로 결정된 위젯(content) 사용
       ),
     ),
   );
 }
-
 
 Widget _buildInputField({
   required TextEditingController controller,
@@ -341,53 +362,6 @@ Widget build(BuildContext context) {
                     onPressed: _isLoading ? null : _signInWithEmail,
                   ),
 
-                // '로그인'과 '회원가입' 모드 전환 버튼
-                SizedBox(height: 16 * heightRatio),
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isSignUp = !_isSignUp;
-                    });
-                  },
-                  child: Text(
-                    _isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입',
-                    style: TextStyle(
-                      color: const Color(0xFF5F37CF),
-                      fontSize: 14 * widthRatio,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-              ],
-            ),
-          ),
-        ),
-
-       // 비회원으로 구경하기 버튼
-        Positioned(
-          left: 136 * widthRatio,
-          top: 570 * heightRatio,
-          child: GestureDetector(
-            onTap: _isLoading ? null : _signInAnonymously,
-            child: Column(
-              children: [
-                Text(
-                  '비회원으로 구경하기',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: const Color(0xFF8E8E8E),
-                    fontSize: 14 * widthRatio,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w600,
-                    height: 1.58,
-                  ),
-                ),
-                Container(
-                  width: 113 * widthRatio,
-                  height: 1 * widthRatio, // underline
-                  color: const Color(0xFF8E8E8E),
-                ),
               ],
             ),
           ),
@@ -397,7 +371,7 @@ Widget build(BuildContext context) {
         // 로그인 버튼 그룹
         Positioned(
           left: 17 * widthRatio,
-          top: 685 * heightRatio,
+          top: 600 * heightRatio,
           child: Container(
             width: 360 * widthRatio,
             child: Row( // Column 대신 Row를 사용하여 버튼들을 가로로 배치합니다.
@@ -409,17 +383,62 @@ Widget build(BuildContext context) {
                   backgroundColor: const Color(0xFFFFE600),
                   imagePath: 'assets/button/kakao_login_circular.png', // 카카오 원형 로고 이미지 경로
                 ),
-                SizedBox(width: 50 * widthRatio), // 버튼 간 간격
+                SizedBox(width: 40 * widthRatio), // 버튼 간 간격
                 // 구글 로그인 원형 버튼
                 _buildCircularButton(
                   onTap: _isLoading ? null : _handleGoogleSignInWithImage,
                   backgroundColor: Colors.white,
                   imagePath: 'assets/button/google_login_circular.png', // 구글 원형 로고 이미지 경로
                 ),
+                
+                SizedBox(width: 40 * widthRatio), // 버튼 간 간격
+                // 이메일 로그인 
+                _buildCircularButton(
+                  onTap: _isLoading ? null : _signInWithEmail,
+                  backgroundColor: Color(0xFFE0E0E0),
+                  iconData: Icons.email, // 구글 원형 로고 이미지 경로
+                  iconColor: Color(0xFF8E8E8E)
+                ),
               ],
             ),
           ),
         ),
+
+
+         // 비회원으로 구경하기 버튼
+          Positioned(
+            left: 130 * widthRatio,
+            top: 760 * heightRatio, // 새로운 위치로 조정 (기존 570에서 672로 변경)
+            child: GestureDetector(
+              onTap: _isLoading ? null : _signInAnonymously,
+              child: Container(
+                width: 138 * widthRatio,
+                height: 26 * heightRatio,
+                decoration: ShapeDecoration(
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                      width: 1,
+                      color: const Color(0xFF5F37CF), // 보라색 테두리
+                    ),
+                    borderRadius: BorderRadius.circular(400), // 충분히 둥근 모서리
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    '비회원으로 구경하기',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: const Color(0xFF5F37CF), // 텍스트 색상을 테두리 색상과 맞춤
+                      fontSize: 14 * widthRatio,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
 
  
       ],
