@@ -18,11 +18,14 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _isSignUp = false;
   late double widthRatio;
+  late double heightRatio;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     widthRatio = MediaQuery.of(context).size.width / 393.0;
+    heightRatio = MediaQuery.of(context).size.height / 852.0;
+
   }
 
   @override
@@ -131,16 +134,54 @@ Widget _buildCircularButton({
 }
 
 
+Widget _buildInputField({
+  required TextEditingController controller,
+  required String hintText,
+  bool isPassword = false,
+  String? Function(String?)? validator,
+}) {
+  return Container(
+    width: 360 * widthRatio,
+    height: 65 * heightRatio,
+    decoration: ShapeDecoration(
+      shape: RoundedRectangleBorder(
+        side: BorderSide(
+          width: 1,
+          color: const Color(0xFFBDBDBD),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    child: TextFormField(
+      controller: controller,
+      obscureText: isPassword, // 비밀번호 필드일 경우 텍스트를 가립니다.
+      validator: validator,
+      style: TextStyle(
+        color: const Color(0xFF121212),
+        fontSize: 18 * widthRatio,
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: InputDecoration(
+        border: InputBorder.none, // 컨테이너에 이미 테두리가 있어 기본 테두리를 제거합니다.
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: const Color(0xFFBDBDBD),
+          fontSize: 18 * widthRatio,
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w600,
+        ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 16 * widthRatio,
+          vertical: 15 * heightRatio,
+        ),
+      ),
+    ),
+  );
+}
+
+
 // lib/screens/login_screen.dart 파일의 build 메서드
-
-  void _showButtonPressDialog(BuildContext context, String provider) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('$provider Button Pressed!'),
-      backgroundColor: Colors.black26,
-      duration: const Duration(milliseconds: 400),
-    ));
-  }
-
 
 @override
 Widget build(BuildContext context) {
@@ -213,67 +254,54 @@ Widget build(BuildContext context) {
           ),
         ),
 
-        // 로그인 버튼 그룹
- Positioned(
-  left: 17 * widthRatio,
-  top: 337 * heightRatio,
-  child: Container(
-    width: 360 * widthRatio,
-    child: Row( // Column 대신 Row를 사용하여 버튼들을 가로로 배치합니다.
-      mainAxisAlignment: MainAxisAlignment.center, // 가운데 정렬
-      children: [
-        // 카카오 로그인 원형 버튼
-        _buildCircularButton(
-          onTap: _isLoading ? null : _handleKakaoSignInWithImage,
-          backgroundColor: const Color(0xFFFFE600),
-          imagePath: 'assets/button/kakao_login_circular.png', // 카카오 원형 로고 이미지 경로
-        ),
-        SizedBox(width: 16 * widthRatio), // 버튼 간 간격
-        // 구글 로그인 원형 버튼
-        _buildCircularButton(
-          onTap: _isLoading ? null : _handleGoogleSignInWithImage,
-          backgroundColor: Colors.white,
-          imagePath: 'assets/button/google_login_circular.png', // 구글 원형 로고 이미지 경로
-        ),
-      ],
-    ),
-  ),
-),
-        // 전화번호로 계속하기 버튼
+        // 로그인 폼
         Positioned(
           left: 17 * widthRatio,
-          top: 590 * heightRatio,
-          child: Container(
-            width: 360 * widthRatio,
-            height: 52 * heightRatio,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : () {}, // 전화번호 로그인 로직으로 연결 필요
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5F37CF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12 * widthRatio),
+          top: 295 * heightRatio, // 적절한 위치에 배치
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 이메일 입력 필드
+                _buildInputField(
+                  controller: _emailController,
+                  hintText: '이메일',
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '이메일을 입력해 주세요.';
+                    }
+                    if (!value.contains('@')) {
+                      return '유효한 이메일 형식이 아닙니다.';
+                    }
+                    return null;
+                  },
                 ),
-                padding: EdgeInsets.symmetric(vertical: 14 * heightRatio),
-              ),
-              child: Text(
-                '전화번호로 계속하기',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w600,
-                  height: 1.23,
+                SizedBox(height: 16 * heightRatio),
+                // 비밀번호 입력 필드
+                _buildInputField(
+                  controller: _passwordController,
+                  hintText: '비밀번호',
+                  isPassword: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '비밀번호를 입력해 주세요.';
+                    }
+                    if (value.length < 6) {
+                      return '비밀번호는 6자 이상이어야 합니다.';
+                    }
+                    return null;
+                  },
                 ),
-              ),
+              ],
             ),
           ),
         ),
 
-        // 비회원으로 구경하기 버튼
+       // 비회원으로 구경하기 버튼
         Positioned(
           left: 136 * widthRatio,
-          top: 672 * heightRatio,
+          top: 500 * heightRatio,
           child: GestureDetector(
             onTap: _isLoading ? null : _signInAnonymously,
             child: Column(
@@ -298,6 +326,36 @@ Widget build(BuildContext context) {
             ),
           ),
         ),
+
+
+        // 로그인 버튼 그룹
+        Positioned(
+          left: 17 * widthRatio,
+          top: 685 * heightRatio,
+          child: Container(
+            width: 360 * widthRatio,
+            child: Row( // Column 대신 Row를 사용하여 버튼들을 가로로 배치합니다.
+              mainAxisAlignment: MainAxisAlignment.center, // 가운데 정렬
+              children: [
+                // 카카오 로그인 원형 버튼
+                _buildCircularButton(
+                  onTap: _isLoading ? null : _handleKakaoSignInWithImage,
+                  backgroundColor: const Color(0xFFFFE600),
+                  imagePath: 'assets/button/kakao_login_circular.png', // 카카오 원형 로고 이미지 경로
+                ),
+                SizedBox(width: 50 * widthRatio), // 버튼 간 간격
+                // 구글 로그인 원형 버튼
+                _buildCircularButton(
+                  onTap: _isLoading ? null : _handleGoogleSignInWithImage,
+                  backgroundColor: Colors.white,
+                  imagePath: 'assets/button/google_login_circular.png', // 구글 원형 로고 이미지 경로
+                ),
+              ],
+            ),
+          ),
+        ),
+
+ 
       ],
     ),
   );
