@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import 'phone_confirm.dart';
  
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -58,7 +59,12 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed( '/login-phone-confirm');
+        // 로그인 성공 시 PhoneConfirmScreen으로 이동 (isFromLogin: true)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const PhoneConfirmScreen(isFromLogin: true),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -79,7 +85,12 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await _authService.signInAnonymously();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed( '/login-phone-confirm');
+        // 익명 로그인 시에도 PhoneConfirmScreen으로 이동 (회원가입 플로우)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -440,7 +451,12 @@ Widget build(BuildContext context) {
     try {
       await _authService.signInWithKakao();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed( '/login-phone-confirm');
+        // 카카오 로그인 시 PhoneConfirmScreen으로 이동 (회원가입 플로우)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -462,7 +478,12 @@ Widget build(BuildContext context) {
     try {
       await _authService.signInWithGoogle();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/login-phone-confirm');
+        // 구글 로그인 시 PhoneConfirmScreen으로 이동 (회원가입 플로우)
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

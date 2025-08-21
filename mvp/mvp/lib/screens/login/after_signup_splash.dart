@@ -44,7 +44,7 @@ class _AfterSignupSplashState extends State<AfterSignupSplash> {
             left: 16 * widthRatio,
             top: 141 * heightRatio,
             child: Text(
-              '회원가입을 완료했습니다.\n실소에 오신 것을 환영합니다!', // 회원가입 완료 메세지 변경
+              '실소 커뮤니티에\n오신 것을 환영합니다!',  
               style: TextStyle(
                 color: const Color(0xFFFAFAFA),
                 fontSize: 24 * widthRatio,

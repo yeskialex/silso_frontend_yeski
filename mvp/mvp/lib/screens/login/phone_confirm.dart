@@ -2,15 +2,21 @@ import 'dart:async'; // Timer를 사용하기 위해 import 합니다.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 // 필요한 서비스와 화면을 import 합니다.
 import '../../../services/community_service.dart';
 //import 'policy_agreement_screen.dart'; // 다음 화면으로 이동하기 위해 필요합니다.
 import 'id_password_signup.dart'; 
+import 'after_signup_splash.dart';
 
 /// 사용자의 프로필 정보를 입력받는 화면입니다.
 /// 사용자 입력을 처리하기 위해 StatefulWidget으로 구성되었습니다.
 class PhoneConfirmScreen extends StatefulWidget {
-  const PhoneConfirmScreen({super.key});
+  // 로그인 경로에서 왔는지 회원가입 경로에서 왔는지 구분하는 매개변수 추가
+  final bool isFromLogin;
+  
+  const PhoneConfirmScreen({super.key, this.isFromLogin = false});
 
   @override
   State<PhoneConfirmScreen> createState() =>
@@ -47,6 +53,7 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
   void initState() {
     super.initState();
     print("screens/community/profile_information_screen.dart is showing");
+    print("🔍 phone_confirm 진입 경로: ${widget.isFromLogin ? '로그인' : '회원가입'}");
   }
 
   @override
@@ -148,6 +155,97 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
     });
   }
 
+  /// 로그인 사용자를 위한 Firebase 사용자 검증 메서드
+  Future<bool> _validateExistingUser() async {
+    if (!widget.isFromLogin) return true; // 회원가입 경로는 검증 스킵
+    
+    print('🔍 로그인 사용자 Firebase 검증 시작');
+    
+    try {
+      final auth = FirebaseAuth.instance;
+      final firestore = FirebaseFirestore.instance;
+      final currentUser = auth.currentUser;
+      
+      if (currentUser == null) {
+        throw Exception('인증된 사용자가 없습니다. 다시 로그인해주세요.');
+      }
+      
+      print('📄 현재 사용자 UID: ${currentUser.uid}');
+      
+      // 1. Firestore에서 사용자 문서 조회
+      final userDoc = await firestore.collection('users').doc(currentUser.uid).get();
+      
+      if (!userDoc.exists) {
+        throw Exception('사용자 정보가 존재하지 않습니다.');
+      }
+      
+      final userData = userDoc.data()!;
+      print('📊 사용자 문서 데이터 로드 완료');
+      
+      // 2. settings.isActive 상태 확인
+      final settings = userData['settings'] as Map<String, dynamic>?;
+      final isActive = settings?['isActive'] ?? false;
+      
+      if (!isActive) {
+        throw Exception('비활성화된 계정입니다. 고객센터에 문의해주세요.');
+      }
+      
+      print('✅ 계정 활성화 상태 확인 완료');
+      
+      // 3. 프로필 정보 비교 및 검증
+      final profile = userData['profile'] as Map<String, dynamic>?;
+      if (profile == null) {
+        throw Exception('프로필 정보가 없습니다.');
+      }
+      
+      // 입력한 정보와 저장된 정보 비교
+      final inputName = _nameController.text.trim();
+      final inputCountry = _nationalitySelection[0] ? '내국인' : '외국인';
+      final inputBirthdate = _birthdateController.text.trim();
+      final inputGender = _selectedGender;
+      
+      final storedName = profile['name']?.toString() ?? '';
+      final storedCountry = profile['country']?.toString() ?? '';
+      final storedBirthdate = profile['birthdate']?.toString() ?? '';
+      final storedGender = profile['gender']?.toString() ?? '';
+      
+      print('🔍 프로필 정보 비교:');
+      print('   이름: $inputName vs $storedName');
+      print('   국적: $inputCountry vs $storedCountry');
+      print('   생년월일: $inputBirthdate vs $storedBirthdate');
+      print('   성별: $inputGender vs $storedGender');
+      
+      // 4. 불일치 항목 체크 및 사용자에게 알림
+      List<String> mismatches = [];
+      
+      if (inputName != storedName) {
+        mismatches.add('이름');
+      }
+      if (inputCountry != storedCountry) {
+        mismatches.add('국적');
+      }
+      if (inputBirthdate != storedBirthdate) {
+        mismatches.add('생년월일');
+      }
+      if (inputGender != storedGender) {
+        mismatches.add('성별');
+      }
+      
+      if (mismatches.isNotEmpty) {
+        final mismatchText = mismatches.join(', ');
+        throw Exception('입력하신 정보가 등록된 정보와 다릅니다.\n불일치 항목: $mismatchText\n\n등록된 정보로 다시 입력해주세요.');
+      }
+      
+      print('✅ 프로필 정보 검증 완료 - 모든 정보가 일치합니다.');
+      return true;
+      
+    } catch (e) {
+      print('🚨 사용자 검증 오류: $e');
+      // 에러를 다시 던져서 상위에서 처리하도록 함
+      rethrow;
+    }
+  }
+
   /// '계속하기' 버튼을 눌렀을 때 실행될 메서드 (수정된 메서드)
   Future<void> _submitProfile() async {
     // 1. 폼 유효성 검사
@@ -170,45 +268,93 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
     });
 
     try {
-      // 3. SMS 인증 코드 검증
+      // 3. 로그인 사용자 검증 (isFromLogin: true인 경우)
+      if (widget.isFromLogin) {
+        print('🔍 로그인 사용자 - Firebase 검증 실행');
+        await _validateExistingUser();
+        print('✅ Firebase 검증 완료');
+      }
+
+      // 4. SMS 인증 코드 검증
       await _communityService.verifySMSCode(
         verificationId: _verificationId!,
         smsCode: _authCodeController.text.trim(),
       );
 
-      // 4. 인증 성공 시, 프로필 정보 저장
-      final String country = _nationalitySelection[0] ? '내국인' : '외국인';
-      await _communityService.saveProfileInformation(
-        name: _nameController.text,
-        country: country,
-        birthdate: _birthdateController.text,
-        gender: _selectedGender,
-        phoneNumber: "+82${_phoneController.text}", // 국가번호 포함
-      );
+      // 5. 인증 성공 시, 프로필 정보 저장 (회원가입 경로만)
+      if (!widget.isFromLogin) {
+        print('📝 회원가입 경로 - 프로필 정보 저장');
+        final String country = _nationalitySelection[0] ? '내국인' : '외국인';
+        await _communityService.saveProfileInformation(
+          name: _nameController.text,
+          country: country,
+          birthdate: _birthdateController.text,
+          gender: _selectedGender,
+          phoneNumber: "+82${_phoneController.text}", // 국가번호 포함
+        );
+      } else {
+        print('📱 로그인 경로 - 프로필 정보 저장 스킵 (이미 검증 완료)');
+      }
 
-      // 5. 저장 성공 시 다음 화면으로 이동
+      // 6. 인증 완료 시 다음 화면으로 이동 - 경로별 분기 처리
       if (mounted) {
-        // 성공 메시지 표시
+        // 성공 메시지 표시 - 경로별 다른 메시지
+        final successMessage = widget.isFromLogin 
+            ? '본인 인증이 완료되었습니다!' 
+            : '인증 및 프로필 저장이 완료되었습니다!';
+            
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('인증 및 프로필 저장이 완료되었습니다!'),
+          SnackBar(
+            content: Text(successMessage),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pushReplacement( // pushReplacement로 변경하여 뒤로가기 시 이 화면으로 오지 않도록 함
-          context,
-          MaterialPageRoute(
-            builder: (context) => const IDPasswordSignUpScreen(),
-          ),
-        );
+
+        // 로그인 경로와 회원가입 경로에 따른 분기 처리
+        if (widget.isFromLogin) {
+          // 로그인 경로에서 온 경우 → AfterSignupSplash로 이동
+          print('📱 로그인 경로: AfterSignupSplash로 이동');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AfterSignupSplash(),
+            ),
+          );
+        } else {
+          // 회원가입 경로에서 온 경우 → IDPasswordSignUpScreen으로 이동 (기존 로직)
+          print('📝 회원가입 경로: IDPasswordSignUpScreen으로 이동');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const IDPasswordSignUpScreen(),
+            ),
+          );
+        }
       }
     } catch (e) {
-      // 오류 발생 시 SnackBar로 메시지 표시
+      // 오류 발생 시 SnackBar로 메시지 표시 - 에러 타입별 구분
       if (mounted) {
+        String errorMessage;
+        Color backgroundColor;
+        
+        // 검증 실패 에러와 일반 에러 구분
+        if (e.toString().contains('입력하신 정보가 등록된 정보와 다릅니다') ||
+            e.toString().contains('비활성화된 계정입니다') ||
+            e.toString().contains('인증된 사용자가 없습니다')) {
+          // 사용자 검증 관련 에러 - 자세한 메시지 표시
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+          backgroundColor = const Color(0xFFFF9800); // 오렌지색 (경고)
+        } else {
+          // 일반 시스템 에러
+          errorMessage = '처리 중 오류가 발생했습니다: ${e.toString()}';
+          backgroundColor = Colors.red;
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('처리 중 오류가 발생했습니다: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(errorMessage),
+            backgroundColor: backgroundColor,
+            duration: const Duration(seconds: 5), // 검증 에러는 좀 더 길게 표시
           ),
         );
       }
