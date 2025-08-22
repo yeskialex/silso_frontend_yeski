@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
 import 'phone_confirm.dart';
 import 'mypet_select.dart';
@@ -12,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _authService = AuthService();
-  final _emailController = TextEditingController();
+  final _idController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
@@ -36,40 +37,60 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _idController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _signInWithPhone() async {
+  Future<void> _signInWithIdAndPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+    final id = _idController.text;
+    final password = _passwordController.text;
 
     try {
-      
-      if (mounted) {
-        // 로그인 성공 시 PhoneConfirmScreen으로 이동 (isFromLogin: true)
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const PhoneConfirmScreen(isFromLogin: true),
-          ),
-        );
-      }
+      final firestore = FirebaseFirestore.instance;
 
-      if (!mounted) {
-        // 로그인  실패 시 PhoneConfirmScreen으로 이동 (isFromLogin: true)
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
-          ),
-        );
-      }
+      // Firestore에서 'authentication.id' 필드가 입력된 id와 일치하는 문서 탐색
+      final result = await firestore
+          .collection('users')
+          .where('authentication.id', isEqualTo: id)
+          .limit(1)
+          .get();
 
+      if (result.docs.isEmpty) {
+        // 일치하는 ID가 없으면 에러 메시지 표시
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('존재하지 않는 아이디입니다.')),
+          );
+        }
+      } else {
+        // 일치하는 ID가 있으면 비밀번호 확인
+        final doc = result.docs.first.data();
+        if (doc['authentication']['password'] == password) {
+          // ID와 비밀번호가 모두 일치하면 로그인 성공
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const PhoneConfirmScreen(isFromLogin: true),
+              ),
+            );
+          }
+        } else {
+          // 비밀번호가 일치하지 않으면 에러 메시지 표시
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('비밀번호가 일치하지 않습니다.')),
+            );
+          }
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text('로그인 오류: ${e.toString()}')),
         );
       }
     } finally {
@@ -326,7 +347,7 @@ Widget build(BuildContext context) {
               children: [
                 // 이메일 입력 필드
                 _buildInputField(
-                  controller: _emailController,
+                  controller: _idController,
                   hintText: '아이디',
                 ),
                 SizedBox(height: 16 * heightRatio),
@@ -358,7 +379,7 @@ Widget build(BuildContext context) {
                 // 로그인 버튼
                    _buildPrimaryButton(
                     text: '로그인',
-                    onPressed: _isLoading ? null : _signInWithPhone,
+                    onPressed: _isLoading ? null : _signInWithIdAndPassword,
                   ),
 
               ],
