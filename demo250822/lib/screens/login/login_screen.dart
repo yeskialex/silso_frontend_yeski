@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
 import 'phone_confirm.dart';
 import 'mypet_select.dart';
-import 'phone_signup.dart'; 
+import 'after_signup_splash.dart'; 
+import 'id_password_signup.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -79,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
           if (mounted) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => const PhoneConfirmScreen(isFromLogin: true),
+                builder: (context) => const AfterSignupSplash(), //const PhoneConfirmScreen(isFromLogin: true),
               ),
             );
           }
@@ -374,12 +375,6 @@ Widget build(BuildContext context) {
 
                 SizedBox(height: 32 * heightRatio), // 입력 필드와 버튼 사이 간격 추가
 
-                // // 회원가입 버튼
-                // if (_isSignUp) // _isSignUp이 true일 때만 이 버튼을 표시
-                //   _buildPrimaryButton(
-                //     text: '회원가입',
-                //     onPressed: _isLoading ? null : _signInWithPhone,
-                //   ),
 
                 // 로그인 버튼
                    _buildPrimaryButton(
@@ -396,7 +391,7 @@ Widget build(BuildContext context) {
         // 로그인 버튼 그룹
         Positioned(
           left: 17 * widthRatio,
-          top: 600 * heightRatio,
+          top: 580 * heightRatio,
           child: Container(
             width: 360 * widthRatio,
             child: Row( // Column 대신 Row를 사용하여 버튼들을 가로로 배치합니다.
@@ -435,6 +430,30 @@ Widget build(BuildContext context) {
           ),
         ),
 
+         // 회원가입 버튼
+          Positioned(
+            left: (393 * widthRatio - 84) / 2,
+            top: 712 * heightRatio,
+            child:                  
+                 TextButton(
+                  child: Text(
+                    '회원가입',
+                    style: TextStyle(
+                      color: Color(0xFF5F37CF),
+                      fontSize: 15 * widthRatio,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onPressed: _isLoading ? null :  () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => const IDPasswordSignUpScreen(),
+                      ),
+                    );
+                  },
+                ),
+            ), 
 
          // 비회원으로 구경하기 버튼
           Positioned(
@@ -470,6 +489,9 @@ Widget build(BuildContext context) {
             ),
           ),
  
+
+
+
       ],
     ),
   );
@@ -495,7 +517,7 @@ Widget build(BuildContext context) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => //PhoneConfirmScreen(isFromLogin: isExistingUser),
-            isExistingUser ? PhoneConfirmScreen(isFromLogin: true) :  PhoneSignUpScreen(), 
+            isExistingUser ?  AfterSignupSplash() :  IDPasswordSignUpScreen(), 
           ),
         );
       }
@@ -532,7 +554,7 @@ Widget build(BuildContext context) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => // PhoneConfirmScreen(isFromLogin: isExistingUser), //   [need modify]
-            isExistingUser ? PhoneConfirmScreen(isFromLogin: true) :  PhoneSignUpScreen(), 
+            isExistingUser ? AfterSignupSplash() :  IDPasswordSignUpScreen(), 
           ),
         );
       }
