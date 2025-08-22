@@ -24,7 +24,7 @@ import 'screens/login/phone_confirm.dart';
 import 'screens/login/category_selection_screen.dart'; 
 import 'screens/login/after_signup_splash.dart';
 import 'screens/login/policy_agreement_screen.dart';
-import  'screens/login/phone_signup.dart'; 
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => SplashScreen(),
+        '/': (context) =>  SplashScreen(),
         '/login': (context) => const LoginScreen(), // Korean UI
         '/after-login-splash': (context) => const AfterLoginSplashScreen(), // Korean UI
         '/temporary-home': (context) => const TemporaryHomePage(), // Temporary home

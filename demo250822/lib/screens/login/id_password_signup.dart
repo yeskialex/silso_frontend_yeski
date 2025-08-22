@@ -52,7 +52,7 @@ class _IDPasswordSignUpScreenState extends State<IDPasswordSignUpScreen> {
       final currentUser = auth.currentUser;
       
       // 'users' 컬렉션에서 해당 아이디를 사용하는 문서 검색
-      final result = await firestore.collection('users').where('authentication.id', isEqualTo: id).limit(1).get();
+      final result = await firestore.collection('users').where('authentication.id', isEqualTo: id + '@silso.com').limit(1).get();
 
       if (result.docs.isEmpty) {
         // 중복되는 ID가 없으면 사용 가능
