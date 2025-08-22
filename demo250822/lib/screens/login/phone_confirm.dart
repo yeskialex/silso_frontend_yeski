@@ -7,8 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // 필요한 서비스와 화면을 import 합니다.
 import '../../../services/community_service.dart';
 //import 'policy_agreement_screen.dart'; // 다음 화면으로 이동하기 위해 필요합니다.
-import 'id_password_signup.dart'; 
-import 'after_signup_splash.dart';
+import 'intro_signin_splash.dart';
 import 'login_screen.dart'; 
 
 /// 사용자의 프로필 정보를 입력받는 화면입니다.
@@ -50,14 +49,7 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
   int _resendCountdown = 0; // 재전송 대기 시간 (초)
   Timer? _timer; // 카운트다운 타이머
 
-  @override
-  void initState() {
-    super.initState();
-    print("screens/community/profile_information_screen.dart is showing");
-    print("🔍 phone_confirm 진입 경로: ${widget.isFromLogin ? '로그인' : '회원가입'}");
-  }
-
-  @override
+   @override
   void dispose() {
     // 모든 컨트롤러와 타이머를 정리합니다.
     _nameController.dispose();
@@ -199,7 +191,9 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
         throw Exception('프로필 정보가 없습니다.');
       }
       
-      // 입력한 정보와 저장된 정보 비교
+      // 입력한 정보와 저장된 정보 비교 sha256 hash값 전화번호 비교 
+
+
       final inputName = _nameController.text.trim();
       final inputCountry = _nationalitySelection[0] ? '내국인' : '외국인';
       final inputBirthdate = _birthdateController.text.trim();
@@ -311,26 +305,12 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
           ),
         );
 
-        // 로그인 경로와 회원가입 경로에 따른 분기 처리
-        if (widget.isFromLogin) {
-          // 로그인 경로에서 온 경우 → AfterSignupSplash로 이동
-          print('📱 로그인 경로: AfterSignupSplash로 이동');
-          Navigator.pushReplacement(
+         Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const AfterSignupSplash(),
+              builder: (context) => const SigininSplashScreen(),
             ),
           );
-        } else {
-          // 회원가입 경로에서 온 경우 → IDPasswordSignUpScreen으로 이동 (기존 로직)
-          print('📝 회원가입 경로: IDPasswordSignUpScreen으로 이동');
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const IDPasswordSignUpScreen(),
-            ),
-          );
-        }
       }
     } catch (e) {
       // 오류 발생 시 SnackBar로 메시지 표시 - 에러 타입별 구분
@@ -385,14 +365,6 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 30),
-                      // _buildSectionTitle('이름'),
-                      // const SizedBox(height: 8),
-                      // _buildNameAndNationality(),
-                      // const SizedBox(height: 35),
-                      // _buildSectionTitle('생년월일'),
-                      // const SizedBox(height: 8),
-                      // _buildBirthdateAndGender(),
                       const SizedBox(height: 35),
                       _buildSectionTitle('휴대폰 인증'),
                       const SizedBox(height: 15),
@@ -412,21 +384,60 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
   
   // --- 이하 위젯 빌드 메서드들 ---
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: const Color(0xFFFAFAFA),
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-        onPressed: () =>  Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
+PreferredSizeWidget _buildAppBar(BuildContext context) {
+  final double baseWidth = 393.0;
+  final double baseHeight = 852.0;
+  final screenWidth = MediaQuery.of(context).size.width;
+  final screenHeight = MediaQuery.of(context).size.height;
+  final double widthRatio = screenWidth / baseWidth;
+  final double heightRatio = screenHeight / baseHeight;
+  
+  return PreferredSize(
+    preferredSize: Size.fromHeight(118 * heightRatio),
+    child: Container(
+      width: double.infinity,
+      height: 118 * heightRatio,
+      color: const Color(0xFFFAFAFA),
+      child: Stack(
+        children: [
+          // 뒤로가기 버튼
+          Positioned(
+            left: 16 * widthRatio,
+            top: 68 * heightRatio,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+              onPressed: () => Navigator.of(context).pop(), // 현재 화면에서 나가기
+            ),
           ),
-        ),
+          // 제목
+          Positioned(
+            left: 153 * widthRatio,
+            top: 73 * heightRatio,
+            child: Text(
+              '실소 회원가입',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: const Color(0xFF121212),
+                fontSize: 18 * widthRatio,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w600,
+                height: 1.62,
+              ),
+            ),
+          ),
+          // 상태바 영역 (SafeArea)
+          const Positioned(
+            left: 0,
+            top: 0,
+            child: SafeArea(
+              child: SizedBox.shrink(),
+            ),
+          ),
+        ],
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
@@ -439,129 +450,7 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
     );
   }
 
-  Widget _buildNameAndNationality() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: TextFormField( // TextField -> TextFormField로 변경
-            controller: _nameController,
-            style: const TextStyle(
-              color: Color(0xFF121212),
-              fontSize: 16,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w500,
-            ),
-            decoration: _textFieldDecoration(hintText: '이름'),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return '이름을 입력해주세요.';
-              }
-              return null;
-            },
-          ),
-        ),
-        const SizedBox(width: 15),
-        ToggleButtons(
-          isSelected: _nationalitySelection,
-          onPressed: (int index) {
-            setState(() {
-              for (int i = 0; i < _nationalitySelection.length; i++) {
-                _nationalitySelection[i] = i == index;
-              }
-            });
-          },
-          borderRadius: BorderRadius.circular(6),
-          selectedColor: Colors.white,
-          color: const Color(0xFF121212),
-          fillColor: const Color(0xFF121212),
-          splashColor: const Color(0xFF5F37CF).withOpacity(0.12),
-          constraints: const BoxConstraints(
-            minHeight: 52.0,
-            minWidth: 70.0,
-          ),
-          children: const <Widget>[
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text('내국인', style: TextStyle(fontFamily: 'Pretendard')),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text('외국인', style: TextStyle(fontFamily: 'Pretendard')),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
-  Widget _buildBirthdateAndGender() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: TextFormField( // TextField -> TextFormField로 변경
-            controller: _birthdateController,
-            style: const TextStyle(
-              color: Color(0xFF121212),
-              fontSize: 16,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w500,
-            ),
-            decoration: _textFieldDecoration(hintText: 'YYMMDD'),
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
-            ],
-            validator: (value) {
-              if (value == null || value.length != 6) {
-                return '6자리 생년월일을 입력해주세요.';
-              }
-              return null;
-            },
-          ),
-        ),
-        const SizedBox(width: 25),
-        Row(
-          children: [
-            _buildGenderOption('남'),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                '|',
-                style: TextStyle(
-                    color: Color(0xFF575757),
-                    fontSize: 16,
-                    fontFamily: 'Pretendard'),
-              ),
-            ),
-            _buildGenderOption('여'),
-          ],
-        )
-      ],
-    );
-  }
-
-  Widget _buildGenderOption(String gender) {
-    final isSelected = _selectedGender == gender;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedGender = gender;
-        });
-      },
-      child: Text(
-        gender,
-        style: TextStyle(
-          color: isSelected ? const Color(0xFF121212) : const Color(0xFFC4C4C4),
-          fontSize: 16,
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
   
   /// 휴대폰 인증 섹션 UI (수정된 부분)
   Widget _buildPhoneAuthSection() {
@@ -651,7 +540,7 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
             ),
           ],
         ),
-        if (_isVerificationRequested) ...[
+        // if (_isVerificationRequested) ...[
           const SizedBox(height: 8),
           TextFormField( // TextField -> TextFormField로 변경
             controller: _authCodeController,
@@ -673,7 +562,7 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
               return null;
             },
           ),
-        ]
+        // ]
       ],
     );
   }

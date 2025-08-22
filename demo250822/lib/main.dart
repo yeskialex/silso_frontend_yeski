@@ -24,7 +24,7 @@ import 'screens/login/phone_confirm.dart';
 import 'screens/login/category_selection_screen.dart'; 
 import 'screens/login/after_signup_splash.dart';
 import 'screens/login/policy_agreement_screen.dart';
-import  'screens/login/phone_signup.dart'; 
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

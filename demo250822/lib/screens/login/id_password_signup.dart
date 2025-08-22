@@ -52,7 +52,7 @@ class _IDPasswordSignUpScreenState extends State<IDPasswordSignUpScreen> {
       final currentUser = auth.currentUser;
       
       // 'users' 컬렉션에서 해당 아이디를 사용하는 문서 검색
-      final result = await firestore.collection('users').where('authentication.id', isEqualTo: id).limit(1).get();
+      final result = await firestore.collection('users').where('authentication.id', isEqualTo: id + '@silso.com').limit(1).get();
 
       if (result.docs.isEmpty) {
         // 중복되는 ID가 없으면 사용 가능
@@ -228,7 +228,7 @@ void _onNext() async {
       ),
     );
     
-    Navigator.of(context).pushReplacementNamed('/login-splash');
+    Navigator.of(context).pushReplacementNamed('/login-phone-confirm');
 
   } on FirebaseAuthException catch (e) {
     // Firebase Auth 에러 처리
@@ -309,295 +309,342 @@ void _onNext() async {
     final double widthRatio = screenWidth / baseWidth;
     final double heightRatio = MediaQuery.of(context).size.height / baseHeight;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: Form(
-        key: _formKey,
-        child: Stack(
-        children: [
-          // 상단 AppBar와 뒤로가기 버튼
-          Positioned(
-            left: 0,
-            top: 0,
-            child: Container(
-              width: 393 * widthRatio,
-              height: 118 * heightRatio,
-              decoration: BoxDecoration(color: const Color(0xFFFAFAFA)),
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: 16 * widthRatio,
-                    top: 68 * heightRatio,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
+      return Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: Form(
+          key: _formKey,
+          child: Stack(
+            children: [
+              // 상단 AppBar와 뒤로가기 버튼
+              Positioned(
+                left: 0,
+                top: 0,
+                child: Container(
+                  width: 393 * widthRatio,
+                  height: 118 * heightRatio,
+                  decoration: BoxDecoration(color: const Color(0xFFFAFAFA)),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 16 * widthRatio,
+                        top: 64 * heightRatio,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back_ios),
+                          color: Color(0xFF121212),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        left: (393 * widthRatio - 100) / 2,  // 80 is approximate text width
+                        top: 68 * heightRatio,
+                        child: Text(
+                          '실소 회원가입',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: const Color(0xFF121212),
+                              fontSize: 18,
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w600,
+                              height: 1.62,
+                          ),
+                      ),      
+                      ),
+                 
+                    ],
+                  ),
+                ),
+              ),
+
+              // 로고 이미지
+              Positioned(
+                left: 8 * widthRatio,
+                top: 133 * heightRatio,
+                child: SizedBox(
+                  width: 90 * widthRatio,
+                  height: 37 * heightRatio,
+                  child: Image.asset(
+                    'assets/images/silso_logo/login_logo.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+
+              // 메인 제목
+              Positioned(
+                left: 16 * widthRatio,
+                top: 175 * heightRatio,
+                child: Text(
+                  '실소 계정을 만들 차례예요!',
+                  style: TextStyle(
+                    color: const Color(0xFF121212),
+                    fontSize: 20 * widthRatio,
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              // '아이디' 텍스트
+              Positioned(
+                left: 16 * widthRatio,
+                top: 241 * heightRatio,
+                child: Text(
+                  '아이디',
+                  style: TextStyle(
+                    color: const Color(0xFF121212),
+                    fontSize: 16 * widthRatio,
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+
+              // 아이디 입력 필드 (TextFormField로 변경)
+              Positioned(
+                left: 17 * widthRatio,
+                top: 271 * heightRatio,
+                child: SizedBox(
+                  width: 245 * widthRatio,
+                  height: 52 * heightRatio,
+                  child: TextFormField(
+                    controller: _idController,
+                    style: TextStyle(
+                      color: const Color(0xFF121212),
+                      fontSize: 16 * widthRatio,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFFEAEAEA),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 17 * widthRatio),
+                      hintText: '아이디를 입력하세요',
+                      hintStyle: TextStyle(
+                        color: const Color(0xFFBBBBBB),
+                        fontSize: 16 * widthRatio,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-
-          // '아이디' 텍스트
-          Positioned(
-            left: 16 * widthRatio,
-            top: 125 * heightRatio,
-            child: Text(
-              '아이디',
-              style: TextStyle(
-                color: const Color(0xFF121212),
-                fontSize: 16 * widthRatio,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-
-          // 아이디 입력 필드
-          Positioned(
-            left: 17 * widthRatio,
-            top: 155 * heightRatio,
-            child: Container(
-              width: 245 * widthRatio,
-              height: 52 * heightRatio,
-              child: TextFormField(
-                controller: _idController,
-                style: TextStyle(
-                  color: const Color(0xFF121212),
-                  fontSize: 16 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
                 ),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: const Color(0xFFEAEAEA),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 17 * widthRatio),
-                  hintText: '아이디를 입력하세요', // 디자인에 없지만, 사용자 편의를 위해 추가
-                  hintStyle: TextStyle(
-                    color: const Color(0xFFBBBBBB),
-                    fontSize: 16 * widthRatio,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w500,
+              ),
+
+              // 중복확인 버튼
+              Positioned(
+                left: 271 * widthRatio,
+                top: 271 * heightRatio,
+                child: SizedBox(
+                  width: 106 * widthRatio,
+                  height: 52 * heightRatio,
+                  child: ElevatedButton(
+                    onPressed: _checkIdAvailability,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF121212),
+                      fixedSize: Size(106 * widthRatio, 52 * heightRatio),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Text(
+                      '중복확인',
+                      style: TextStyle(
+                        color: const Color(0xFFFAFAFA),
+                        fontSize: 16 * widthRatio,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
 
-          // 중복확인 버튼
-          Positioned(
-            left: 271 * widthRatio,
-            top: 155 * heightRatio,
-            child: ElevatedButton(
-              onPressed: _checkIdAvailability,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF121212),
-                fixedSize: Size(106 * widthRatio, 52 * heightRatio),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                padding: EdgeInsets.zero,
-              ),
-              child: Text(
-                '중복확인',
-                style: TextStyle(
-                  color: const Color(0xFFFAFAFA),
-                  fontSize: 16 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-
-          // 아이디 사용 가능 메시지
-          Positioned(
-            left: 38 * widthRatio,
-            top: 218 * heightRatio,
-            child: SizedBox(
-              width: 296 * widthRatio,
-              child: Text(
-                _isIdAvailableInitial ? (_isIdAvailable ? '사용 가능한 아이디!' : '영문과 숫자만 사용하여, 영문으로 시작되는 4-12자의 아이디를 입력해주세요.') : (_isIdAvailable ? '사용 가능한 아이디!' : '사용 불가한 아이디'),
-                style: TextStyle(
-                  color: _isIdAvailableInitial ? (_isIdAvailable ? const Color(0xFF03A20B) : const Color(0xFF5F37CF)) : (_isIdAvailable ? const Color(0xFF03A20B) : const Color(0xFFC31A1A)),
-                  fontSize: 12 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-
-          // '비밀번호' 텍스트
-          Positioned(
-            left: 16 * widthRatio,
-            top: 295 * heightRatio,
-            child: Text(
-              '비밀번호',
-              style: TextStyle(
-                color: const Color(0xFF121212),
-                fontSize: 16 * widthRatio,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-
-          // 비밀번호 입력 필드
-          Positioned(
-            left: 17 * widthRatio,
-            top: 329 * heightRatio,
-            child: Container(
-              width: 360 * widthRatio,
-              height: 52 * heightRatio,
-              child: TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                onChanged: (_) => _validatePassword(),
-                style: TextStyle(
-                  color: const Color(0xFF121212),
-                  fontSize: 16 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: const Color(0xFFEAEAEA),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 17 * widthRatio),
-                  hintText: '비밀번호를 입력하세요',
-                  hintStyle: TextStyle(
-                    color: const Color(0xFFBBBBBB),
-                    fontSize: 16 * widthRatio,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w500,
-                  ),
-
-                  suffix: Padding( // 메시지 좌우 여백을 위해 Padding 위젯 사용
-                  padding: EdgeInsets.symmetric(horizontal: 10 * widthRatio),
+              // 아이디 유효성 메시지
+              Positioned(
+                left: 38 * widthRatio,
+                top: 334 * heightRatio,
+                child: SizedBox(
+                  width: 296 * widthRatio,
                   child: Text(
-                    _isPasswordValid ? '사용가능' : '사용불가',
+                    _isIdAvailableInitial ? (_isIdAvailable ? '사용 가능한 아이디!' : '영문과 숫자만 사용하여, 영문으로 시작되는 4-12자의 아이디를 입력해주세요.') : (_isIdAvailable ? '사용 가능한 아이디!' : '사용 불가한 아이디'),
                     style: TextStyle(
-                      color: _isPasswordValid ? const Color(0xFF03A20B) : const Color(0xFFC31A1A),
+                      color: _isIdAvailableInitial ? (_isIdAvailable ? const Color(0xFF03A20B) : const Color(0xFF5F37CF)) : (_isIdAvailable ? const Color(0xFF03A20B) : const Color(0xFFC31A1A)),
                       fontSize: 12 * widthRatio,
                       fontFamily: 'Pretendard',
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-                ),
               ),
-            ),
-          ),
 
-          // 비밀번호 확인 입력 필드
-          Positioned(
-            left: 17 * widthRatio,
-            top: 392 * heightRatio,
-            child: Container(
-              width: 360 * widthRatio,
-              height: 52 * heightRatio,
-              child: TextFormField(
-                controller: _confirmPasswordController,
-                obscureText: true,
-                onChanged: (_) {
-                  setState(() {}); // 텍스트가 변경될 때마다 화면을 다시 그리도록 합니다.
-                },
-                validator: (value) {
-                  if (value != _passwordController.text) {
-                    return '비밀번호가 일치하지 않습니다.';
-                  }
-                  return null;
-                },
-                style: TextStyle(
-                  color: const Color(0xFF121212),
-                  fontSize: 16 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: const Color(0xFFEAEAEA),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 17 * widthRatio),
-                  hintText: '비밀번호를 다시 입력하세요',
-                  hintStyle: TextStyle(
-                    color: const Color(0xFFBBBBBB),
+              // '비밀번호' 텍스트
+              Positioned(
+                left: 16 * widthRatio,
+                top: 411 * heightRatio,
+                child: Text(
+                  '비밀번호',
+                  style: TextStyle(
+                    color: const Color(0xFF121212),
                     fontSize: 16 * widthRatio,
                     fontFamily: 'Pretendard',
                     fontWeight: FontWeight.w500,
                   ),
-
-                 suffix: Padding( // 메시지 좌우 여백을 위해 Padding 위젯 사용
-                  padding: EdgeInsets.symmetric(horizontal: 10 * widthRatio),
-                  child: (_confirmPasswordController.text.isEmpty) ? null : 
-                    (_confirmPasswordController.text != _passwordController.text) ? 
-                    const Icon(Icons.cancel_outlined, color: Color(0xFFC31A1A)) : 
-                    const Icon(Icons.check_circle_outline_outlined, color: Color(0xFF03A20B)),
-                ),
-
                 ),
               ),
-            ),
-          ),
 
-          // 비밀번호 유효성 메시지
-          Positioned(
-            left: 34 * widthRatio,
-            top: 455 * heightRatio,
-            child: SizedBox(
-              width: 296 * widthRatio,
-              child: Text(
-                _isPasswordValid ? '' : '영문 대소문자, 숫자, 특수문자 중 2가지 이상을 조합하여 6-20자로 입력해주세요',
-                style: TextStyle(
-                  color: _isPasswordValid ? Colors.green : const Color(0xFF5F37CF),
-                  fontSize: 12 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-
-          // '다음' 버튼
-          Positioned(
-            left: 18 * widthRatio,
-            top: 732 * heightRatio, // 적절한 위치로 조정
-            child: SizedBox(
-              width: 360 * widthRatio,
-              height: 52 * heightRatio,
-              child: ElevatedButton(
-                onPressed: _onNext,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isIdAvailable && _isPasswordValid ? const Color(0xFF5F37CF) : const Color(0xFFBDBDBD),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text( // after press this  <실소 회원가입 완료 screen : 3 seconds> 
-                  '다음',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18 * widthRatio,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w600,
+              // 비밀번호 입력 필드
+              Positioned(
+                left: 17 * widthRatio,
+                top: 445 * heightRatio,
+                child: SizedBox(
+                  width: 360 * widthRatio,
+                  height: 52 * heightRatio,
+                  child: TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    onChanged: (_) => _validatePassword(),
+                    style: TextStyle(
+                      color: const Color(0xFF121212),
+                      fontSize: 16 * widthRatio,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFFEAEAEA),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 17 * widthRatio),
+                      hintText: '비밀번호를 입력하세요',
+                      hintStyle: TextStyle(
+                        color: const Color(0xFFBBBBBB),
+                        fontSize: 16 * widthRatio,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w500,
+                      ),
+                      suffixIcon: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10 * widthRatio),
+                        child: Text(
+                          _isPasswordValid ? '사용가능' : '사용불가',
+                          style: TextStyle(
+                            color: _isPasswordValid ? const Color(0xFF03A20B) : const Color(0xFFC31A1A),
+                            fontSize: 12 * widthRatio,
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+
+              // 비밀번호 확인 입력 필드
+              Positioned(
+                left: 17 * widthRatio,
+                top: 508 * heightRatio,
+                child: SizedBox(
+                  width: 360 * widthRatio,
+                  height: 52 * heightRatio,
+                  child: TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    onChanged: (_) {
+                      setState(() {});
+                    },
+                    validator: (value) {
+                      if (value != _passwordController.text) {
+                        return '비밀번호가 일치하지 않습니다.';
+                      }
+                      return null;
+                    },
+                    style: TextStyle(
+                      color: const Color(0xFF121212),
+                      fontSize: 16 * widthRatio,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: const Color(0xFFEAEAEA),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 17 * widthRatio),
+                      hintText: '비밀번호를 다시 입력하세요',
+                      hintStyle: TextStyle(
+                        color: const Color(0xFFBBBBBB),
+                        fontSize: 16 * widthRatio,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w500,
+                      ),
+                      suffixIcon: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10 * widthRatio),
+                        child: (_confirmPasswordController.text.isEmpty) ? null :
+                        (_confirmPasswordController.text != _passwordController.text) ?
+                        const Icon(Icons.cancel_outlined, color: Color(0xFFC31A1A)) :
+                        const Icon(Icons.check_circle_outline_outlined, color: Color(0xFF03A20B)),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // 비밀번호 유효성 메시지
+              Positioned(
+                left: 34 * widthRatio,
+                top: 571 * heightRatio,
+                child: SizedBox(
+                  width: 296 * widthRatio,
+                  child: Text(
+                    _isPasswordValid ? '' : '영문 대소문자, 숫자, 특수문자 중 2가지 이상을 조합하여 6-20자로 입력해주세요',
+                    style: TextStyle(
+                      color: _isPasswordValid ? Colors.green : const Color(0xFF5F37CF),
+                      fontSize: 12 * widthRatio,
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+
+              // '다음' 버튼
+              Positioned(
+                left: 18 * widthRatio,
+                top: 732 * heightRatio,
+                child: SizedBox(
+                  width: 360 * widthRatio,
+                  height: 52 * heightRatio,
+                  child: ElevatedButton(
+                    onPressed: _onNext,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isIdAvailable && _isPasswordValid ? const Color(0xFF5F37CF) : const Color(0xFFBDBDBD),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text(
+                      '다음',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18 * widthRatio,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
         ),
-      ),
-    );
+      );
   }
 }
