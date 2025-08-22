@@ -17,9 +17,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  // bool _isSignUp = false;
   late double widthRatio;
   late double heightRatio;
+
+  Future<bool> _checkUserExists(String uid) async {
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    return userDoc.exists;
+  }
 
   @override
   void didChangeDependencies() {
@@ -474,20 +478,29 @@ Widget build(BuildContext context) {
 
   Future<void> _handleKakaoSignInWithImage() async {
     setState(() => _isLoading = true);
+
     try {
-      await _authService.signInWithKakao();
-      if (mounted) {
-        // 카카오 로그인 시 PhoneConfirmScreen으로 이동 (회원가입 플로우)
+      // 1. Kakao OAuth 로그인 실행
+      final userCredential = await _authService.signInWithKakao();
+
+      if (userCredential?.user != null && mounted) {
+        // 2. Firebase Auth UID 가져오기
+        final String uid = userCredential!.user!.uid;
+
+        // 3. Firestore에서 해당 UID로 사용자 문서 존재 확인
+        final bool isExistingUser = await _checkUserExists(uid);
+
+        // 4. 기존 회원 여부에 따라 플로우 분기
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
+            builder: (context) => PhoneConfirmScreen(isFromLogin: isExistingUser),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text('카카오 로그인 오류: ${e.toString()}')),
         );
       }
     } finally {
@@ -497,24 +510,33 @@ Widget build(BuildContext context) {
     }
   }
 
-    Future<void> _handleGoogleSignInWithImage() async {
+
+  Future<void> _handleGoogleSignInWithImage() async {
     if (_isLoading) return;
     setState(() => _isLoading = true);
 
     try {
-      await _authService.signInWithGoogle();
-      if (mounted) {
-        // 구글 로그인 시 PhoneConfirmScreen으로 이동 (회원가입 플로우)
+      // 1. Google OAuth 로그인 실행
+      final userCredential = await _authService.signInWithGoogle();       
+
+      if (userCredential?.user != null && mounted) {
+        // 2. Firebase Auth UID 가져오기
+        final String uid = userCredential!.user!.uid;
+
+        // 3. Firestore에서 해당 UID로 사용자 문서 존재 확인
+        final bool isExistingUser = await _checkUserExists(uid);
+
+        // 4. 기존 회원 여부에 따라 플로우 분기
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
+            builder: (context) => PhoneConfirmScreen(isFromLogin: isExistingUser),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text('구글 로그인 오류: ${e.toString()}')),
         );
       }
     } finally {
