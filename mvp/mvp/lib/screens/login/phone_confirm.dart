@@ -9,6 +9,7 @@ import '../../../services/community_service.dart';
 //import 'policy_agreement_screen.dart'; // 다음 화면으로 이동하기 위해 필요합니다.
 import 'id_password_signup.dart'; 
 import 'after_signup_splash.dart';
+import 'login_screen.dart'; 
 
 /// 사용자의 프로필 정보를 입력받는 화면입니다.
 /// 사용자 입력을 처리하기 위해 StatefulWidget으로 구성되었습니다.
@@ -417,7 +418,11 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () =>  Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const LoginScreen(),
+          ),
+        ),
       ),
     );
   }
