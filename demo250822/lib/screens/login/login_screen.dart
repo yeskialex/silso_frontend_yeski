@@ -390,7 +390,7 @@ Widget build(BuildContext context) {
 
         // 로그인 버튼 그룹
         Positioned(
-          left: 17 * widthRatio,
+          left: (393 * widthRatio - 328) / 2,
           top: 580 * heightRatio,
           child: Container(
             width: 360 * widthRatio,
@@ -411,20 +411,20 @@ Widget build(BuildContext context) {
                   imagePath: 'assets/button/google_login_circular.png', // 구글 원형 로고 이미지 경로
                 ),
                 
-                SizedBox(width: 40 * widthRatio), // 버튼 간 간격
-                // 전화번호 로그인 
-                _buildCircularButton(
-                onTap: _isLoading ? null : () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
-                    ),
-                  );
-                },
-                  backgroundColor: Color(0xFFE0E0E0),
-                  iconData: Icons.phone, // 전화 로고 이미지 경로
-                  iconColor: Color(0xFF8E8E8E)
-                ),
+                // SizedBox(width: 40 * widthRatio), // 버튼 간 간격
+                // // 전화번호 로그인 
+                // _buildCircularButton(
+                // onTap: _isLoading ? null : () {
+                //   Navigator.of(context).pushReplacement(
+                //     MaterialPageRoute(
+                //       builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
+                //     ),
+                //   );
+                // },
+                //   backgroundColor: Color(0xFFE0E0E0),
+                //   iconData: Icons.phone, // 전화 로고 이미지 경로
+                //   iconColor: Color(0xFF8E8E8E)
+                // ),
               ],
             ),
           ),
@@ -432,7 +432,7 @@ Widget build(BuildContext context) {
 
          // 회원가입 버튼
           Positioned(
-            left: (393 * widthRatio - 84) / 2,
+            left: (393 * widthRatio - 80) / 2,
             top: 712 * heightRatio,
             child:                  
                  TextButton(
@@ -457,8 +457,8 @@ Widget build(BuildContext context) {
 
          // 비회원으로 구경하기 버튼
           Positioned(
-            left: 130 * widthRatio,
-            top: 760 * heightRatio, // 새로운 위치로 조정 (기존 570에서 672로 변경)
+            left: (393 * widthRatio - 128) / 2,
+            top: 770 * heightRatio, // 새로운 위치로 조정 (기존 570에서 672로 변경)
             child: GestureDetector(
               onTap: _isLoading ? null : _signInAnonymously,
               child: Container(
