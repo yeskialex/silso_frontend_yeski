@@ -12,11 +12,6 @@ import 'screens/temporary_home.dart'; // Temporary home page
 import 'widgets/navigation_bar.dart'; // Main Navigation Bar
 import 'screens/contents_page/contents_main.dart'; // Contents page
 import 'screens/my_page/my_page_main.dart'; // My page
-// Initial profile setup screens
-import 'screens/community/initial_profile/intro_community_splash2.dart';
-// import 'screens/community/initial_profile/category_selection_screen.dart';
-import 'screens/community/initial_profile/profile_information_screen.dart';
-//import 'screens/community/initial_profile/policy_agreement_screen.dart';
 // Initial login & sign_up
 import 'screens/login/id_password_signup.dart'; 
 import 'screens/login/intro_signin_splash.dart';
@@ -69,9 +64,7 @@ class MyApp extends StatelessWidget {
         '/my-page': (context) => const MyPageMain(), // My page
         '/mvp_community' : (context) => const CommunityMainTabScreenMycom(), // Korean UI
         // Initial profile setup flow
-        '/intro-community-splash': (context) => const IntroCommunitySplash(),
         // '/category-selection': (context) => const CategorySelectionScreen(),
-        '/profile-information': (context) => const ProfileInformationScreen(),
         //'/policy-agreement': (context) => const PolicyAgreementScreen(),
         // initial login flow
         // '/login-id-sign-up' : (context) => const IDPasswordSignUpScreen(), 

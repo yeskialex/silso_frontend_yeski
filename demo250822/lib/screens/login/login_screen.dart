@@ -5,6 +5,7 @@ import 'phone_confirm.dart';
 import 'mypet_select.dart';
 import 'after_signup_splash.dart'; 
 import 'id_password_signup.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // for privacy password, using auth firebase
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -52,54 +53,54 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    final id = _idController.text;
-    final password = _passwordController.text;
+    // 사용자가 입력한 ID에 도메인을 추가하여 Firebase Auth가 인식하는 이메일 형식으로 변환합니다.
+    final email = '${_idController.text.trim()}@silso.com';
+    final password = _passwordController.text.trim();
 
     try {
-      final firestore = FirebaseFirestore.instance;
+      // Firebase Authentication을 사용하여 이메일과 비밀번호로 로그인을 시도합니다.
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-      // Firestore에서 'authentication.id' 필드가 입력된 id와 일치하는 문서 탐색
-      final result = await firestore
-          .collection('users')
-          .where('authentication.id', isEqualTo: id)
-          .limit(1)
-          .get();
-
-      if (result.docs.isEmpty) {
-        // 일치하는 ID가 없으면 에러 메시지 표시
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('존재하지 않는 아이디입니다.')),
-          );
-        }
-      } else {
-        // 일치하는 ID가 있으면 비밀번호 확인
-        final doc = result.docs.first.data();
-        if (doc['authentication']['password'] == password) {
-          // ID와 비밀번호가 모두 일치하면 로그인 성공
-          if (mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => const AfterSignupSplash(), //const PhoneConfirmScreen(isFromLogin: true),
-              ),
-            );
-          }
-        } else {
-          // 비밀번호가 일치하지 않으면 에러 메시지 표시
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('비밀번호가 일치하지 않습니다.')),
-            );
-          }
-        }
+      // 로그인 성공 시, 다음 화면으로 이동합니다.
+      // mounted 체크를 통해 위젯이 여전히 화면에 있는지 확인합니다.
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const AfterSignupSplash(),
+          ),
+        );
       }
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
+      // FirebaseAuth에서 발생하는 예외를 처리합니다.
+      String errorMessage = '로그인에 실패했습니다. 다시 시도해주세요.';
+      print('FirebaseAuthException code: ${e.code}'); // 디버깅을 위해 에러 코드 출력
+
+      // 에러 코드에 따라 사용자에게 더 친절한 메시지를 보여줍니다.
+      if (e.code == 'user-not-found' || e.code == 'invalid-email') {
+        errorMessage = '존재하지 않는 아이디입니다.';
+      } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        errorMessage = '비밀번호가 일치하지 않습니다.';
+      } else if (e.code == 'network-request-failed') {
+        errorMessage = '네트워크 연결을 확인해주세요.';
+      }
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('로그인 오류: ${e.toString()}')),
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    } catch (e) {
+      // 그 외 일반적인 예외를 처리합니다.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('로그인 중 오류가 발생했습니다: ${e.toString()}')),
         );
       }
     } finally {
+      // 작업이 성공하든 실패하든 로딩 상태를 해제합니다.
       if (mounted) {
         setState(() => _isLoading = false);
       }

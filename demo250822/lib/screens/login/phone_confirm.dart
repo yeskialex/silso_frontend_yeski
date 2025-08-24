@@ -8,7 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/community_service.dart';
 //import 'policy_agreement_screen.dart'; // 다음 화면으로 이동하기 위해 필요합니다.
 import 'intro_signin_splash.dart';
-import 'login_screen.dart'; 
+import 'dart:convert'; // Required for utf8.encode
+import 'package:crypto/crypto.dart'; // Required for sha256
 
 /// 사용자의 프로필 정보를 입력받는 화면입니다.
 /// 사용자 입력을 처리하기 위해 StatefulWidget으로 구성되었습니다.
@@ -185,52 +186,26 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
       
       print('✅ 계정 활성화 상태 확인 완료');
       
-      // 3. 프로필 정보 비교 및 검증
-      final profile = userData['profile'] as Map<String, dynamic>?;
-      if (profile == null) {
-        throw Exception('프로필 정보가 없습니다.');
+      // 3. 저장된 전화번호 비교 및 검증
+      final storedphonenum = userData['phoneNumber']?.toString() ??  '';
+      if (storedphonenum == null) {
+        throw Exception('저장된 전화번호가 없습니다.');
       }
       
       // 입력한 정보와 저장된 정보 비교 sha256 hash값 전화번호 비교, 
-
-      final inputName = _nameController.text.trim();
-      final inputCountry = _nationalitySelection[0] ? '내국인' : '외국인';
-      final inputBirthdate = _birthdateController.text.trim();
-      final inputGender = _selectedGender;
+        final inputPhoneNumber = "+82${_phoneController.text.trim()}";
+        final inputBytes = utf8.encode(inputPhoneNumber);
+        final inputDigest = sha256.convert(inputBytes);
+        final inputHashedPhoneNumber = inputDigest.toString();
       
-      final storedName = profile['name']?.toString() ?? '';
-      final storedCountry = profile['country']?.toString() ?? '';
-      final storedBirthdate = profile['birthdate']?.toString() ?? '';
-      final storedGender = profile['gender']?.toString() ?? '';
-      
-      print('🔍 프로필 정보 비교:');
-      print('   이름: $inputName vs $storedName');
-      print('   국적: $inputCountry vs $storedCountry');
-      print('   생년월일: $inputBirthdate vs $storedBirthdate');
-      print('   성별: $inputGender vs $storedGender');
-      
-      // 4. 불일치 항목 체크 및 사용자에게 알림
-      List<String> mismatches = [];
-      
-      if (inputName != storedName) {
-        mismatches.add('이름');
-      }
-      if (inputCountry != storedCountry) {
-        mismatches.add('국적');
-      }
-      if (inputBirthdate != storedBirthdate) {
-        mismatches.add('생년월일');
-      }
-      if (inputGender != storedGender) {
-        mismatches.add('성별');
+      print('🔍 정보 비교:');
+      print('전화번호: $storedphonenum vs $inputHashedPhoneNumber');
+ 
+      // 4. 이미 존재하는 전화번호 체크 및 사용자에게 알림
+      if (storedphonenum == inputHashedPhoneNumber) {
+         throw Exception('입력하신 전화번호는 이미 등록된 번호입니다.');
       }
       
-      if (mismatches.isNotEmpty) {
-        final mismatchText = mismatches.join(', ');
-        throw Exception('입력하신 정보가 등록된 정보와 다릅니다.\n불일치 항목: $mismatchText\n\n등록된 정보로 다시 입력해주세요.');
-      }
-      
-      print('✅ 프로필 정보 검증 완료 - 모든 정보가 일치합니다.');
       return true;
       
     } catch (e) {
@@ -279,12 +254,12 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
       if (!widget.isFromLogin) {
         print('📝 회원가입 경로 - 프로필 정보 저장');
         final String country = _nationalitySelection[0] ? '내국인' : '외국인';
+        final bytes = utf8.encode('+82${_phoneController.text}'); // data being hashed
+        final digest = sha256.convert(bytes);
+        final hashedPassword = digest.toString();
+
         await _communityService.saveProfileInformation(
-          name: _nameController.text,
-          country: country,
-          birthdate: _birthdateController.text,
-          gender: _selectedGender,
-          phoneNumber: "+82${_phoneController.text}", // 국가번호 포함
+           phoneNumber: hashedPassword, // 국가번호 포함
         );
       } else {
         print('📱 로그인 경로 - 프로필 정보 저장 스킵 (이미 검증 완료)');

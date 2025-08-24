@@ -625,7 +625,7 @@ class _CaseVotingScreenState extends State<CaseVotingScreen> with TickerProvider
                   Text(
                     '• 최소 투표 수: ${CourtSystemConfig.minVotesForPromotion}표\n'
                     '• 승급 조건: ${CourtSystemConfig.controversyRatioMin.toInt()}-${CourtSystemConfig.controversyRatioMax.toInt()}% 범위\n'
-                    '• 법정 세션 시간: ${CourtSystemConfig.sessionDurationHours}시간',
+                    '• 법정 세션 시간: ${(CourtSystemConfig.sessionDurationMinutes / 60).toStringAsFixed(1)}시간',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF8E8E8E),

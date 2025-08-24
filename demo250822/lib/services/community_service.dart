@@ -145,10 +145,6 @@ class CommunityService {
 
   // Step B: Save profile information
   Future<void> saveProfileInformation({
-    required String name,
-    required String country,
-    required String birthdate,
-    required String gender,
     required String phoneNumber,
   }) async {
     if (currentUserId == null) throw 'User not authenticated';
@@ -158,12 +154,6 @@ class CommunityService {
           .collection('users')
           .doc(currentUserId)
           .set({
-        'profile': {
-          'name': name,
-          'country': country,
-          'birthdate': birthdate,
-          'gender': gender,
-        },
         'phoneNumber': phoneNumber,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));

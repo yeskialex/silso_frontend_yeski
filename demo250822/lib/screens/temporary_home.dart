@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'community/community_main.dart';
-import 'community/initial_profile/intro_community_splash2.dart';
 import 'contents_page/contents_main.dart';
 import 'admin_page/admin_menu.dart';
 import 'my_page/my_page_main.dart';
 import '../services/community_service.dart';
 import '../services/auth_service.dart';
+import 'login/after_signup_splash.dart'; 
 
 class TemporaryHomePage extends StatefulWidget {
   const TemporaryHomePage({super.key});
@@ -141,7 +141,7 @@ class _TemporaryHomePageState extends State<TemporaryHomePage> {
                     // Go through the setup flow
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const IntroCommunitySplash(),
+                        builder: (context) => const AfterSignupSplash(),
                       ),
                     );
                   }
