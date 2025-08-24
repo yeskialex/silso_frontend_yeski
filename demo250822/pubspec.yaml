@@ -68,6 +68,8 @@ dependencies:
   
   # Google Fonts for Korean character support
   google_fonts: ^6.1.0
+  crypto: ^3.0.6
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

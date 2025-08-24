@@ -448,7 +448,7 @@ Widget build(BuildContext context) {
                   onPressed: _isLoading ? null :  () {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(
-                        builder: (context) => const IDPasswordSignUpScreen(),
+                        builder: (context) => const IDPasswordSignUpScreen(isIdAndPasswordShortCut: true),
                       ),
                     );
                   },
@@ -517,7 +517,7 @@ Widget build(BuildContext context) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => //PhoneConfirmScreen(isFromLogin: isExistingUser),
-            isExistingUser ?  AfterSignupSplash() :  IDPasswordSignUpScreen(), 
+            isExistingUser ?  AfterSignupSplash() :  IDPasswordSignUpScreen(isIdAndPasswordShortCut: false), 
           ),
         );
       }
@@ -554,7 +554,7 @@ Widget build(BuildContext context) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => // PhoneConfirmScreen(isFromLogin: isExistingUser), //   [need modify]
-            isExistingUser ? AfterSignupSplash() :  IDPasswordSignUpScreen(), 
+            isExistingUser ? AfterSignupSplash() :  IDPasswordSignUpScreen(isIdAndPasswordShortCut: false), 
           ),
         );
       }

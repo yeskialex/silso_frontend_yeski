@@ -5,9 +5,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class IDPasswordSignUpScreen extends StatefulWidget {
-  const IDPasswordSignUpScreen({super.key});
 
+
+class IDPasswordSignUpScreen extends StatefulWidget {
+  final bool isIdAndPasswordShortCut; // '회원가입' 로그인 경우 기존 사용자 인증 문서 인증이 필요없으므로 확인용.
+
+  const IDPasswordSignUpScreen({super.key, required this.isIdAndPasswordShortCut});
+  
   @override
   State<IDPasswordSignUpScreen> createState() => _IDPasswordSignUpScreenState();
 }
@@ -21,6 +25,11 @@ class _IDPasswordSignUpScreenState extends State<IDPasswordSignUpScreen> {
   bool _isIdAvailable = false; // 아이디 중복 확인 상태
   bool _isIdAvailableInitial = true; // 아이디 중복 확인 처음 상태
   bool _isPasswordValid = false; // 비밀번호 유효성 상태
+ 
+  @override
+  void initState(){
+    super.initState(); 
+  }
 
   @override
   void dispose() {
@@ -110,6 +119,13 @@ class _IDPasswordSignUpScreenState extends State<IDPasswordSignUpScreen> {
     });
   }
 
+  // password hashing
+  String _hashPassword(String password) {
+  final bytes = utf8.encode(password); // 1. 비밀번호를 바이트로 변환
+  final digest = sha256.convert(bytes); // 2. SHA-256으로 해싱
+  return digest.toString(); // 3. 해시값을 문자열로 반환
+  }
+
 // '다음' 버튼 로직 - 기존 사용자 계정에 이메일/비밀번호 추가
 void _onNext() async {
   // 1. 기본 유효성 검사
@@ -142,164 +158,181 @@ void _onNext() async {
   );
 
   try {
-    // 3. Firebase 초기화 확인
-    await Firebase.initializeApp();
-    
     final auth = FirebaseAuth.instance;
     final firestore = FirebaseFirestore.instance;
+    final email = _idController.text + '@silso.com';
+    final password = _passwordController.text;
 
-    // 4. 현재 로그인된 사용자 확인 (phone_confirm에서 인증된 사용자)
-    final currentUser = auth.currentUser;
-    if (currentUser == null) {
-      throw Exception('사용자가 로그인되어 있지 않습니다. 다시 처음부터 진행해주세요.');
+    // 🚀 [추가된 로직] isIdAndPasswordShortCut 값에 따라 분기 처리
+    if (widget.isIdAndPasswordShortCut) {
+      // ✅ Case 1: 신규 회원가입 로직 (ShortCut)
+      print('🚀 신규 회원가입(ShortCut)을 시작합니다...');
+
+      // 1. Firebase Authentication에서 신규 사용자 생성
+      UserCredential userCredential = await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      print('✅ Firebase Auth 사용자 생성 완료. UID: ${userCredential.user?.uid}');
+
+      final newUserId = userCredential.user!.uid;
+
+      // 2. Firestore에 저장할 사용자 데이터 생성
+      final hashedPassword = _hashPassword(password);
+      final newUserData = {
+        'profile': {
+          'uid': newUserId,
+        },
+        'authentication': {
+          'id': email,
+          // [보안 경고] 실제 운영 환경에서는 이 라인을 반드시 제거하세요!
+          'password': hashedPassword,
+          'hasPhoneAuth': false, // 전화 인증을 거치지 않았음
+          'hasEmailPassword': true,
+          'emailPasswordSetupAt': FieldValue.serverTimestamp(),
+        },
+        'settings': {
+          'isActive': true,
+          'signUpCompleted': true,
+          'emailPasswordCompleted': true,
+        },
+        'createdAt': FieldValue.serverTimestamp(), // 생성 시점 기록
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      // 3. Firestore의 'users' 컬렉션에 새로운 사용자 문서 생성
+      await firestore.collection('users').doc(newUserId).set(newUserData);
+      print('✅ Firestore에 새 사용자 문서 생성 완료.');
+
+    } else {
+      // ✅ Case 2: 기존 사용자에게 이메일/비밀번호 연결 로직 (기존 로직)
+      print('🔄 기존 사용자 계정에 이메일/비밀번호 연결을 시작합니다...');
+
+      final currentUser = auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('사용자가 로그인되어 있지 않습니다. 다시 처음부터 진행해주세요.');
+      }
+      
+      final currentUserId = currentUser.uid;
+      print('🔄 기존 사용자 계정 사용. UID: $currentUserId');
+
+      // 기존 사용자 계정에 이메일/비밀번호 인증 방법 연결
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+      await currentUser.linkWithCredential(credential);
+      print('✅ 이메일/비밀번호 인증 정보 추가 완료');
+
+      // Firestore의 기존 사용자 문서에 추가 정보 merge
+      final hashedPassword = _hashPassword(password);
+      final additionalUserData = {
+        'authentication': {
+          'id': email,
+          // [보안 경고] 실제 운영 환경에서는 이 라인을 반드시 제거하세요!
+          'password' : hashedPassword,
+          'hasEmailPassword': true,
+          'emailPasswordSetupAt': FieldValue.serverTimestamp(),
+        },
+        'settings': {
+          'signUpCompleted': true,
+          'emailPasswordCompleted': true,
+        },
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await firestore.collection('users').doc(currentUserId).set(
+        additionalUserData,
+        SetOptions(merge : true)
+      );
+      print('✅ Firestore에 사용자 정보 업데이트 완료.');
     }
-    
-    final currentUserId = currentUser.uid;
-    print('🔄 기존 사용자 계정 사용. UID: $currentUserId');
 
-    // 5. 기존 사용자에게 이메일/비밀번호 인증 정보 추가
-    print('🔄 이메일/비밀번호 인증 정보 추가 중...');
-    final credential = EmailAuthProvider.credential(
-      email: _idController.text + '@silso.com',
-      password: _passwordController.text,
-    );
-    
-    // 기존 사용자 계정에 이메일/비밀번호 인증 방법 연결
-    await currentUser.linkWithCredential(credential);
-    print('✅ 이메일/비밀번호 인증 정보 추가 완료');
+       // 8. 로딩 다이얼로그 닫기
+        if (Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
 
-    // 6. Firestore의 기존 사용자 문서에 추가 정보 merge
-    print('🔄 Firestore에 추가 사용자 정보 merge 중...');
-    
-    // 기존 문서 존재 여부 확인
-    final existingDoc = await firestore.collection('users').doc(currentUserId).get();
-    print('📄 기존 문서 존재: ${existingDoc.exists}');
+        // 9. 성공 메시지 및 다음 페이지로 이동
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('아이디/비밀번호 설정이 완료되었습니다!'),
+            backgroundColor: Color(0xFF03A20B),
+          ),
+        );
+        
+        Navigator.of(context).pushReplacementNamed('/login-phone-confirm');
 
-    final additionalUserData = {
-      'profile': {
-        'uid': currentUserId,
-       },
-      'authentication': {
-        'id': _idController.text + '@silso.com',  // email 형식 활용
-        'password' : _passwordController.text, 
-        'hasPhoneAuth': true,
-        'hasEmailPassword': true,
-        'emailPasswordSetupAt': FieldValue.serverTimestamp(),
-      },
-      'settings': {
-        'isActive': true,
-        'signUpCompleted': true,
-        'emailPasswordCompleted': true,
-      },
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-
-    // 기존 문서와 merge
-    await firestore.collection('users').doc(currentUserId).set(
-      additionalUserData,
-      SetOptions(merge: true)
-    );
-
-    // 7. 업데이트 확인 (재검증)
-    print('🔄 Firestore 업데이트 확인 중...');
-    final updatedDocSnapshot = await firestore.collection('users').doc(currentUserId).get();
-    if (!updatedDocSnapshot.exists) {
-      throw Exception('Firestore 문서 업데이트에 실패했습니다.');
+      } on FirebaseAuthException catch (e) {
+        // Firebase Auth 에러 처리
+        if (Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
+        
+        String errorMessage = '아이디/비밀번호 설정 중 오류가 발생했습니다.';
+        print('🚨 FirebaseAuthException: ${e.code} - ${e.message}');
+        
+        switch (e.code) {
+          case 'weak-password':
+            errorMessage = '비밀번호가 너무 약합니다.';
+            break;
+          case 'email-already-in-use':
+            errorMessage = '이미 사용 중인 아이디(이메일)입니다.';
+            break;
+          case 'invalid-email':
+            errorMessage = '유효하지 않은 이메일 형식입니다.';
+            break;
+          case 'credential-already-in-use':
+            errorMessage = '이미 다른 계정에서 사용 중인 이메일입니다.';
+            break;
+          case 'provider-already-linked':
+            errorMessage = '이미 이메일/비밀번호가 설정된 계정입니다.';
+            break;
+          case 'network-request-failed':
+            errorMessage = '네트워크 연결을 확인해주세요.';
+            break;
+          default:
+            errorMessage = '인증 오류: ${e.message}';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: const Color(0xFFC31A1A),
+          ),
+        );
+        
+      } on FirebaseException catch (e) {
+        // Firestore 에러 처리
+        if (Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
+        
+        print('🚨 FirebaseException: ${e.code} - ${e.message}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('데이터 저장 오류: ${e.message}'),
+            backgroundColor: const Color(0xFFC31A1A),
+          ),
+        );
+        
+      } catch (e) {
+        // 일반 에러 처리
+        if (Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
+        
+        print('🚨 일반 오류 발생: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('아이디/비밀번호 설정 중 예상치 못한 오류가 발생했습니다: $e'),
+            backgroundColor: const Color(0xFFC31A1A),
+          ),
+        );
+      }
     }
-    
-    final updatedData = updatedDocSnapshot.data()!;
-    if (!updatedData.containsKey('authentication') || 
-        !updatedData['authentication']['hasEmailPassword']) {
-      throw Exception('이메일/비밀번호 정보 저장이 확인되지 않습니다.');
-    }
-    print('✅ Firestore 업데이트 확인 완료');
-    print('📊 최종 사용자 데이터: ${updatedData.keys}');
+   }
 
-    // 8. 로딩 다이얼로그 닫기
-    if (Navigator.canPop(context)) {
-      Navigator.of(context).pop();
-    }
-
-    // 9. 성공 메시지 및 다음 페이지로 이동
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('아이디/비밀번호 설정이 완료되었습니다!'),
-        backgroundColor: Color(0xFF03A20B),
-      ),
-    );
-    
-    Navigator.of(context).pushReplacementNamed('/login-phone-confirm');
-
-  } on FirebaseAuthException catch (e) {
-    // Firebase Auth 에러 처리
-    if (Navigator.canPop(context)) {
-      Navigator.of(context).pop();
-    }
-    
-    String errorMessage = '아이디/비밀번호 설정 중 오류가 발생했습니다.';
-    print('🚨 FirebaseAuthException: ${e.code} - ${e.message}');
-    
-    switch (e.code) {
-      case 'weak-password':
-        errorMessage = '비밀번호가 너무 약합니다.';
-        break;
-      case 'email-already-in-use':
-        errorMessage = '이미 사용 중인 아이디(이메일)입니다.';
-        break;
-      case 'invalid-email':
-        errorMessage = '유효하지 않은 이메일 형식입니다.';
-        break;
-      case 'credential-already-in-use':
-        errorMessage = '이미 다른 계정에서 사용 중인 이메일입니다.';
-        break;
-      case 'provider-already-linked':
-        errorMessage = '이미 이메일/비밀번호가 설정된 계정입니다.';
-        break;
-      case 'network-request-failed':
-        errorMessage = '네트워크 연결을 확인해주세요.';
-        break;
-      default:
-        errorMessage = '인증 오류: ${e.message}';
-    }
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(errorMessage),
-        backgroundColor: const Color(0xFFC31A1A),
-      ),
-    );
-    
-  } on FirebaseException catch (e) {
-    // Firestore 에러 처리
-    if (Navigator.canPop(context)) {
-      Navigator.of(context).pop();
-    }
-    
-    print('🚨 FirebaseException: ${e.code} - ${e.message}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('데이터 저장 오류: ${e.message}'),
-        backgroundColor: const Color(0xFFC31A1A),
-      ),
-    );
-    
-  } catch (e) {
-    // 일반 에러 처리
-    if (Navigator.canPop(context)) {
-      Navigator.of(context).pop();
-    }
-    
-    print('🚨 일반 오류 발생: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('아이디/비밀번호 설정 중 예상치 못한 오류가 발생했습니다: $e'),
-        backgroundColor: const Color(0xFFC31A1A),
-      ),
-    );
-  }
-}
-
-// lib/screens/signup_screen.dart 파일의 build 메서드
 
   @override
   Widget build(BuildContext context) {

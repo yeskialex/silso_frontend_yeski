@@ -74,7 +74,7 @@ class MyApp extends StatelessWidget {
         '/profile-information': (context) => const ProfileInformationScreen(),
         //'/policy-agreement': (context) => const PolicyAgreementScreen(),
         // initial login flow
-        '/login-id-sign-up' : (context) => const IDPasswordSignUpScreen(), 
+        '/login-id-sign-up' : (context) => const IDPasswordSignUpScreen(false), 
         '/login-splash' : (context) => const SigininSplashScreen(), 
         '/login-phone-confirm' : (context) => const PhoneConfirmScreen(), 
         '/category-selection': (context) => const CategorySelectionScreen(),

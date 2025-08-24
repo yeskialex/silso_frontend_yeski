@@ -148,7 +148,7 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
     });
   }
 
-  /// 로그인 사용자를 위한 Firebase 사용자 검증 메서드
+  /// 로그인 사용자를 위한 Firebase 사용자 검증 메서드 ; 
   Future<bool> _validateExistingUser() async {
     if (!widget.isFromLogin) return true; // 회원가입 경로는 검증 스킵
     
@@ -191,8 +191,7 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
         throw Exception('프로필 정보가 없습니다.');
       }
       
-      // 입력한 정보와 저장된 정보 비교 sha256 hash값 전화번호 비교 
-
+      // 입력한 정보와 저장된 정보 비교 sha256 hash값 전화번호 비교, 
 
       final inputName = _nameController.text.trim();
       final inputCountry = _nationalitySelection[0] ? '내국인' : '외국인';
@@ -266,7 +265,7 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
       // 3. 로그인 사용자 검증 (isFromLogin: true인 경우)
       if (widget.isFromLogin) {
         print('🔍 로그인 사용자 - Firebase 검증 실행');
-        await _validateExistingUser();
+        //await //_validateExistingUser(); 
         print('✅ Firebase 검증 완료');
       }
 
