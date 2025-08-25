@@ -92,12 +92,18 @@ void initState() {
         break;
       case PetCreationStep.startNaming:
         // 입력 필드에 포커스를 주어 키보드를 활성화
-      setState(() {
-        _currentStep = PetCreationStep.keyboardActive;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _nicknameFocusNode.requestFocus();
-      });        
+        setState(() {
+          _currentStep = PetCreationStep.keyboardActive;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _nicknameFocusNode.requestFocus();
+        });        
+        break;
+      case PetCreationStep.keyboardActive:
+        // 키보드 활성 상태에서 버튼을 누르면 닉네임 제출
+        if (_nicknameController.text.isNotEmpty) {
+          _handleNicknameSubmit();
+        }
         break;
       case PetCreationStep.namingDone:
         _navigateToNextScreen();
@@ -111,10 +117,9 @@ void initState() {
     // 키보드의 '완료' 버튼을 누르거나 포커스를 잃었을 때 호출
     if (_nicknameController.text.isNotEmpty) {
       setState(() {
-        // _finalNickname = _nicknameController.text;
         _currentStep = PetCreationStep.namingDone;
       });
-       _nicknameFocusNode.unfocus(); // 키보드 숨기기
+      _nicknameFocusNode.unfocus(); // 키보드 숨기기
     }
   }
   
@@ -420,7 +425,8 @@ Widget _buildNicknameDisplayBox(double screenHeight) {
     bool isVisible = _currentStep != PetCreationStep.intro;
     bool isButtonActive = _currentStep == PetCreationStep.revealPet ||
                           _currentStep == PetCreationStep.startNaming ||
-                          _currentStep == PetCreationStep.namingDone;
+                          _currentStep == PetCreationStep.namingDone ||
+                          (_currentStep == PetCreationStep.keyboardActive && _nicknameController.text.isNotEmpty);
     
     String buttonText = '';
     switch(_currentStep) {
