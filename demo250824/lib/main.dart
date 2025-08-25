@@ -25,6 +25,8 @@ import 'screens/login/category_selection_screen.dart';
 import 'screens/login/after_signup_splash.dart';
 import 'screens/login/policy_agreement_screen.dart';
 
+// 
+import 'screens/login_silpet_select/mypet_select.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
