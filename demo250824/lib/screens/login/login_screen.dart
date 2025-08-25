@@ -272,231 +272,163 @@ Widget _buildPrimaryButton({
 
 // lib/screens/login_screen.dart 파일의 build 메서드
 
-@override
-Widget build(BuildContext context) {
-  // 기준 해상도 (iPhone 16)
-  const double baseWidth = 393.0;
-  const double baseHeight = 852.0;
-
-  // 현재 화면의 너비와 높이를 가져와 비율 계산
-  final screenWidth = MediaQuery.of(context).size.width;
-  final screenHeight = MediaQuery.of(context).size.height;
-  final double widthRatio = screenWidth / baseWidth;
-  final double heightRatio = screenHeight / baseHeight;
-
-  // 새로운 디자인에서는 어두운 배경 대신 밝은 배경을 사용
-  return Scaffold(
-    backgroundColor: const Color(0xFFFAFAFA),
-    body: Stack(
-      children: [
-
-        // 로고 이미지
-        // silso-logo
-        Positioned(
-        left: 16 * widthRatio,
-        top: 145 * heightRatio,
-        child: SizedBox(
-        width: 90 * widthRatio,
-        height: 37 * heightRatio,
-        child: Image.asset(
-        'assets/images/silso_logo/login_logo.png', // 확장자를 .svg에서 .png로 변경
-        fit: BoxFit.contain, // 또는 BoxFit.fill 등 필요에 따라 조절
-        ),
-        ),
-        ),
-
-        // 메인 제목
-        Positioned(
-          left: 16 * widthRatio,
-          top: 199 * heightRatio,
-          child: Text(
-            '로그인을 시작합니다!',
-            style: TextStyle(
-              color: const Color(0xFF121212),
-              fontSize: 24 * widthRatio,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-              height: 1.25,
-            ),
-          ),
-        ),
-
-        // 서브 텍스트
-        Positioned(
-          left: 16 * widthRatio,
-          top: 235 * heightRatio,
-          child: Text.rich(
-            TextSpan(
+   @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAFAFA),
+      body: SafeArea( // SafeArea를 추가하여 시스템 UI를 피합니다.
+        child: SingleChildScrollView( // 화면이 작을 경우 스크롤이 가능하도록 합니다.
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16), // 좌우 패딩
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, // 자식 위젯들을 왼쪽으로 정렬
               children: [
-                TextSpan(
-                  text: '실소의 맴버가 되어주세요!',
+                SizedBox(height: 88), // 상단 여백 (기존 top: 145에서 SafeArea 등을 고려하여 조정)
+
+                // 로고 이미지
+                SizedBox(
+                  width: 90,
+                  height: 37,
+                  child: Image.asset(
+                    'assets/images/silso_logo/login_logo.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                SizedBox(height: 17),
+
+                // 메인 제목
+                Text(
+                  '로그인을 시작합니다!',
                   style: TextStyle(
-                    color: const Color(0xFFC7C7C7),
-                    fontSize: 14 * widthRatio,
+                    color: const Color(0xFF121212),
+                    fontSize: 24,
                     fontFamily: 'Pretendard',
                     fontWeight: FontWeight.w600,
-                    height: 2.14,
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+                SizedBox(height: 12),
 
-        // 로그인 폼 -> custom id (email 응용)
-        Positioned(
-          left: 17 * widthRatio,
-          top: 295 * heightRatio, // 적절한 위치에 배치
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 이메일 입력 필드
-                _buildInputField(
-                  controller: _idController,
-                  hintText: '아이디',
-                ),
-                SizedBox(height: 16 * heightRatio),
-                // 비밀번호 입력 필드
-                _buildInputField(
-                  controller: _passwordController,
-                  hintText: '비밀번호',
-                  isPassword: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '비밀번호를 입력해 주세요.';
-                    }
-                    if (value.length < 6) {
-                      return '비밀번호는 6자 이상이어야 합니다.';
-                    }
-                    return null;
-                  },
-                ),
-
-                SizedBox(height: 32 * heightRatio), // 입력 필드와 버튼 사이 간격 추가
-
-
-                // 로그인 버튼
-                   _buildPrimaryButton(
-                    text: '로그인',
-                    onPressed: _isLoading ? null : _signInWithIdAndPassword,
+                // 서브 텍스트
+                Text(
+                  '실소의 맴버가 되어주세요!',
+                  style: TextStyle(
+                    color: const Color(0xFFC7C7C7),
+                    fontSize: 14,
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w600,
                   ),
-
-              ],
-            ),
-          ),
-        ),
-
-
-        // 로그인 버튼 그룹
-        Positioned(
-          left: (393 * widthRatio - 328) / 2,
-          top: 580 * heightRatio,
-          child: Container(
-            width: 360 * widthRatio,
-            child: Row( // Column 대신 Row를 사용하여 버튼들을 가로로 배치합니다.
-              mainAxisAlignment: MainAxisAlignment.center, // 가운데 정렬
-              children: [
-                // 카카오 로그인 원형 버튼
-                _buildCircularButton(
-                  onTap: _isLoading ? null : _handleKakaoSignInWithImage,
-                  backgroundColor: const Color(0xFFFFE600),
-                  imagePath: 'assets/button/kakao_login_circular.png', // 카카오 원형 로고 이미지 경로
                 ),
-                SizedBox(width: 40 * widthRatio), // 버튼 간 간격
-                // 구글 로그인 원형 버튼
-                _buildCircularButton(
-                  onTap: _isLoading ? null : _handleGoogleSignInWithImage,
-                  backgroundColor: Colors.white,
-                  imagePath: 'assets/button/google_login_circular.png', // 구글 원형 로고 이미지 경로
-                ),
-                
-                // SizedBox(width: 40 * widthRatio), // 버튼 간 간격
-                // // 전화번호 로그인 
-                // _buildCircularButton(
-                // onTap: _isLoading ? null : () {
-                //   Navigator.of(context).pushReplacement(
-                //     MaterialPageRoute(
-                //       builder: (context) => const PhoneConfirmScreen(isFromLogin: false),
-                //     ),
-                //   );
-                // },
-                //   backgroundColor: Color(0xFFE0E0E0),
-                //   iconData: Icons.phone, // 전화 로고 이미지 경로
-                //   iconColor: Color(0xFF8E8E8E)
-                // ),
-              ],
-            ),
-          ),
-        ),
+                SizedBox(height: 30),
 
-         // 회원가입 버튼
-          Positioned(
-            left: (393 * widthRatio - 80) / 2,
-            top: 712 * heightRatio,
-            child:                  
-                 TextButton(
-                  child: Text(
-                    '회원가입',
-                    style: TextStyle(
-                      color: Color(0xFF5F37CF),
-                      fontSize: 15 * widthRatio,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onPressed: _isLoading ? null :  () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const IDPasswordSignUpScreen(isIdAndPasswordShortCut: true),
+                // 로그인 폼
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      _buildInputField(
+                        controller: _idController,
+                        hintText: '아이디',
                       ),
-                    );
-                  },
+                      SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _passwordController,
+                        hintText: '비밀번호',
+                        isPassword: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '비밀번호를 입력해 주세요.';
+                          }
+                          if (value.length < 6) {
+                            return '비밀번호는 6자 이상이어야 합니다.';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 32),
+                      _buildPrimaryButton(
+                        text: '로그인',
+                        onPressed: _isLoading ? null : _signInWithIdAndPassword,
+                      ),
+                    ],
+                  ),
                 ),
-            ), 
+                SizedBox(height: 100), // 소셜 로그인 버튼과의 간격
 
-         // 비회원으로 구경하기 버튼
-          Positioned(
-            left: (393 * widthRatio - 128) / 2,
-            top: 770 * heightRatio, // 새로운 위치로 조정 (기존 570에서 672로 변경)
-            child: GestureDetector(
-              onTap: _isLoading ? null : _signInAnonymously,
-              child: Container(
-                width: 138 * widthRatio,
-                height: 26 * heightRatio,
-                decoration: ShapeDecoration(
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(
-                      width: 1,
-                      color: const Color(0xFF5F37CF), // 보라색 테두리
+                // 소셜 로그인 버튼 그룹
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildCircularButton(
+                      onTap: _isLoading ? null : _handleKakaoSignInWithImage,
+                      backgroundColor: const Color(0xFFFFE600),
+                      imagePath: 'assets/button/kakao_login_circular.png',
                     ),
-                    borderRadius: BorderRadius.circular(400), // 충분히 둥근 모서리
+                    SizedBox(width: 40),
+                    _buildCircularButton(
+                      onTap: _isLoading ? null : _handleGoogleSignInWithImage,
+                      backgroundColor: Colors.white,
+                      imagePath: 'assets/button/google_login_circular.png',
+                    ),
+                  ],
+                ),
+                SizedBox(height: 80),
+
+                // 회원가입 버튼
+                Center(
+                  child: TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            // 회원가입 화면으로 이동
+                          },
+                    child: Text(
+                      '회원가입',
+                      style: TextStyle(
+                        color: Color(0xFF5F37CF),
+                        fontSize: 15,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
-                child: Center(
-                  child: Text(
-                    '비회원으로 구경하기',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: const Color(0xFF5F37CF), // 텍스트 색상을 테두리 색상과 맞춤
-                      fontSize: 14 * widthRatio,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w600,
+                SizedBox(height: 10),
+
+                // 비회원으로 구경하기 버튼
+                 Center(
+                   child: GestureDetector(
+                    onTap: _isLoading ? null : _signInAnonymously,
+                    child: Container(
+                      width: 138,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFF5F37CF)),
+                        borderRadius: BorderRadius.circular(400),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '비회원으로 구경하기',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: const Color(0xFF5F37CF),
+                            fontSize: 14,
+                            fontFamily: 'Pretendard',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
+                                 ),
+                 ),
+                 SizedBox(height: 20), // 하단 여백
+              ],
             ),
           ),
- 
+        ),
+      ),
+    );
+  }
 
-
-
-      ],
-    ),
-  );
-}
 
 
 
