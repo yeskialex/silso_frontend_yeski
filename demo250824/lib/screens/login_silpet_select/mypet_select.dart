@@ -34,38 +34,36 @@ class _PetCreationScreenState extends State<PetCreationScreen> {
   
   // 애니메이션 효과를 위한 투명도 값
   double _splashAnimationOpacity = 1.0;
+ // mypet_select.dart
 
-  @override
-  void initState() {
-    super.initState();
-    // 랜덤 펫 번호 초기화
-    _petImageNumber = Random().nextInt(11) + 1;
+@override
+void initState() {
+  super.initState();
+  _petImageNumber = Random().nextInt(11) + 1;
 
-    // ✅ 실시간 텍스트 업데이트를 위한 리스너 추가
-    _nicknameController.addListener(() {
-      setState(() {
-        // 컨트롤러의 텍스트가 변경될 때마다 UI를 새로고침합니다.
-      });
-    });
+  _nicknameController.addListener(() {
+    setState(() {});
+  });
 
-    // 닉네임 입력 필드의 포커스 상태를 감지하여 UI 상태 변경
-    _nicknameFocusNode.addListener(() {
-      if (_nicknameFocusNode.hasFocus) {
+  // ✅ 수정된 FocusNode 리스너
+  _nicknameFocusNode.addListener(() {
+    // 포커스를 잃었을 때만 (키보드가 내려갔을 때) 상태를 변경하도록 처리합니다.
+    if (!_nicknameFocusNode.hasFocus) {
+      // 텍스트 필드에 내용이 있으면 'namingDone' 상태로 변경합니다.
+      if (_nicknameController.text.isNotEmpty) {
+        // _handleNicknameSubmit() 함수가 내부적으로 setState를 호출하여
+        // _currentStep = PetCreationStep.namingDone 으로 변경합니다.
+        _handleNicknameSubmit();
+      } 
+      // 텍스트 필드가 비어있으면 'startNaming' 상태로 되돌아갑니다.
+      else {
         setState(() {
-          _currentStep = PetCreationStep.keyboardActive;
+          _currentStep = PetCreationStep.startNaming;
         });
-      } else {
-        // 포커스를 잃었을 때 (키보드 내려감), 닉네임이 있다면 완료 상태로 변경
-        if (_nicknameController.text.isNotEmpty) {
-           _handleNicknameSubmit();
-        } else {
-          setState(() {
-            _currentStep = PetCreationStep.startNaming;
-          });
-        }
       }
-    });
-  }
+    }
+  });
+}
 
   // ✅ dispose에서 리스너를 제거해야 메모리 누수가 발생하지 않습니다.
   @override
@@ -94,7 +92,12 @@ class _PetCreationScreenState extends State<PetCreationScreen> {
         break;
       case PetCreationStep.startNaming:
         // 입력 필드에 포커스를 주어 키보드를 활성화
+      setState(() {
+        _currentStep = PetCreationStep.keyboardActive;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         _nicknameFocusNode.requestFocus();
+      });        
         break;
       case PetCreationStep.namingDone:
         _navigateToNextScreen();
@@ -424,10 +427,6 @@ Widget _buildNicknameDisplayBox(double screenHeight) {
       case PetCreationStep.revealPet:
       case PetCreationStep.startNaming:
         buttonText = '닉네임 만들기';
-          // setState(() => _currentStep = PetCreationStep.keyboardActive);
-          // WidgetsBinding.instance.addPostFrameCallback((_) {
-          //   _nicknameFocusNode.requestFocus();
-          // });
         break;
       case PetCreationStep.namingDone:
         buttonText = '시작하기';
