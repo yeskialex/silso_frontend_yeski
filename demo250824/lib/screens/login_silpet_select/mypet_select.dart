@@ -31,7 +31,6 @@ class _PetCreationScreenState extends State<PetCreationScreen> {
 
   // 랜덤 펫 이미지 번호와 최종 닉네임 저장 변수
   int _petImageNumber = 1;
-  String _finalNickname = '';
   
   // 애니메이션 효과를 위한 투명도 값
   double _splashAnimationOpacity = 1.0;
@@ -126,7 +125,7 @@ class _PetCreationScreenState extends State<PetCreationScreen> {
     //     'petImage': 'assets/images/pets/pet$_petImageNumber.png', // 펫 이미지 정보도 함께 저장
     //   });
     // }
-    print('닉네임 "$_finalNickname" 저장 완료!');
+    print('닉네임 "${_nicknameController.text}" 저장 완료!');
   }
   
   void _navigateToNextScreen() async {
@@ -169,10 +168,12 @@ class _PetCreationScreenState extends State<PetCreationScreen> {
               _buildPetImage(screenHeight),
 
               // 닉네임 입력 필드 위젯
-              _buildNicknameField(screenHeight),
+              _buildInitialNicknameField(screenHeight),
               
               // 닉네임 표시 박스 (키보드 올라왔을 때)
               _buildNicknameDisplayBox(screenHeight),
+
+              _buildNicknameField(screenHeight),
 
               // 하단 버튼 위젯
               _buildBottomButton(screenWidth, screenHeight),
@@ -207,11 +208,12 @@ class _PetCreationScreenState extends State<PetCreationScreen> {
         text = '당신의 실팻이에요!';
         break;
       case PetCreationStep.startNaming:
+        text = '이름을 지어주세요!'; // 
+        break;
       case PetCreationStep.keyboardActive:
-        text = '이름을 지어주세요!';
         break;
       case PetCreationStep.namingDone:
-        text = '$_finalNickname! 멋진 이름이네요';
+        text = '${_nicknameController.text} 멋진 이름이네요';
         break;
     }
 
@@ -245,7 +247,7 @@ class _PetCreationScreenState extends State<PetCreationScreen> {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 600),
       curve: Curves.elasticOut, // 통통 튀는 효과
-      top: _currentStep == PetCreationStep.keyboardActive ? screenHeight * 0.21 : screenHeight * 0.35,
+      top: _currentStep == PetCreationStep.keyboardActive ? screenHeight * 0.21 : screenHeight * 0.3,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
         opacity: isVisible ? 1.0 : 0.0,
@@ -278,31 +280,84 @@ class _PetCreationScreenState extends State<PetCreationScreen> {
     );
   }
 
+// mypet_select.dart
+
+// 초기 상태('이름을 입력해주세요')를 표시하는 위젯
+Widget _buildInitialNicknameField(double screenHeight) {
+  bool isVisible = _currentStep == PetCreationStep.startNaming;
+  return AnimatedPositioned(
+    duration: const Duration(milliseconds: 500),
+    curve: Curves.easeInOut,
+    top: screenHeight * 0.7,
+    child: AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: isVisible ? 1.0 : 0.0,
+      child: IgnorePointer(
+        ignoring: !isVisible,
+        // ✅ 1. GestureDetector를 추가하여 탭 이벤트를 감지합니다.
+        child: GestureDetector(
+          // ✅ 2. 탭하면 FocusNode에 포커스를 요청하여 키보드를 활성화합니다.
+            onTap: () {
+              setState(() {
+                _currentStep = PetCreationStep.keyboardActive;
+              });
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _nicknameFocusNode.requestFocus();
+              });
+            }, 
+            child: Container(
+            width: 224,
+            height: 40,
+            decoration: ShapeDecoration(
+              color: const Color(0xFFF7F4FF),
+              shape: RoundedRectangleBorder(
+                side: const BorderSide(width: 1, color: Color(0xFF5F37CF)),
+                borderRadius: BorderRadius.circular(400),
+              ),
+            ),
+            child: const Center(
+              child: Text(
+                '이름을 입력해주세요',
+                style: TextStyle(
+                  color: Color(0xFFD0C5ED),
+                  fontSize: 16,
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 // 닉네임 입력 필드 (실제 입력은 여기서, 하지만 화면엔 보이지 않음)
 Widget _buildNicknameField(double screenHeight) {
-  // 키보드가 활성화되었을 때만 TextField가 존재하도록 함
   if (_currentStep != PetCreationStep.keyboardActive) {
-    return const SizedBox.shrink(); // 다른 상태에서는 위젯을 아예 렌더링하지 않음
+    return const SizedBox.shrink();
   }
 
   return Positioned(
-    top: screenHeight * 0.3,
+    // ✅ DisplayBox와 동일하게 상단 텍스트 위치로 이동합니다.
+    top: screenHeight * 0.18,
     child: SizedBox(
       width: 224,
       height: 40,
-      child: TextField( // 투명한 TextField
+      child: TextField(
         controller: _nicknameController,
         focusNode: _nicknameFocusNode,
         textAlign: TextAlign.center,
         onSubmitted: (_) => _handleNicknameSubmit(),
-        autofocus: true, // 상태 진입 시 자동으로 포커스
-        style: const TextStyle(color: Colors.transparent), // 텍스트를 투명하게
+        autofocus: true,
+        style: const TextStyle(color: Colors.transparent),
         decoration: const InputDecoration(
           border: InputBorder.none,
-          fillColor: Colors.transparent, // 배경을 투명하게
+          fillColor: Colors.transparent,
           filled: true,
         ),
-        cursorColor: Colors.transparent, // 커서도 투명하게
+        cursorColor: Colors.transparent,
       ),
     ),
   );
@@ -310,25 +365,24 @@ Widget _buildNicknameField(double screenHeight) {
 
 // 닉네임 표시 박스 (실시간 업데이트 및 수정 기능 추가)
 Widget _buildNicknameDisplayBox(double screenHeight) {
-  // ✅ 키보드 활성 상태와 완료 상태 모두에서 보임
   bool isVisible = _currentStep == PetCreationStep.keyboardActive || _currentStep == PetCreationStep.namingDone;
-  
+
   return AnimatedPositioned(
     duration: const Duration(milliseconds: 500),
     curve: Curves.easeInOut,
-    top: screenHeight * 0.3,
+    // ✅ keyboardActive 상태일 때 상단 텍스트 위치(0.18)로 이동합니다.
+    top: _currentStep == PetCreationStep.keyboardActive
+        ? screenHeight * 0.18
+        : screenHeight * 0.25,
     child: AnimatedOpacity(
       duration: const Duration(milliseconds: 300),
-      // ✅ isVisible 조건과 컨트롤러에 텍스트가 있을 때만 보이도록 수정
       opacity: isVisible && _nicknameController.text.isNotEmpty ? 1.0 : 0.0,
       child: GestureDetector(
-        // ✅ 탭하면 수정 모드로 전환
         onTap: () {
           if (_currentStep == PetCreationStep.namingDone) {
             setState(() {
               _currentStep = PetCreationStep.keyboardActive;
             });
-            // TextField에 다시 포커스를 주어 키보드를 올림
             _nicknameFocusNode.requestFocus();
           }
         },
@@ -344,7 +398,6 @@ Widget _buildNicknameDisplayBox(double screenHeight) {
           ),
           child: Center(
             child: Text(
-              // ✅ _finalNickname 대신 컨트롤러의 텍스트를 직접 사용
               _nicknameController.text,
               style: const TextStyle(
                 color: Color(0xFF121212),
@@ -360,7 +413,6 @@ Widget _buildNicknameDisplayBox(double screenHeight) {
   );
 }
 
-
   Widget _buildBottomButton(double screenWidth, double screenHeight) {
     bool isVisible = _currentStep != PetCreationStep.intro;
     bool isButtonActive = _currentStep == PetCreationStep.revealPet ||
@@ -372,6 +424,10 @@ Widget _buildNicknameDisplayBox(double screenHeight) {
       case PetCreationStep.revealPet:
       case PetCreationStep.startNaming:
         buttonText = '닉네임 만들기';
+          // setState(() => _currentStep = PetCreationStep.keyboardActive);
+          // WidgetsBinding.instance.addPostFrameCallback((_) {
+          //   _nicknameFocusNode.requestFocus();
+          // });
         break;
       case PetCreationStep.namingDone:
         buttonText = '시작하기';
