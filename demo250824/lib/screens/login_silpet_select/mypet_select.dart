@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 // import 'package:rive/rive.dart'; // Rive 애니메이션을 사용하는 경우
-// import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore 사용 시
-// import 'package:firebase_auth/firebase_auth.dart';     // Firebase Auth 사용 시
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore 사용 시
+import 'package:firebase_auth/firebase_auth.dart';     // Firebase Auth 사용 시
 import '../login/after_signup_splash.dart'; 
 
 // 1. UI 상태를 enum으로 정의합니다.
@@ -125,14 +125,14 @@ void initState() {
   
   // 6. Firestore에 닉네임 저장 및 다음 화면으로 이동
   Future<void> _saveNicknameToFirestore() async {
-    // // Firestore 및 FirebaseAuth 설정이 필요합니다.
-    // final user = FirebaseAuth.instance.currentUser;
-    // if (user != null && _finalNickname.isNotEmpty) {
-    //   await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-    //     'NicknamePet': _finalNickname,
-    //     'petImage': 'assets/images/pets/pet$_petImageNumber.png', // 펫 이미지 정보도 함께 저장
-    //   });
-    // }
+    // Firestore 및 FirebaseAuth 설정이 필요합니다.
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && _nicknameController.text.isNotEmpty) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'NicknamePet': _nicknameController.text,
+        'selectedPet': 'pet$_petImageNumber', // 펫 이미지 정보도 함께 저장
+      });
+    }
     print('닉네임 "${_nicknameController.text}" 저장 완료!');
   }
   
