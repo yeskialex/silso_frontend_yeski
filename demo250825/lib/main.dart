@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => SplashScreen(),
+        '/': (context) => MyPageMain(), //SplashScreen(),
         '/login': (context) => const LoginScreen(), // Korean UI
         '/after-login-splash': (context) => const AfterLoginSplashScreen(), // Korean UI
         '/temporary-home': (context) => const TemporaryHomePage(), // Temporary home
