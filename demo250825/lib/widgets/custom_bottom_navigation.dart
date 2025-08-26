@@ -23,12 +23,12 @@ Widget build(BuildContext context) {
         icon: SizedBox(
           width: 30.0, // 원하는 아이콘 크기
           height: 30.0, // 원하는 아이콘 크기
-          child: Icon(Icons.home_outlined, size: 40),
+          child: Icon(Icons.home_outlined, size: 37),
         ),
         activeIcon: SizedBox(
           width: 30.0, // 활성화된 아이콘 크기
           height: 30.0, // 활성화된 아이콘 크기
-          child: Icon(Icons.home, size: 40),
+          child: Icon(Icons.home, size: 37),
         ),
         label: '',
       ),
@@ -36,12 +36,12 @@ Widget build(BuildContext context) {
         icon: SizedBox(
           width: 30.0,
           height: 30.0,
-          child: Icon(Icons.filter_none, size: 40),
+          child: Icon(Icons.filter_none, size: 37),
         ),
         activeIcon: SizedBox(
           width: 30.0,
           height: 30.0,
-          child: Icon(Icons.filter_none, size: 40),
+          child: Icon(Icons.filter_none, size: 37),
         ),
         label: '',
       ),
@@ -49,12 +49,12 @@ Widget build(BuildContext context) {
         icon: SizedBox(
           width: 30.0,
           height: 30.0,
-          child: Icon(Icons.person_outline, size: 40),
+          child: Icon(Icons.person_outline, size: 37),
         ),
         activeIcon: SizedBox(
           width: 30.0,
           height: 30.0,
-          child: Icon(Icons.person, size: 40),
+          child: Icon(Icons.person, size: 37),
         ),
         label: '',
       ),

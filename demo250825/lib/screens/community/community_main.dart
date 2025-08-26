@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../services/community_service.dart'; // hot posts, general posts, my posts
 import '../../services/authentication/auth_service.dart'; // auth service for sign out
@@ -32,7 +33,6 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   
   // Court 관련 변수들
   late PageController _pageController;
-  int _currentPage = 0;
   Stream<List<CourtSessionData>>? _liveSessionsStream;
   
   // HOT 게시물을 비동기적으로 불러오기 위한 Future 변수
@@ -40,7 +40,6 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   late Future<List<Post>> _generalPostsFuture; // 종합 게시판 게시물
   late Future<List<Map<String, dynamic>>> _myPostsFuture; // '내 게시판'을 위한 Future 추가
   late Stream<List<Community>> _myCommunitiesStream; // '내 커뮤니티'를 위한 Stream
-  late Future<List<Community>> _top5CommunitiesFuture;
   late Stream<List<Community>> _recommendedCommunitiesStream; // 추천 커뮤니티를 위한 Stream
   late Future<List<String>> _userInterestsFuture; // 사용자 관심사를 위한 Future
 
@@ -75,8 +74,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     _generalPostsFuture = _blockingService.getFilteredGeneralPosts();
     _myPostsFuture = _communityService.getLatestPostsFromMyCommunities(); // 새로 만든 함수 호출
     _myCommunitiesStream = _communityService.getMyCommunitiesStream(); // '내 커뮤니티'를 위한 Stream
-    _top5CommunitiesFuture = _communityService.getTop5Communities();
-    _recommendedCommunitiesStream = _blockingService.getFilteredRecommendedCommunitiesStream(); // 추천 커뮤니티 스트림 (차단된 사용자 제외)
+     _recommendedCommunitiesStream = _blockingService.getFilteredRecommendedCommunitiesStream(); // 추천 커뮤니티 스트림 (차단된 사용자 제외)
     _userInterestsFuture = _communityService.getUserInterests(); // 사용자 관심사 로드
 
   }
@@ -213,10 +211,19 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
                   MaterialPageRoute(builder: (context) => const SilsoCourtPage()),
                 );
               },
-              child: _buildSectionHeader(
-                title: '실시간 재판소',
-                subtitle: '실시간으로 재판에 참여해 투표해보세요!',
-              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader(
+                    title: '실시간 재판소',
+                    subtitle: '실시간으로 재판에 참여해 투표해보세요!',
+                  ),
+                  const SizedBox(height: 35), // 상단 여백
+                  Spacer(), 
+                  Icon(Icons.arrow_forward_ios, color: Color(0xFF121212)),
+                ],
+              ), 
+              
             ),
 
             const SizedBox(height: 26),
@@ -228,31 +235,36 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
               future: _hotPostsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return _buildLoadingState();
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return _buildErrorState('HOT 게시물을 불러오는데 실패했습니다: ${snapshot.error}');
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return _buildBoardSection(
                     title: 'HOT 게시물',
-                    items: [], // 빈 리스트 전달
+                    items: [],
                   );
                 }
-                final hotPosts = snapshot.data!
-                    .map((postData) => _HotPostItem(
-                          postId: postData['postId'],
-                          communityId: postData['communityId'] ?? '',
-                          category: postData['category'],
-                          title: postData['title'],
-                          views: postData['views'],
-                          onTap: () => _navigateToPostDetail(postData['postId'], postData['communityId']),
-                        ))
-                    .toList();
-                return _buildBoardSection(
-                  title: 'HOT 게시물',
-                  items: hotPosts,
-                );
+                
+                try {
+                  final hotPosts = snapshot.data!
+                      .map((postData) => _HotPostItem(
+                            postId: postData['postId'] ?? '',
+                            communityId: postData['communityId'] ?? '',
+                            category: postData['category'] ?? '미노분류',
+                            title: postData['title'] ?? '제목 없음',
+                            views: postData['views']?.toString() ?? '0',
+                            onTap: () => _navigateToPostDetail(postData['postId'], postData['communityId']),
+                          ))
+                      .toList();
+                  return _buildBoardSection(
+                    title: 'HOT 게시물',
+                    items: hotPosts,
+                  );
+                } catch (e) {
+                  return _buildErrorState('HOT 게시물 데이터 처리 오류: $e');
+                }
               },
             ),
             const SizedBox(height: 30),
@@ -261,32 +273,37 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
               future: _generalPostsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return _buildLoadingState();
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return _buildErrorState('종합게시판을 불러오는데 실패했습니다: ${snapshot.error}');
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return _buildBoardSection(
                     title: '종합게시판',
-                    items: [], // Pass an empty list
+                    items: [],
                   );
                 }
-                final generalPosts = snapshot.data!.map((post) {
-                  final bool isNew = DateTime.now().difference(post.datePosted).inHours < 24;
-                  return _GeneralPostItem(
-                    title: post.title,
-                    isNew: isNew,
-                    postId: post.postId,
-                    communityId: post.communityId,
-                    onTap: () => _navigateToPostDetail(post.postId, post.communityId),
+                
+                try {
+                  final generalPosts = snapshot.data!.map((post) {
+                    final bool isNew = DateTime.now().difference(post.datePosted).inHours < 24;
+                    return _GeneralPostItem(
+                      title: post.title,
+                      isNew: isNew,
+                      postId: post.postId,
+                      communityId: post.communityId,
+                      onTap: () => _navigateToPostDetail(post.postId, post.communityId),
+                    );
+                  }).toList();
+                  return _buildBoardSection(
+                    title: '종합게시판',
+                    isGeneral: true,
+                    items: generalPosts,
                   );
-                }).toList();
-                return _buildBoardSection(
-                  title: '종합게시판',
-                  isGeneral: true,
-                  items: generalPosts,
-                );
+                } catch (e) {
+                  return _buildErrorState('종합게시판 데이터 처리 오류: $e');
+                }
               },
             ),
             const SizedBox(height: 30),
@@ -295,33 +312,38 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
               future: _myPostsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return _buildLoadingState();
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('게시판을 불러오는 데 실패했습니다: ${snapshot.error}'));
+                  return _buildErrorState('내 게시판을 불러오는 데 실패했습니다: ${snapshot.error}');
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return _buildBoardSection(
                     title: '내 게시판',
-                    items: [], // 데이터가 없으면 빈 리스트를 전달
+                    items: [],
                   );
                 }
-                final myPosts = snapshot.data!.map((postData) {
-                  final DateTime postDate = postData['postDate'];
-                  final bool isNew = DateTime.now().difference(postDate).inHours < 24;
-                  return _MyPostItem(
-                    category: postData['communityName'],
-                    title: postData['postTitle'],
-                    isNew: isNew,
-                    postId: postData['postId'],
-                    communityId: postData['communityId'],
-                    onTap: () => _navigateToPostDetail(postData['postId'], postData['communityId']),
+                
+                try {
+                  final myPosts = snapshot.data!.map((postData) {
+                    final DateTime? postDate = postData['postDate'];
+                    final bool isNew = postDate != null ? DateTime.now().difference(postDate).inHours < 24 : false;
+                    return _MyPostItem(
+                      category: postData['communityName'] ?? '미노커뮤니티',
+                      title: postData['postTitle'] ?? '제목 없음',
+                      isNew: isNew,
+                      postId: postData['postId'] ?? '',
+                      communityId: postData['communityId'] ?? '',
+                      onTap: () => _navigateToPostDetail(postData['postId'], postData['communityId']),
+                    );
+                  }).toList();
+                  return _buildBoardSection(
+                    title: '내 게시판',
+                    items: myPosts,
                   );
-                }).toList();
-                return _buildBoardSection(
-                  title: '내 게시판',
-                  items: myPosts,
-                );
+                } catch (e) {
+                  return _buildErrorState('내 게시판 데이터 처리 오류: $e');
+                }
               },
             ),
             const SizedBox(height: 40), // 하단 여백
@@ -346,10 +368,10 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
       stream: _myCommunitiesStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return _buildLoadingState();
         }
         if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
+          return _buildErrorState('커뮤니티 데이터를 불러오는데 실패했습니다: ${snapshot.error}');
         }
 
         final myJoinedCommunities = snapshot.data ?? [];
@@ -533,174 +555,16 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
     );
   }
 
-  // Helper widget for the 'MY' tab's empty state message and button
-  Widget _buildEmptyState(double widthRatio, double heightRatio) {
-    return Column(
-      children: [
-        Text(
-          '참여한 커뮤니티가 없어요.\n자유롭게 관심있는 커뮤니티를 추가해보세요!',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: const Color(0xFFC7C7C7),
-            fontSize: 14 * widthRatio,
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w600,
-            height: 1.43,
-          ),
-        ),
-        SizedBox(height: 13 * heightRatio),
-        GestureDetector(
-          onTap: () {
-            // TODO: Implement navigation to the community search/discovery page
-            print('Navigate to find community page!');
-          },
-          child: Container(
-            width: 139 * widthRatio,
-            height: 29 * heightRatio,
-            decoration: ShapeDecoration(
-              shape: RoundedRectangleBorder(
-                side: const BorderSide(
-                  width: 1.20,
-                  color: Color(0xFF121212),
-                ),
-                borderRadius: BorderRadius.circular(400),
-              ),
-            ),
-            child: Center(
-              child: Text(
-                '커뮤니티 찾아보기',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: const Color(0xFF121212),
-                  fontSize: 14 * widthRatio,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   // Builds a card for a joined community, now with dynamic data.
   Widget _buildMyCommunityCard(double widthRatio, double heightRatio, Community community) {
     return Container(
       margin: EdgeInsets.only(bottom: 12 * heightRatio),
-      height: 150 * heightRatio, // Define explicit height for the card
-      child: Card(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12 * widthRatio),
-          side: const BorderSide(color: Color(0xFFF0F0F0), width: 1),
-        ),
-        clipBehavior: Clip.antiAlias, // Ensure image respects card border radius
-        child: InkWell(
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => KoreanCommunityDetailPage(community: community),
-              ),
-            );
-          },
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch, // Make children fill full height
-            children: [
-              // Community image on the left - stretches full height
-              Container(
-                width: 80 * widthRatio, // Made slightly wider for better proportion
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE9E9E9),
-                ),
-                child: community.communityBanner != null
-                    ? Image.network(
-                        community.communityBanner!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 80 * widthRatio,
-                            color: const Color(0xFFE9E9E9),
-                            child: const Icon(Icons.group, color: Colors.grey, size: 32),
-                          );
-                        },
-                      )
-                    : const Icon(Icons.group, color: Colors.grey, size: 32),
-              ),
-              
-              // Community info on the right
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(16 * widthRatio),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Community title
-                          Text(
-                            community.communityName,
-                            style: TextStyle(
-                              color: const Color(0xFF121212),
-                              fontSize: 16 * widthRatio,
-                              fontFamily: 'Pretendard',
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          
-                          SizedBox(height: 4 * heightRatio),
-                          
-                          // Community description
-                          if (community.announcement != null && community.announcement!.isNotEmpty) ...[
-                            Text(
-                              community.announcement!,
-                              style: TextStyle(
-                                color: const Color(0xFF8E8E8E),
-                                fontSize: 14 * widthRatio,
-                                fontFamily: 'Pretendard',
-                                fontWeight: FontWeight.w400,
-                                height: 1.4,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                      ),
-                      
-                      // Member count at bottom right
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Icon(
-                            Icons.people,
-                            size: 14 * widthRatio,
-                            color: const Color(0xFF8E8E8E),
-                          ),
-                          SizedBox(width: 4 * widthRatio),
-                          Text(
-                            '${community.memberCount}명',
-                            style: TextStyle(
-                              color: const Color(0xFF8E8E8E),
-                              fontSize: 12 * widthRatio,
-                              fontFamily: 'Pretendard',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      height: 150 * heightRatio,
+      child: _buildCommunityCard(
+        community: community,
+        width: double.infinity,
+        height: 150 * heightRatio,
       ),
     );
   }
@@ -842,7 +706,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
         if (snapshot.connectionState == ConnectionState.waiting) {
           return SizedBox(
             height: 201 * heightRatio,
-            child: const Center(child: CircularProgressIndicator()),
+            child: _buildLoadingState(),
           );
         }
         
@@ -850,7 +714,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
         if (snapshot.hasError) {
           return SizedBox(
             height: 201 * heightRatio,
-            child: const Center(child: Text('추천 커뮤니티를 불러오는데 실패했습니다.')),
+            child: _buildErrorState('추천 커뮤니티를 불러오는데 실패했습니다.'),
           );
         }
         
@@ -858,7 +722,7 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return SizedBox(
             height: 201 * heightRatio,
-            child: const Center(child: Text('추천할 커뮤니티가 없습니다.')),
+            child: _buildEmptyState('추천할 커뮤니티가 없습니다.'),
           );
         }
 
@@ -978,183 +842,180 @@ class _CommunityMainTabScreenMycomState extends State<CommunityMainTabScreenMyco
   }
 
 
-  // Helper widget for the "TOP 5" header
-  Widget _buildTop5Header(double widthRatio) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        'TOP 5 커뮤니티',
-        style: TextStyle(
-          color: const Color(0xFF121212),
-          fontSize: 18 * widthRatio,
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
+ 
   
-  // Helper widget for the horizontally scrollable TOP 5 communities
-// community_tab_mycom.dart
-
-// Helper widget for the horizontally scrollable TOP 5 communities
-Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
-  // FutureBuilder를 사용하여 비동기 데이터를 처리합니다.
-  return FutureBuilder<List<Community>>(
-    future: _top5CommunitiesFuture, // 여기서 state 변수를 사용합니다.
-    builder: (context, snapshot) {
-      // 데이터 로딩 중일 때 로딩 인디케이터를 표시합니다.
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      // 에러가 발생했을 때 에러 메시지를 표시합니다.
-      if (snapshot.hasError) {
-        return Center(child: Text('커뮤니티를 불러오는 데 실패했습니다.'));
-      }
-      // 데이터가 없거나 비어있을 때 메시지를 표시합니다.
-      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-        return const Center(child: Text('표시할 커뮤니티가 없습니다.'));
-      }
-
-      // 데이터를 성공적으로 가져왔을 때 리스트를 빌드합니다.
-      final topCommunities = snapshot.data!;
-
-      return SizedBox(
-        height: 176 * heightRatio,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: topCommunities.length,
-          separatorBuilder: (context, index) => SizedBox(width: 12 * widthRatio),
-          itemBuilder: (context, index) {
-            final community = topCommunities[index];
-            // 순위를 표시하기 위해 index를 활용합니다.
-            final rank = '${index + 1}위'; 
-
-            return _buildRankedCommunityCard(
-              widthRatio,
-              heightRatio,
-              rank: rank,
-              // Community 모델의 프로퍼티를 직접 사용합니다.
-              title: community.communityName,
-              description: community.announcement ?? '소개가 없습니다.', // announcement가 null일 경우 기본값 설정
-              members: '${community.memberCount}명',
-              imageUrl: community.communityBanner ?? 'https://placehold.co/300x87', // 배너가 없을 경우 기본 이미지
+  // Helper method to build a community card with consistent styling
+  Widget _buildCommunityCard({
+    required Community community,
+    required double width,
+    required double height,
+    VoidCallback? onTap,
+  }) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Card(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Color(0xFFF0F0F0), width: 1),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap ?? () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => KoreanCommunityDetailPage(community: community),
+              ),
             );
           },
-        ),
-      );
-    },
-  );
-}
-  
-  // Helper widget for a single ranked community card
-  Widget _buildRankedCommunityCard(double widthRatio, double heightRatio,
-      {required String rank,
-      required String title,
-      required String description,
-      required String members,
-      required String imageUrl}) {
-    return Container(
-      width: 300 * widthRatio,
-      height: 176 * heightRatio,
-      decoration: ShapeDecoration(
-        color: const Color(0xFFFAFAFA),
-        shape: RoundedRectangleBorder(
-          side: const BorderSide(width: 1, color: Color(0xFF5F37CF)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Community image
               Container(
-                height: 87 * heightRatio,
-                width: 300 * widthRatio,
-                decoration: ShapeDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
-                  ),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                  ),
+                width: 80,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE9E9E9),
                 ),
+                child: community.communityBanner != null
+                    ? Image.network(
+                        community.communityBanner!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.group, color: Colors.grey, size: 32);
+                        },
+                      )
+                    : const Icon(Icons.group, color: Colors.grey, size: 32),
               ),
-              Positioned(
-                left: 11 * widthRatio,
-                top: 11 * heightRatio,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 10 * widthRatio, vertical: 2 * heightRatio),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF5F37CF),
-                    borderRadius: BorderRadius.circular(400),
-                  ),
-                  child: Text(
-                    rank,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10 * widthRatio,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 12 * widthRatio,
-                bottom: 8 * heightRatio,
-                child: Row(
-                  children: [
-                     Icon(Icons.person, color: Colors.white, size: 14 * widthRatio),
-                     SizedBox(width: 4 * widthRatio),
-                    Text(
-                      members,
-                      style: TextStyle(
-                        color: const Color(0xFFFAFAFA),
-                        fontSize: 12 * widthRatio,
-                        fontWeight: FontWeight.w500,
+              // Community info
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            community.communityName,
+                            style: const TextStyle(
+                              color: Color(0xFF121212),
+                              fontSize: 16,
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (community.announcement != null && community.announcement!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              community.announcement!,
+                              style: const TextStyle(
+                                color: Color(0xFF8E8E8E),
+                                fontSize: 14,
+                                fontFamily: 'Pretendard',
+                                fontWeight: FontWeight.w400,
+                                height: 1.4,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
                       ),
-                    ),
-                  ],
+                      // Member count
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          const Icon(
+                            Icons.people,
+                            size: 14,
+                            color: Color(0xFF8E8E8E),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${community.memberCount}명',
+                            style: const TextStyle(
+                              color: Color(0xFF8E8E8E),
+                              fontSize: 12,
+                              fontFamily: 'Pretendard',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          Padding(
-            padding: EdgeInsets.all(12 * widthRatio),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: const Color(0xFF121212),
-                    fontSize: 16 * widthRatio,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 4 * heightRatio),
-                Text(
-                  description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: const Color(0xFF8E8E8E),
-                    fontSize: 14 * widthRatio,
-                    fontWeight: FontWeight.w500,
-                    height: 1.2,
-                  ),
-                ),
-              ],
+        ),
+      ),
+    );
+  }
+
+  // Helper method to build loading state
+  Widget _buildLoadingState() {
+    return const Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5F37CF)),
+      ),
+    );
+  }
+
+  // Helper method to build error state
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: const TextStyle(
+              color: Colors.red,
+              fontSize: 16,
+              fontFamily: 'Pretendard',
             ),
-          )
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to build empty state
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.inbox_outlined,
+            color: Colors.grey.withOpacity(0.5),
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              color: Colors.grey.withOpacity(0.7),
+              fontSize: 16,
+              fontFamily: 'Pretendard',
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -1186,7 +1047,7 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
               ),
               const Spacer(),
               IconButton(
-                icon : const Icon(Icons.search, size: 28, color: Color(0xFF5F37CF),),
+                icon: const Icon(Icons.search, size: 28, color: Color(0xFF5F37CF)),
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -1389,7 +1250,7 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
                     right: index == liveSessions.length - 1 ? 16 : 0,
                   ),
                   child: GestureDetector(
-                    onTap: () => _navigateToCourtSession(session),
+                    onTap: () => _navigateToCourtSession(session, context),
                     child: _buildTrialCard(
                       imageUrl: "assets/images/community/judge_${(index % 2) + 1}.png",
                       title: session.title,
@@ -1513,15 +1374,7 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFF5F37CF),
-              fontSize: 16,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          _buildBoardSectionHeader(title),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
@@ -1544,15 +1397,7 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFF5F37CF),
-            fontSize: 16,
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        _buildBoardSectionHeader(title),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 18),
@@ -1561,22 +1406,19 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
-            // ListView.separated를 사용하여 아이템 사이에 구분선을 추가합니다.
             children: List.generate(items.length, (index) {
               final item = items[index];
               Widget itemWidget;
-              // 게시판 종류에 따라 다른 위젯을 렌더링합니다.
               if (title == 'HOT 게시물' && item is _HotPostItem) {
                 itemWidget = item;
               } else if (item is _GeneralPostItem) {
                 itemWidget = item;
               } else if (item is _MyPostItem) {
-                 itemWidget = item;
+                itemWidget = item;
               } else {
                 itemWidget = const SizedBox.shrink();
               }
 
-              // 마지막 아이템이 아닐 경우에만 간격을 줍니다.
               return Padding(
                 padding: EdgeInsets.only(bottom: index == items.length - 1 ? 0 : 12),
                 child: itemWidget,
@@ -1586,6 +1428,52 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
         ),
       ],
     );
+  }
+
+  Widget _buildBoardSectionHeader(String title) {
+    final bool isNavigableBoard = title == '내 게시판' || title == '종합게시판';
+    
+    if (isNavigableBoard) {
+      return GestureDetector(
+        onTap: () {
+          if (title == '내 게시판') {
+            setState(() {
+              _selectedTab = 'MY';
+            });
+          } else if (title == '종합게시판') {
+            // Navigate to general board community detail page
+            _navigateToGeneralBoard(context);
+          }
+        },
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFF5F37CF),
+                fontSize: 16,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            const Icon(Icons.arrow_forward_ios, color: Color(0xFF5F37CF), size: 16),
+          ],
+        ),
+      );
+    }
+    
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Color(0xFF5F37CF),
+        fontSize: 16,
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  } 
   }
 
   // Court 관련 헬퍼 함수들
@@ -1599,7 +1487,7 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
     }
   }
 
-  void _navigateToCourtSession(CourtSessionData session) {
+  void _navigateToCourtSession(CourtSessionData session, context) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => court_main.CourtPrototypeScreen(
@@ -1608,8 +1496,31 @@ Widget _buildTop5CommunityList(double widthRatio, double heightRatio) {
       ),
     );
   }
-}
 
+  // Navigate to general board (종합게시판) community detail page
+  void _navigateToGeneralBoard(context) {
+    // Create a general community object for 종합게시판
+    final generalCommunity = Community(
+      communityId : 'default_general_board',
+      communityName : '종합게시반',
+      creatorId : 'system_admin',
+      memberCount : 0,
+      members : [],
+      announcement : '실소 커뮤니티의 기본 게시판입니다. 모든 사용자가 자동으로 가입되어 자유롭게 소통할 수 있습니다.',
+      posts : [],
+      communityBanner : null,
+      hashtags : ['일반', 'general', '종합', 'community', '실소'],
+      dateAdded : DateTime.now(),
+      createdAt : DateTime.now(),
+      updatedAt : DateTime.now(),
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => KoreanCommunityDetailPage(community: generalCommunity),
+      ),
+    );
+  }
 
 // 'HOT 게시물' 아이템 위젯
 class _HotPostItem extends StatelessWidget {
