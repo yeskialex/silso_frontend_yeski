@@ -8,35 +8,59 @@ class CustomBottomNavigation extends StatelessWidget {
     required this.currentIndex,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
-      selectedItemColor: const Color(0xFF5F37CF),
-      unselectedItemColor: Colors.grey,
-      elevation: 8,
-      currentIndex: currentIndex,
-      onTap: (index) => _onTap(context, index),
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'Community',
+@override
+Widget build(BuildContext context) {
+  return BottomNavigationBar(
+    type: BottomNavigationBarType.fixed,
+    backgroundColor: Colors.white,
+    selectedItemColor: const Color(0xFF5F37CF),
+    unselectedItemColor: Colors.grey,
+    elevation: 8,
+    currentIndex: currentIndex,
+    onTap: (index) => _onTap(context, index),
+    items: const [
+      BottomNavigationBarItem(
+        icon: SizedBox(
+          width: 30.0, // 원하는 아이콘 크기
+          height: 30.0, // 원하는 아이콘 크기
+          child: Icon(Icons.home_outlined, size: 37),
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.filter_none),
-          activeIcon: Icon(Icons.filter_none),
-          label: 'Contents',
+        activeIcon: SizedBox(
+          width: 30.0, // 활성화된 아이콘 크기
+          height: 30.0, // 활성화된 아이콘 크기
+          child: Icon(Icons.home, size: 37),
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          activeIcon: Icon(Icons.person),
-          label: 'Profile',
+        label: '',
+      ),
+      BottomNavigationBarItem(
+        icon: SizedBox(
+          width: 30.0,
+          height: 30.0,
+          child: Icon(Icons.filter_none, size: 37),
         ),
-      ],
-    );
-  }
+        activeIcon: SizedBox(
+          width: 30.0,
+          height: 30.0,
+          child: Icon(Icons.filter_none, size: 37),
+        ),
+        label: '',
+      ),
+      BottomNavigationBarItem(
+        icon: SizedBox(
+          width: 30.0,
+          height: 30.0,
+          child: Icon(Icons.person_outline, size: 37),
+        ),
+        activeIcon: SizedBox(
+          width: 30.0,
+          height: 30.0,
+          child: Icon(Icons.person, size: 37),
+        ),
+        label: '',
+      ),
+    ],
+  );
+}
 
   void _onTap(BuildContext context, int index) {
     // 현재 페이지와 같은 탭을 누르면 아무 작업 안함

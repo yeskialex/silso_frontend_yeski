@@ -523,14 +523,11 @@ class _MyPageMainState extends State<MyPageMain> with SingleTickerProviderStateM
           // Tab Bar
           Container(
             decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Color(0xFFF0F0F0), width: 1),
-              ),
             ),
             child: TabBar(
               controller: _tabController,
               labelColor: const Color(0xFF5F37CF),
-              unselectedLabelColor: const Color(0xFF8E8E8E),
+              unselectedLabelColor: const Color(0xFFC7C7C7),
               indicatorColor: const Color(0xFF5F37CF),
               indicatorWeight: 2,
               labelStyle: TextStyle(
