@@ -386,13 +386,13 @@ class _TransparentBackgroundVoteControlRowState extends State<TransparentBackgro
             ? ChatMessageType.guilty
             : ChatMessageType.notGuilty;
             
-        await _courtService.sendChatMessage(
+        // sendVote 함수를 사용하여 투표를 보냅니다.
+        // 이 함수는 'court_service.dart'에 정의되어 있습니다.
+        await _courtService.sendVote(
           courtId: widget.courtSession!.id,
-          message: voteMessage,
-          messageType: messageType,
-          isSystemMessage: true, // 채팅창에 표시되지 않음
+          voteType: messageType,
         );
-        
+
         // Show success feedback
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -430,6 +430,13 @@ class _TransparentBackgroundVoteControlRowState extends State<TransparentBackgro
               duration: const Duration(seconds: 3),
             ),
           );
+        } else {
+          // courtSession.id가 없을 경우
+          if (mounted) {
+            setState(() {
+              _isVoting = false;
+            });
+          }
         }
       }
     }

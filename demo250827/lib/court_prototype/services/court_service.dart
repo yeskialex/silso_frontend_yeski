@@ -330,6 +330,53 @@ class CourtService {
 
   // === CHAT FUNCTIONALITY ===
 
+  // Send a vote (system message that doesn't appear in chat)
+  Future<String> sendVote({
+    required String courtId,
+    required ChatMessageType voteType,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Check if court session exists
+      final courtDoc = await _courtsCollection.doc(courtId).get();
+      if (!courtDoc.exists) {
+        throw Exception('Court session not found');
+      }
+
+      // Auto-join user when voting
+      await joinCourtSession(courtId);
+
+      // Get user display name
+      String senderName = user.displayName ?? user.email ?? 'Anonymous';
+      
+      // Create vote message (always system message)
+      String voteMessage = voteType == ChatMessageType.guilty 
+          ? '투표: 유죄 (guilty)' 
+          : '투표: 무죄 (Not Guilty)';
+
+      final voteData = {
+        'courtId': courtId,
+        'senderId': user.uid,
+        'senderName': senderName,
+        'message': voteMessage,
+        'messageType': voteType.name,
+        'timestamp': FieldValue.serverTimestamp(),
+        'isDeleted': false,
+        'isSystemMessage': true, // Always true for votes - won't appear in chat
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      final docRef = await _courtChatsCollection.add(voteData);
+      return docRef.id;
+    } catch (e) {
+      throw Exception('Failed to send vote: ${e.toString()}');
+    }
+  }
+
   // Send a chat message to a court session
   Future<String> sendChatMessage({
     required String courtId,
@@ -376,17 +423,21 @@ class CourtService {
     }
   }
 
-  // Get chat messages for a court session
+  // Get chat messages for a court session (excludes system messages and vote messages)
   Stream<List<CourtChatMessage>> getCourtChatMessages(String courtId) {
     return _courtChatsCollection
         .where('courtId', isEqualTo: courtId)
         .where('isDeleted', isEqualTo: false)
+        .where('isSystemMessage', isEqualTo: false) // Exclude system messages including votes
         .snapshots()
         .map((snapshot) {
-      final messages = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return CourtChatMessage.fromFirestore(doc.id, data);
-      }).toList();
+      final messages = snapshot.docs
+          .map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return CourtChatMessage.fromFirestore(doc.id, data);
+          })
+          .where((message) => message.messageType != ChatMessageType.system) // Additional filter for system message types
+          .toList();
       
       // Sort by timestamp (oldest first for chat display)
       messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
