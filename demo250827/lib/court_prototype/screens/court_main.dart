@@ -295,223 +295,265 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
     
     showDialog(
       context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
       barrierDismissible: false, // User must tap button to close
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: SingleChildScrollView (
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with court gavel icon
-                Row(
+      builder: (context) => _buildDocumentDialog(),
+    );
+  }
+
+  // Build document-style dialog
+  Widget _buildDocumentDialog() {
+    final screenSize = MediaQuery.of(context).size;
+    final modalWidth = screenSize.width * 0.9;
+    final modalHeight = screenSize.height * 0.7;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(16),
+      child: Stack(
+        children: [
+          SizedBox(
+            width: modalWidth,
+            height: modalHeight,
+            child: _buildSessionDocumentUi(
+              width: modalWidth,
+              height: modalHeight,
+              title: '재판소 입장 안내문',
+              content: _buildSessionContent(),
+              pageInfo: '1/1',
+            ),
+          ),
+          // Close button
+          Positioned(
+            top: -8,
+            right: -8,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.of(context).pop(),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build session content for document UI
+  Widget _buildSessionContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Case title section
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF5F37CF).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: const Color(0xFF5F37CF).withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5F37CF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.gavel,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
+                    const Text(
+                      'LIVE SESSION',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
                         color: Color(0xFF5F37CF),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.gavel,
-                        color: Colors.white,
-                        size: 24,
+                        fontFamily: 'Pretendard',
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Court Session',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF8E8E8E),
-                              fontFamily: 'Pretendard',
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Live Discussion',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8E8E8E),
-                              fontFamily: 'Pretendard',
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.courtSession!.category,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF5E4E2C),
+                        fontFamily: 'Pretendard',
                       ),
                     ),
                   ],
                 ),
-                
-                const SizedBox(height: 24),
-                
-                // Session title
-                Text(
-                  widget.courtSession!.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF121212),
-                    fontFamily: 'Pretendard',
-                    height: 1.3,
-                  ),
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 20),
+        
+        // Case title
+        Text(
+          widget.courtSession!.title,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF5E4E2C),
+            fontFamily: 'Pretendard',
+            height: 1.3,
+          ),
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Case description
+        Text(
+          widget.courtSession!.description.isNotEmpty
+              ? widget.courtSession!.description
+              : "Session details will be provided during the discussion.",
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF5E4E2C),
+            fontFamily: 'Pretendard',
+            height: 1.6,
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Participation guidelines
+        Container(
+          width: double.infinity,
+          height: 1,
+          color: const Color(0xFFE0C898),
+        ),
+        const SizedBox(height: 16),
+        
+        const Text(
+          '재판소 GUIDLINE',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFFA68A54),
+            fontFamily: 'Pretendard',
+            letterSpacing: 0.5,
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        const Text(
+        "• 사건의 예비 심리 단계에서 사전 투표가 완료되었습니다\n"
+        "• 채팅을 통해 자신의 주장과 증거를 제시할 수 있습니다\n"   
+        "• 모든 참가자와의 대화에서 일방적인 욕설, 비방 없이 정중한 태도를 유지해 주세요\n"
+        "• 채팅창은 ‘유죄 / 무죄’ 입장 전환 스위치 버튼으로 구분됩니다\n"
+        "• 대화가 과열될 경우, ‘정숙 모드’가 발동되어 채팅창이 일시적으로 얼려질 수 있습니다\n" 
+        "• 채팅에 참여해야 최종 투표가 가능합니다\n",
+          style: TextStyle(
+            fontSize: 10,
+            color: Color(0xFF5E4E2C),
+            fontFamily: 'Pretendard',
+            height: 1.5,
+          ),
+        ),
+        
+        const SizedBox(height: 20),
+        
+        // Session statistics
+        Container(
+          width: double.infinity,
+          height: 1,
+          color: const Color(0xFFE0C898),
+        ),
+        const SizedBox(height: 16),
+        
+        const Text(
+          'SESSION STATUS',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFFA68A54),
+            fontFamily: 'Pretendard',
+            letterSpacing: 0.5,
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        Row(
+          children: [
+            Expanded(
+              child: _buildDocumentInfoItem(
+                label: 'Active Participants',
+                value: '${widget.courtSession!.currentLiveMembers}',
+                icon: Icons.people,
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: _buildDocumentInfoItem(
+                label: 'Remaining Time',
+                value: _formatTimeLeft(widget.courtSession!.timeLeft),
+                icon: Icons.schedule,
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 32),
+        
+        // Join section
+        Center(
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _handleJoinSession(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5F37CF),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                
-                const SizedBox(height: 16),
-                
-                // Session description
-                Text(
-                  widget.courtSession!.description,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF424242),
-                    fontFamily: 'Pretendard',
-                    height: 1.5,
-                  ),
+                elevation: 2,
+              ),
+              child: const Text(
+                'Enter Court Session',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Pretendard',
                 ),
-                
-                const SizedBox(height: 24),
-                
-                // Info section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF5F37CF).withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF5F37CF).withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: const Color(0xFF5F37CF),
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'How to participate',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF5F37CF),
-                              fontFamily: 'Pretendard',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        '• Voting has already been completed in the case stage\n'
-                        '• Share your arguments and evidence through discussion\n'
-                        '• Engage respectfully with other participants\n'
-                        '• Your messages will be grouped by your position (guilty/not guilty)',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF5F37CF),
-                          fontFamily: 'Pretendard',
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Session info
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.people_outline,
-                        label: 'Participants',
-                        value: '${widget.courtSession!.currentLiveMembers}',
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildInfoItem(
-                        icon: Icons.access_time,
-                        label: 'Time Left',
-                        value: _formatTimeLeft(widget.courtSession!.timeLeft),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 32),
-                
-                // Join section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFE0E0E0),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Ready to join the discussion?',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF121212),
-                          fontFamily: 'Pretendard',
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Join Discussion button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => _handleJoinSession(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF5F37CF),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: const Text(
-                            'Join Discussion',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Pretendard',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -801,7 +843,7 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
                             if (_isImagePopupVisible) // 새로운 상태 변수를 추가했다고 가정
                               Positioned.fill(
                                 child: Container(
-                                  color: Colors.black.withOpacity(0.0), // 배경을 어둡게 처리
+                                  color: Colors.black.withValues(alpha: 0.0), // 배경을 어둡게 처리
                                   child: Center(
                                     child: Image.asset(
                                       'assets/animation_effect/message_effect.png', // 이미지 경로를 실제 파일 경로로 변경하세요.
@@ -994,4 +1036,231 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
       },
     );
   }
+
+  // Build document info item for document-style dialog
+  Widget _buildDocumentInfoItem({
+    required String label,
+    required String value,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2E3BC).withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFE0C898),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF5E4E2C).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              icon,
+              color: const Color(0xFF5E4E2C),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFA68A54),
+                    fontFamily: 'Pretendard',
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF5E4E2C),
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build document header
+  Widget _buildSessionDocumentHeader(String title, String pageInfo) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const SizedBox(width: 40), // Spacer for centering title
+          Expanded(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF5E4E2C),
+                fontSize: 20,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 40,
+            child: Text(
+              pageInfo,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: Color(0xFFA68A54),
+                fontSize: 14,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Create session document UI
+  Widget _buildSessionDocumentUi({
+    required double width,
+    required double height,
+    required String title,
+    required Widget content,
+    String pageInfo = '1/1',
+  }) {
+    const double borderWidth = 12.0;
+    const double foldSize = 50.0;
+
+    Widget buildBorder(Widget child) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(color: const Color(0xFF79673F)),
+          CustomPaint(
+            painter: _SessionPixelPatternPainter(
+              dotColor: Colors.black.withValues(alpha: 0.1),
+              step: 3.0,
+            ),
+            child: Container(),
+          ),
+          child,
+        ],
+      );
+    }
+
+    return Stack(
+      children: [
+        // Base document background
+        Container(color: const Color(0xFFF2E3BC)),
+        CustomPaint(
+          size: Size(width, height),
+          painter: _SessionPixelPatternPainter(
+            dotColor: Colors.black.withValues(alpha: 0.05),
+          ),
+        ),
+        // Folded corner effect
+        Positioned(
+          bottom: 0,
+          right: 0,
+          width: foldSize,
+          height: foldSize,
+          child: ClipPath(
+            clipper: _SessionFoldedCornerClipper(),
+            child: Container(color: const Color(0xFFD4C0A1)),
+          ),
+        ),
+        // Document borders
+        Positioned(
+          left: 0, top: 0, bottom: 0,
+          child: SizedBox(width: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        Positioned(
+          right: 0, top: 0, bottom: 0,
+          child: SizedBox(width: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        Positioned(
+          left: 0, top: 0, right: 0,
+          child: SizedBox(height: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        Positioned(
+          left: 0, bottom: 0, right: 0,
+          child: SizedBox(height: borderWidth, child: buildBorder(const SizedBox())),
+        ),
+        // Content area
+        Padding(
+          padding: const EdgeInsets.all(borderWidth + 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSessionDocumentHeader(title, pageInfo),
+              const SizedBox(height: 15),
+              Container(width: double.infinity, height: 1, color: const Color(0xFFE0C898)),
+              const SizedBox(height: 20),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: content,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Document UI helper classes for session dialog
+class _SessionPixelPatternPainter extends CustomPainter {
+  final Color dotColor;
+  final double step;
+  _SessionPixelPatternPainter({required this.dotColor, this.step = 4.0});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = dotColor..style = PaintingStyle.fill;
+    for (double x = 0; x < size.width; x += step) {
+      for (double y = 0; y < size.height; y += step) {
+        canvas.drawRect(Rect.fromLTWH(x, y, 1, 1), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _SessionFoldedCornerClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(0, size.height);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
