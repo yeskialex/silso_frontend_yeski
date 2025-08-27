@@ -1007,12 +1007,27 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
           );
         }
 
-        return Positioned.fill(
-          child: Padding(
-            padding: EdgeInsets.only(
-              top: 100, // Account for app bar
-              bottom: keyboardHeight + 160, // Account for keyboard and input
-            ),
+      return Positioned.fill(
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: 200, // Account for app bar
+            bottom: keyboardHeight + 100, // Account for keyboard and input
+          ),
+          child: ShaderMask(
+            shaderCallback: (Rect bounds) {
+              return LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[
+                  Colors.white.withOpacity(0.7), // 시작점 그라데이션 
+                  Colors.white, // 상단 
+                  Colors.white, // 하단 
+                  Colors.white.withOpacity(0.7), // 끝점 그라데이션 
+                ],
+                stops: const [0.0, 0.05, 0.95, 1.0], // 그라데이션 경계 지점
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.dstIn, // 그라데이션 효과 적용
             child: ListView.builder(
               controller: _scrollController,
               reverse: false, // Show oldest first
@@ -1020,7 +1035,6 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
               itemBuilder: (context, index) {
                 final message = displayMessages[index];
                 
-                // Auto-scroll when new message is added (last item)
                 if (index == displayMessages.length - 1) {
                   WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
                 }
@@ -1032,7 +1046,8 @@ class BubbleStackScreenState extends State<BubbleStackScreen> {
               },
             ),
           ),
-        );
+        ),
+      );
       },
     );
   }
