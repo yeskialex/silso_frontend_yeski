@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/vote_model.dart';
 import '../services/court_service.dart';
+import '../models/court_chat_message.dart';
 
 /// Selective transparency design - only background transparent, content fully visible
 class SelectiveTransparentDesign {
@@ -179,8 +180,14 @@ class _TransparentBackgroundVoteAppBarState extends State<TransparentBackgroundV
                     guiltyVotes: 0,
                     notGuiltyVotes: 0,
                   ),
-            // 3rd Row: Vote Control Row (remove manual voting buttons)
-            TransparentBackgroundVoteControlRow(title: widget.title),
+            // 3rd Row: Vote Control Row with interactive voting
+            TransparentBackgroundVoteControlRow(
+              title: widget.title,
+              courtSession: widget.courtSession,
+              onVoteChanged: (choice) {
+                debugPrint('Vote changed to: $choice');
+              },
+            ),
           ],
         ),
       ),
@@ -298,14 +305,238 @@ class TransparentBackgroundScaleBar extends StatelessWidget {
   }
 }
 
-/// 투명한 배경을 가진 투표 컨트롤 행 위젯 (display only, no manual voting)
-class TransparentBackgroundVoteControlRow extends StatelessWidget {
+/// 투명한 배경을 가진 투표 컨트롤 행 위젯 (interactive voting buttons)
+class TransparentBackgroundVoteControlRow extends StatefulWidget {
   final String title;
+  final Function(VoteChoice)? onVoteChanged;
+  final dynamic courtSession; // For vote submission
 
   const TransparentBackgroundVoteControlRow({
     super.key,
     required this.title,
+    this.onVoteChanged,
+    this.courtSession,
   });
+
+  @override
+  State<TransparentBackgroundVoteControlRow> createState() => _TransparentBackgroundVoteControlRowState();
+}
+
+/// Vote choice enumeration
+enum VoteChoice { none, guilty, notGuilty }
+
+class _TransparentBackgroundVoteControlRowState extends State<TransparentBackgroundVoteControlRow>
+    with SingleTickerProviderStateMixin {
+  VoteChoice _selectedVote = VoteChoice.none;
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  final CourtService _courtService = CourtService();
+  bool _isVoting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleVote(VoteChoice choice) async {
+    if (_isVoting || _selectedVote == choice) return;
+
+    setState(() {
+      _isVoting = true;
+    });
+
+    // Trigger animation
+    await _animationController.forward();
+    await _animationController.reverse();
+
+    // Update local state
+    setState(() {
+      _selectedVote = choice;
+      _isVoting = false;
+    });
+
+    // Notify parent about vote change
+    widget.onVoteChanged?.call(choice);
+
+    // Submit vote to court service if courtSession is available
+    if (widget.courtSession?.id != null) {
+      try {
+        final voteMessage = choice == VoteChoice.guilty 
+            ? '투표: 유죄 (Guilty)'
+            : '투표: 무죄 (Not Guilty)';
+        
+        final messageType = choice == VoteChoice.guilty 
+            ? ChatMessageType.guilty
+            : ChatMessageType.notGuilty;
+            
+        await _courtService.sendChatMessage(
+          courtId: widget.courtSession!.id,
+          message: voteMessage,
+          messageType: messageType,
+          isSystemMessage: true, // 채팅창에 표시되지 않음
+        );
+        
+        // Show success feedback
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                choice == VoteChoice.guilty 
+                    ? '유죄에 투표했습니다 (Voted Guilty)'
+                    : '무죄에 투표했습니다 (Voted Not Guilty)',
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              backgroundColor: Color(messageType.colorValue),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Vote submission failed: $e');
+        // Show error feedback to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to submit vote: ${e.toString()}',
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Widget _buildVoteButton({
+    required String label,
+    required Color baseColor,
+    required VoteChoice voteChoice,
+    required double fontSize,
+  }) {
+    final isSelected = _selectedVote == voteChoice;
+    final isDisabled = _isVoting;
+    
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: isSelected ? _scaleAnimation.value : 1.0,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: isDisabled ? null : () => _handleVote(voteChoice),
+              borderRadius: BorderRadius.circular(22),
+              splashColor: baseColor.withValues(alpha: 0.3),
+              highlightColor: baseColor.withValues(alpha: 0.2),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 80,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isSelected 
+                      ? baseColor
+                      : baseColor.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(22),
+                  border: isSelected 
+                      ? Border.all(color: Colors.white, width: 2)
+                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected ? Colors.black38 : Colors.black26,
+                      blurRadius: isSelected ? 4 : 2,
+                      offset: Offset(0, isSelected ? 2 : 1),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 200),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSelected ? fontSize + 1 : fontSize,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        ),
+                        child: Text(label),
+                      ),
+                    ),
+                    if (isSelected)
+                      Positioned(
+                        top: 2,
+                        right: 2,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.check,
+                              size: 8,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (_isVoting && _selectedVote == voteChoice)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: const Center(
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -314,72 +545,50 @@ class TransparentBackgroundVoteControlRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Guilty label (left side - red)
-          Container(
-            width: 80,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF44336).withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 2,
-                  offset: Offset(0, 1),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Text(
-                'Guilty',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+          // Guilty button (left side - red)
+          _buildVoteButton(
+            label: 'Guilty',
+            baseColor: const Color(0xFFF44336),
+            voteChoice: VoteChoice.guilty,
+            fontSize: 14,
           ),
           // 중앙 제목 영역
           Expanded(
             child: Center(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (_selectedVote != VoteChoice.none)
+                    Text(
+                      _selectedVote == VoteChoice.guilty ? 'You voted: Guilty' : 'You voted: Not Guilty',
+                      style: TextStyle(
+                        color: _selectedVote == VoteChoice.guilty 
+                            ? const Color(0xFFF44336)
+                            : const Color(0xFF3146E6),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
-          // Not Guilty label (right side - green)
-          Container(
-            width: 80,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFF3146E6).withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 2,
-                  offset: Offset(0, 1),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Text(
-                'Not Guilty',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+          // Not Guilty button (right side - blue)
+          _buildVoteButton(
+            label: 'Not Guilty',
+            baseColor: const Color(0xFF3146E6),
+            voteChoice: VoteChoice.notGuilty,
+            fontSize: 12,
           ),
         ],
       ),
