@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow anyone to read and query users collection for ID duplicate checks (no authentication required)
+    match /users/{userId} {
+      allow read, list: if true; // Public read access for duplicate checks and queries
+      allow write: if request.auth != null; // Write requires authentication
+    }
+    
+    // All other collections require authentication for both read and write
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
