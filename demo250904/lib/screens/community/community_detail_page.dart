@@ -121,7 +121,7 @@ class _KoreanCommunityDetailPageState extends State<KoreanCommunityDetailPage> {
               ),
 
               title: const Text('커뮤니티 나가기', style: TextStyle(color: Colors.black, fontSize: 18, fontFamily: 'Pretendard', fontWeight: FontWeight.w600, height: 1.23,), textAlign: TextAlign.center,),
-              content: const Text('정말로 이 커뮤니티를 나가시겠습니까?', style: TextStyle(color: const Color(0xFFC7C7C7), fontSize: 14, fontFamily: 'Pretendard', fontWeight: FontWeight.w600, height: 1.58,)),
+              content: const Text('정말로 이 커뮤니티를 나가시겠습니까?\n\n 탈퇴 이후 해당 커뮤니티에서 작성한 게시글 및 댓글은 수정 및 삭제가 불가합니다.', style: TextStyle(color: const Color(0xFFC7C7C7), fontSize: 14, fontFamily: 'Pretendard', fontWeight: FontWeight.w600, height: 1.58,)),
               actionsAlignment: MainAxisAlignment.center,
 
               actions: <Widget>[
