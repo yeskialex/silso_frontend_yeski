@@ -211,7 +211,7 @@ class _ExploreSearchPageState extends State<ExploreSearchPage> {
       title: TextField(
         controller: _searchController,
         focusNode: _searchFocusNode,
-        style: TextStyle(fontSize: 16 * widthRatio),
+        style: TextStyle(fontSize: 16 * widthRatio, color: Colors.black87),
         decoration: InputDecoration(
           hintText: '관심있는 키워드를 입력해주세요.',
           hintStyle: TextStyle(
