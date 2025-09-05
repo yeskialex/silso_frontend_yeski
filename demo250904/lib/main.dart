@@ -100,7 +100,7 @@ class MyApp extends StatelessWidget {
         // '/profile-information': (context) => const ProfileInformationScreen(),
         //'/policy-agreement': (context) => const PolicyAgreementScreen(),
         // initial login flow
-         '/login-splash' : (context) => const SigininSplashScreen(), 
+        '/login-splash' : (context) => const SigininSplashScreen(), 
         '/id-password-signup': (context) => const IDPasswordSignUpScreen(isIdAndPasswordShortCut: false),
         '/login-phone-confirm' : (context) => const PhoneConfirmScreen(), 
         '/category-selection': (context) => const CategorySelectionScreen(),

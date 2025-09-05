@@ -109,23 +109,84 @@ class _KoreanCommunityDetailPageState extends State<KoreanCommunityDetailPage> {
     setState(() => _isLoading = true);
 
     try {
-      if (_isSubscribed) {
-        await _communityService.leaveCommunity(_community.communityId);
-        setState(() {
-          _isSubscribed = false;
-          _community = _community.copyWith(
-            memberCount: _community.memberCount - 1,
-            members: _community.members.where((id) => id != currentUserId).toList(),
-          );
-        });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('커뮤니티를 나갔습니다'),
-            backgroundColor: Colors.orange,
-          ),
+       if (_isSubscribed) {
+        // Show confirmation dialog before leaving
+        final bool? confirmLeave = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: Color(0xFFFFFFFF),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+
+              title: const Text('커뮤니티 나가기', style: TextStyle(color: Colors.black, fontSize: 18, fontFamily: 'Pretendard', fontWeight: FontWeight.w600, height: 1.23,), textAlign: TextAlign.center,),
+              content: const Text('정말로 이 커뮤니티를 나가시겠습니까?', style: TextStyle(color: const Color(0xFFC7C7C7), fontSize: 14, fontFamily: 'Pretendard', fontWeight: FontWeight.w600, height: 1.58,)),
+              actionsAlignment: MainAxisAlignment.center,
+
+              actions: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // 5. '취소' 버튼 스타일
+                    Expanded(
+                      child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFDFD4FF).withOpacity(0.8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('취소', style: TextStyle(color: Color(0xFF5F37CF))),
+                      ),
+                    ),
+  
+                      SizedBox(width: 8),
+  
+                      // 6. '나가기' 버튼 스타일
+                    Expanded(
+                      child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.withOpacity(0.8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('나가기', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+
+                  ],
+                ),
+              ],
+            );
+          },
         );
-      } else {
+
+        // Proceed only if user confirmed
+        if (confirmLeave == true) {
+          await _communityService.leaveCommunity(_community.communityId);
+          setState(() {
+            _isSubscribed = false;
+            _community = _community.copyWith(
+              memberCount: _community.memberCount - 1,
+              members: _community.members.where((id) => id != currentUserId).toList(),
+            );
+          });
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('커뮤니티를 나갔습니다'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+      }
+      else {
         await _communityService.joinCommunity(_community.communityId);
         setState(() {
           _isSubscribed = true;
