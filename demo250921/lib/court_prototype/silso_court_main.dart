@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../screens/community/community_search_page.dart';
-import 'services/court_service.dart';
-import 'services/case_service.dart';
-import 'models/case_model.dart';
-import 'models/court_session_model.dart';
-import 'screens/add_case_screen.dart';
-import 'screens/court_main.dart' as court_main;
-import 'config/court_config.dart';
+import '../services/court_service.dart';
+import '../services/case_service.dart';
+import '../models/case_model.dart';
+import '../models/court_session_model.dart';
+import '../models/ai_conclusion_model.dart';
+import 'add_case_screen.dart';
+import 'court_main.dart' as court_main;
+import '../config/court_config.dart';
+
+// Import separated widget files
+import '../models/silso_court_pixelPattern.dart';
+import '../models/silso_court_voteResult.dart';
+import '../models/silso_court_votemodal.dart';
+import '../widgets/widget_buildDocumentUi.dart';
+import '../widgets/widget_buildHeader.dart';
 
 // Import main widget files
-import 'widgets/widget_buildCasesTab.dart';
-import 'widgets/widget_buildCourthouseTab.dart';
-import 'widgets/widget_buildFolderCard.dart';
-import 'widgets/widget_buildLivetrial.dart';
-import 'widgets/widget_buildVerdictZipTab.dart';
+import '../widgets/widget_buildCasesTab.dart';
+import '../widgets/widget_buildCourthouseTab.dart';
+import '../widgets/widget_buildFolderCard.dart';
+import '../widgets/widget_buildLivetrial.dart';
+import '../widgets/widget_buildVerdictZipTab.dart';
 
 
 // Removed unused _TrialData class since we now use real data
