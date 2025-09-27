@@ -23,6 +23,112 @@ class _LoginScreenState extends State<LoginScreen> {
   late double widthRatio;
   late double heightRatio;
 
+  // Helper function to detect if error is from user cancellation
+  bool _isUserCancellation(String errorMessage) {
+    final cancelationKeywords = [
+      'cancelled',
+      'canceled',
+      'user cancelled',
+      'user canceled',
+      'sign_in_canceled',
+      'aborted',
+      'dismissed',
+      'user_cancelled',
+      'popup_closed',
+      'null',
+    ];
+
+    final lowerError = errorMessage.toLowerCase();
+    return cancelationKeywords.any((keyword) => lowerError.contains(keyword));
+  }
+
+  // Show custom error dialog that matches app design
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 320 * widthRatio,
+            padding: EdgeInsets.all(24 * widthRatio),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAFAFA),
+              borderRadius: BorderRadius.circular(16 * widthRatio),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Error icon
+                Container(
+                  width: 56 * widthRatio,
+                  height: 56 * widthRatio,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEBEE),
+                    borderRadius: BorderRadius.circular(28 * widthRatio),
+                  ),
+                  child: Icon(
+                    Icons.error_outline,
+                    color: const Color(0xFFE53E3E),
+                    size: 32 * widthRatio,
+                  ),
+                ),
+                SizedBox(height: 16 * heightRatio),
+
+                // Error message
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: const Color(0xFF121212),
+                    fontSize: 16 * widthRatio,
+                    fontFamily: 'Pretendard',
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+                SizedBox(height: 24 * heightRatio),
+
+                // OK button
+                SizedBox(
+                  width: double.infinity,
+                  height: 44 * heightRatio,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5F37CF),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12 * widthRatio),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      '확인',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16 * widthRatio,
+                        fontFamily: 'Pretendard',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<bool> _checkUserExists(String uid) async {
     print('🔍 Checking user existence for UID: $uid');
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
@@ -144,16 +250,12 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
+        _showErrorDialog(errorMessage);
       }
     } catch (e) {
       // 그 외 일반적인 예외를 처리합니다.
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('로그인 중 오류가 발생했습니다: ${e.toString()}')),
-        );
+        _showErrorDialog('로그인 중 문제가 발생했습니다');
       }
     } finally {
       // 작업이 성공하든 실패하든 로딩 상태를 해제합니다.
@@ -177,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('게스트 모드 진입 오류: ${e.toString()}')),
+          SnackBar(content: Text('게스트 모드 진입 중 문제가 발생했습니다')),
         );
       }
     } finally {
@@ -203,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text('익명 로그인 중 문제가 발생했습니다')),
         );
       }
     } finally {
@@ -565,9 +667,10 @@ Widget build(BuildContext context) {
       }
     } catch (e) {
       print('❌ Kakao Login Error: ${e.toString()}');
-      if (mounted) {
+      // Don't show error popup for user cancellation or common user actions
+      if (mounted && !_isUserCancellation(e.toString())) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('카카오 로그인 오류: ${e.toString()}')),
+          SnackBar(content: Text('카카오 로그인 중 문제가 발생했습니다')),
         );
       }
     } finally {
@@ -618,9 +721,10 @@ Widget build(BuildContext context) {
       }
     } catch (e) {
       print('❌ Google Login Error: ${e.toString()}');
-      if (mounted) {
+      // Don't show error popup for user cancellation or common user actions
+      if (mounted && !_isUserCancellation(e.toString())) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('구글 로그인 오류: ${e.toString()}')),
+          SnackBar(content: Text('구글 로그인 중 문제가 발생했습니다')),
         );
       }
     } finally {

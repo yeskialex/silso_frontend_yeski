@@ -7,7 +7,15 @@ class AuthService {
   // Singleton pattern implementation
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
-  AuthService._internal();
+  AuthService._internal() {
+    // Listen to auth state changes and automatically exit guest mode when user signs in
+    _auth.authStateChanges().listen((User? user) {
+      if (user != null && !user.isAnonymous) {
+        // User is properly authenticated (not anonymous), exit guest mode
+        exitGuestMode();
+      }
+    });
+  }
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
@@ -21,7 +29,7 @@ class AuthService {
   // Configure GoogleSignIn with web client ID
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     // For web, you need to provide the web client ID
-    clientId: kIsWeb ? '337349884372-k47h7h11pfuljssvug8bbfgjopkt5c39.apps.googleusercontent.com' : null,
+    clientId: kIsWeb ? '337349884372-lg6d6u7bmf7pbvebrfhr4s2i5rffds0o.apps.googleusercontent.com' : null,
     scopes: [
       'email',
       'openid',

@@ -1,5 +1,4 @@
 
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -25,6 +24,9 @@ import 'screens/login_silpet_select/mypet_select.dart';
 
 import 'court_prototype/silso_court_main.dart';
 
+import 'package:recaptcha_enterprise_flutter/recaptcha.dart';
+import 'package:flutter/foundation.dart';
+
 class _NoTransitionPageTransitionsBuilder extends PageTransitionsBuilder {
   const _NoTransitionPageTransitionsBuilder();
 
@@ -40,6 +42,7 @@ class _NoTransitionPageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -53,6 +56,25 @@ void main() async {
     kakaoAppKey: KakaoConfig.javascriptKey, // JavaScript key for web
     nativeAppKey: KakaoConfig.nativeAppKey, // Native app key for mobile
   );
+
+  // Platform-specific reCAPTCHA site keys
+  String siteKey;
+  if (kIsWeb) {
+    // Web reCAPTCHA site key
+    siteKey = "6Lf63pkrAAAAADGXf8InEQea5JaMAuF-VAnpPFb9";
+  } else if (defaultTargetPlatform == TargetPlatform.android) {
+    // Android reCAPTCHA site key
+    siteKey = "6Ldsy5krAAAAAJ8WA_yTis_appCYssKMc4Z9Fp5E";
+  } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+    // iOS reCAPTCHA site key
+    siteKey = "6Ld2MZkrAAAAANhGiZTCyJ4LB83DV-rWL7Eosw6v";
+  } else {
+    // Default fallback
+    siteKey = "6LewvNUrAAAAALwfV2QU4BTGRj6bwcUuQjchfJv0";
+  }
+
+  // Initialize reCAPTCHA client for later use
+  await Recaptcha.fetchClient(siteKey);
   
   runApp(const MyApp());
 }

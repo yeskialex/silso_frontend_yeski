@@ -1,0 +1,108 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "demo250904",
+            "cwd": "demo250904",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "demo250904 (profile mode)",
+            "cwd": "demo250904",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "demo250904 (release mode)",
+            "cwd": "demo250904",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "demo250921",
+            "cwd": "demo250921",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "demo250921 (profile mode)",
+            "cwd": "demo250921",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "demo250921 (release mode)",
+            "cwd": "demo250921",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "demo250923",
+            "cwd": "demo250923",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "demo250923 (profile mode)",
+            "cwd": "demo250923",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "demo250923 (release mode)",
+            "cwd": "demo250923",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "playground",
+            "cwd": "playground",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "playground (profile mode)",
+            "cwd": "playground",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "playground (release mode)",
+            "cwd": "playground",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "mypage",
+            "cwd": "mypage/mypage",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "mypage (profile mode)",
+            "cwd": "mypage/mypage",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "mypage (release mode)",
+            "cwd": "mypage/mypage",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}

@@ -345,6 +345,9 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
           await firestore.collection('users').doc(newUserId).set(newUserData);
           print('✅ Firestore에 새 사용자 문서 생성 완료.');
 
+          // Exit guest mode after successful signup
+          _authService.exitGuestMode();
+
         } else {
           // Case 2: 기존 사용자에게 이메일/비밀번호 연결 로직
           print('🔄 기존 사용자 계정에 이메일/비밀번호 연결을 시작합니다...');
@@ -396,6 +399,9 @@ class _PhoneConfirmScreenState extends State<PhoneConfirmScreen> {
             SetOptions(merge: true)
           );
           print('✅ Firestore에 사용자 정보 업데이트 완료.');
+
+          // Exit guest mode after successful credential linking
+          _authService.exitGuestMode();
         }
       } else if (!widget.isFromLogin) {
         // For cases where we have existing social auth but no pending email/password

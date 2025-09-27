@@ -407,20 +407,7 @@ class _MyPageMainState extends State<MyPageMain> with SingleTickerProviderStateM
       appBar: AppBar(
         backgroundColor: const Color(0xFFFAFAFA),
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: const Color(0xFF121212),
-            size: 20 * widthRatio,
-          ),
-          onPressed: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => const TemporaryHomePage(),
-              ),
-            );
-          },
-        ),
+        automaticallyImplyLeading: false,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -622,11 +609,14 @@ class _MyPageMainState extends State<MyPageMain> with SingleTickerProviderStateM
               // Right filter - Sort Order
               GestureDetector(
                 onTap: () => _showSortOrderDropdown(),
-                child: Image.asset(
-                  'images/icons/audio-settings-01.png',
-                  width: 20 * widthRatio,
-                  height: 20 * widthRatio,
-                  fit: BoxFit.contain,
+                child: Container(
+                  width: 24 * widthRatio,
+                  height: 24 * widthRatio,
+                  child: Icon(
+                    Icons.tune,
+                    size: 18 * widthRatio,
+                    color: const Color(0xFF121212),
+                  ),
                 ),
               ),
             ],

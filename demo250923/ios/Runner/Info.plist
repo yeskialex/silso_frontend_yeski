@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Demo 250811</string>
+	<string>Silso</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -45,5 +45,26 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>RECAPTCHA_SITE_KEY</key>
+	<string>6LewvNUrAAAAALwfV2QU4BTGRj6bwcUuQjchfJv0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>google</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.337349884372-lg6d6u7bmf7pbvebrfhr4s2i5rffds0o</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>recaptcha</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.example.demo250811</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
