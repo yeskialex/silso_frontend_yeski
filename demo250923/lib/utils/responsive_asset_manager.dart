@@ -5,7 +5,6 @@ import 'package:path/path.dart' as path;
 /// 앱에서 사용하는 애셋 타입을 정의하는 열거형
 enum AppAsset {
   kakaoSignin,
-  googleSigninLogo,
   googleSigninButton,
   silsoLogo,
 }
@@ -15,24 +14,12 @@ class AppAssetProvider {
   // Asset 경로의 기본 루트
   static const String _baseImagePath = 'assets/images';
 
-  // 화면 크기 분기점
-  static const double _tabletBreakpoint = 1024.0;
-
   /// [asset] 타입에 맞는 애셋의 전체 경로를 반환합니다.
-  ///
-  /// 일부 애셋은 [useEnglish] 플래그를 통해 언어별 버전을 선택할 수 있습니다.
-  static String getPath(
-    BuildContext context,
-    AppAsset asset, {
-    bool useEnglish = false,
-  }) {
+  static String getPath(BuildContext context, AppAsset asset) {
     switch (asset) {
       case AppAsset.kakaoSignin:
         // Return the circular login button path currently used in login screen
         return 'assets/button/kakao_login_circular.png';
-
-      case AppAsset.googleSigninLogo:
-        return '$_baseImagePath/google_signin/google_logo.png';
 
       case AppAsset.googleSigninButton:
         // Return the circular login button path currently used in login screen
@@ -189,7 +176,6 @@ class AssetPreloader {
     // 만약 이전 코드를 사용하지 않으신다면 이 부분은 기존 코드에 맞게 수정해주세요.
     final List<String> assetsToPreload = [
       AppAssetProvider.getPath(context, AppAsset.kakaoSignin),
-      AppAssetProvider.getPath(context, AppAsset.kakaoSignin, useEnglish: true),
       AppAssetProvider.getPath(context, AppAsset.googleSigninButton),
       // SVG와 PNG 경로를 모두 추가
       AppAssetProvider.getPath(context, AppAsset.silsoLogo), // .svg

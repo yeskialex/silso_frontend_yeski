@@ -23,7 +23,6 @@ class AuthService {
   
   // Sign-in progress tracking to prevent race conditions
   bool _isSignInInProgress = false;
-  DateTime? _lastSignInAttempt;
   
   // Korean authentication service
   final KoreanAuthService _koreanAuth = KoreanAuthService();
@@ -31,11 +30,7 @@ class AuthService {
   // Configure GoogleSignIn with web client ID
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb ? AuthConfig.googleWebClientId : null,
-    scopes: [
-      'email',
-      'openid',
-      'https://www.googleapis.com/auth/userinfo.profile',
-    ],
+    scopes: AuthConfig.googleScopes,
   );
 
   // Get current user
@@ -136,7 +131,6 @@ class AuthService {
     if (_isSignInInProgress) return null;
     
     _isSignInInProgress = true;
-    _lastSignInAttempt = DateTime.now();
     
     try {
       if (kIsWeb) {
@@ -196,10 +190,10 @@ class AuthService {
     try {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
       
-      // Add scopes (use full URLs for People API compatibility)
-      googleProvider.addScope('email');
-      googleProvider.addScope('openid');
-      googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+      // Add scopes from config
+      for (final scope in AuthConfig.googleScopes) {
+        googleProvider.addScope(scope);
+      }
       
       // Set custom parameters
       googleProvider.setCustomParameters({
@@ -221,10 +215,10 @@ class AuthService {
     try {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
       
-      // Add scopes
-      googleProvider.addScope('email');
-      googleProvider.addScope('openid');
-      googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+      // Add scopes from config
+      for (final scope in AuthConfig.googleScopes) {
+        googleProvider.addScope(scope);
+      }
       
       // Set custom parameters
       googleProvider.setCustomParameters({
@@ -241,28 +235,6 @@ class AuthService {
     }
   }
 
-  // Check for redirect result (call this in app initialization)
-  Future<UserCredential?> checkRedirectResult() async {
-    if (!kIsWeb) return null;
-    
-    // Don't check redirect if manual sign-in happened recently (within 5 seconds)
-    if (_lastSignInAttempt != null && 
-        DateTime.now().difference(_lastSignInAttempt!).inSeconds < 5) {
-      return null;
-    }
-    
-    // Don't check redirect if sign-in is already in progress
-    if (_isSignInInProgress) return null;
-    
-    try {
-      final result = await _auth.getRedirectResult();
-      // Exit guest mode on successful redirect login
-      if (result?.user != null) exitGuestMode();
-      return result;
-    } catch (e) {
-      return null;
-    }
-  }
 
   // Kakao login wrapper
   Future<UserCredential?> signInWithKakao() async {
@@ -277,10 +249,6 @@ class AuthService {
   }
 
 
-  // Check if Kakao is signed in
-  Future<bool> isKakaoSignedIn() async {
-    return await _koreanAuth.isKakaoSignedIn();
-  }
 
 
   // Apple Sign-In
@@ -482,48 +450,5 @@ class AuthService {
     }
   }
 
-  // Validation helpers
-  static bool isValidEmail(String email) {
-    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
-  }
 
-  static bool isValidPassword(String password) {
-    return password.length >= 6;
-  }
-
-  static String? validateEmail(String? email) {
-    if (email == null || email.isEmpty) {
-      return 'Please enter your email';
-    }
-    if (!isValidEmail(email)) {
-      return 'Please enter a valid email address';
-    }
-    return null;
-  }
-
-  static String? validatePassword(String? password) {
-    if (password == null || password.isEmpty) {
-      return 'Please enter your password';
-    }
-    if (!isValidPassword(password)) {
-      return 'Password must be at least 6 characters long';
-    }
-    return null;
-  }
-
-  static String? validateConfirmPassword(String? password, String? confirmPassword) {
-    if (confirmPassword == null || confirmPassword.isEmpty) {
-      return 'Please confirm your password';
-    }
-    if (password != confirmPassword) {
-      return 'Passwords do not match';
-    }
-    return null;
-  }
-
-  // Get username from email (part before @)
-  String getUsernameFromEmail(String? email) {
-    if (email == null) return 'User';
-    return email.split('@')[0];
-  }
 }

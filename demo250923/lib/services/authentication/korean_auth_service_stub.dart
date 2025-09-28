@@ -5,30 +5,22 @@ class KoreanAuthService {
   factory KoreanAuthService() => _instance;
   KoreanAuthService._internal();
 
-  // Stub implementations that throw unsupported errors
   static Future<void> initialize({
     required String kakaoAppKey,
     String? nativeAppKey,
   }) async {
-    throw UnsupportedError('Platform not supported');
+    throw UnsupportedError('Kakao authentication not supported on this platform');
   }
 
   Future<UserCredential?> signInWithKakao() async {
-    throw UnsupportedError('Platform not supported');
+    throw UnsupportedError('Kakao authentication not supported on this platform');
   }
 
+  Future<bool> isKakaoSignedIn() async => false;
 
-  Future<bool> isKakaoSignedIn() async {
-    return false;
-  }
-
-  Future<UserCredential?> handleOAuthCallbackOnly() async {
-    return null;
-  }
+  Future<UserCredential?> handleOAuthCallbackOnly() async => null;
 
   Future<void> signOutKakaoServices() async {
     // No-op for unsupported platforms
   }
-
-
 }

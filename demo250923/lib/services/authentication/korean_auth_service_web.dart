@@ -15,27 +15,17 @@ class KoreanAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
   bool _isSignInInProgress = false;
-  String? _kakaoAppKey; // JavaScript key for web
-  String? _nativeAppKey; // Native app key for mobile
 
   // Backend server URL
   static const String _backendUrl = AuthConfig.backendUrl;
 
-  // Initialize Kakao SDK
+  // Initialize Kakao SDK (simplified for direct OAuth)
   static Future<void> initialize({
-    required String kakaoAppKey, // JavaScript key for web
-    String? nativeAppKey, // Native app key for mobile
+    required String kakaoAppKey, // JavaScript key for web (not used anymore)
+    String? nativeAppKey, // Native app key for mobile (not used in web)
   }) async {
-    try {
-      final service = KoreanAuthService();
-      service._kakaoAppKey = kakaoAppKey;
-      service._nativeAppKey = nativeAppKey;
-      
-      print('✅ Kakao configuration set for web (JavaScript key: ${kakaoAppKey.substring(0, 8)}...)');
-    } catch (e) {
-      print('❌ Kakao SDK initialization failed: $e');
-      rethrow;
-    }
+    // No initialization needed for direct OAuth approach
+    print('✅ Kakao web service ready for direct OAuth');
   }
 
   // Kakao Login for Web
@@ -86,22 +76,13 @@ class KoreanAuthService {
   // Web-based Kakao login using JavaScript SDK
   Future<String?> _signInWithKakaoWeb() async {
     try {
-      print('🟡 Initializing Kakao JavaScript SDK...');
-      
-      // Initialize Kakao SDK with your app key
-      await _initializeKakaoSDK();
-      
       print('🟡 Starting Kakao OAuth login...');
       
-      // Use JavaScript interop to call Kakao.Auth.login
-      final String? accessToken = await _callKakaoLogin();
-      
-      if (accessToken == null || accessToken.isEmpty) {
-        throw 'Failed to get access token from Kakao';
-      }
-      
-      print('✅ Kakao web login successful');
-      return accessToken;
+      // Redirect to Kakao OAuth (returns null since it's a redirect)
+      await _callKakaoLogin();
+
+      // This will not execute since the page redirects
+      return null;
       
     } catch (e) {
       print('❌ Web Kakao login error: $e');
@@ -299,143 +280,23 @@ class KoreanAuthService {
   }
 
 
-  // JavaScript interop methods for web
-  Future<void> _initializeKakaoSDK() async {
-    if (_kakaoAppKey == null) return;
-    
-    try {
-      // Wait for Kakao SDK to be loaded
-      await Future.delayed(const Duration(milliseconds: 100));
-      
-      // Check if Kakao SDK is available
-      if (js.globalContext.getProperty('Kakao'.toJS).isNull || js.globalContext.getProperty('Kakao'.toJS).isUndefined) {
-        throw 'Kakao JavaScript SDK not loaded. Make sure to include the script tag.';
-      }
-      
-      // Initialize Kakao SDK
-      js.globalContext.callMethod('eval'.toJS, '''
-        if (!Kakao.isInitialized()) {
-          Kakao.init('$_kakaoAppKey');
-        }
-      '''.toJS);
-      
-      print('✅ Kakao JavaScript SDK initialized');
-    } catch (e) {
-      print('❌ Kakao SDK initialization failed: $e');
-      rethrow;
-    }
-  }
 
   Future<String?> _callKakaoLogin() async {
     try {
-      // Create a completer to handle the async JavaScript callback
-      final completer = Completer<String?>();
-      
       // Build OAuth URL with proper client ID from config
       final currentOrigin = (js.globalContext.getProperty('location'.toJS) as js.JSObject).getProperty('origin'.toJS).dartify() as String;
       final oauthUrl = '${AuthConfig.kakaoAuthorizeUrl}?client_id=${AuthConfig.kakaoRestApiKey}&redirect_uri=${Uri.encodeComponent(currentOrigin)}&response_type=code&scope=${AuthConfig.kakaoScopes.join(',')}';
-      
-      // Define global callback functions (web only)
-      js.globalContext.setProperty('flutterKakaoSuccess'.toJS, (js.JSAny authObj) {
-        try {
-          print('🟡 Kakao login success callback received');
-          final accessToken = (authObj as js.JSObject).getProperty('access_token'.toJS).dartify() as String?;
-          if (accessToken != null) {
-            print('✅ Access token received: ${accessToken.toString().substring(0, 10)}...');
-            completer.complete(accessToken.toString());
-          } else {
-            print('❌ No access token in response');
-            completer.completeError('No access token received');
-          }
-        } catch (e) {
-          print('❌ Error processing login result: $e');
-          completer.completeError('Error processing login result: $e');
-        }
-      }.toJS);
-      
-      js.globalContext.setProperty('flutterKakaoError'.toJS, (js.JSAny error) {
-        print('❌ Kakao login error callback received: $error');
-        completer.completeError('Kakao login failed: ${error.toString()}');
-      }.toJS);
-      
-      // Use eval to execute the Kakao login with proper error handling (web only)
-      print('🟡 Calling Kakao.Auth.login via eval...');
+
+      // Direct OAuth redirect - simpler and more reliable
+      print('🟡 Redirecting to Kakao OAuth...');
       js.globalContext.callMethod('eval'.toJS, '''
-      (function() {
-        try {
-          console.log('Kakao object available:', typeof Kakao !== 'undefined');
-          console.log('Kakao.Auth available:', typeof Kakao.Auth !== 'undefined');
-          console.log('Kakao.Auth.login available:', typeof Kakao.Auth.login === 'function');
-          
-          if (typeof Kakao === 'undefined') {
-            flutterKakaoError('Kakao SDK not loaded');
-            return;
-          }
-          
-          if (typeof Kakao.Auth === 'undefined') {
-            flutterKakaoError('Kakao.Auth not available');
-            return;
-          }
-          
-          // Try multiple possible Kakao login methods
-          console.log('Available Kakao.Auth methods:', Object.getOwnPropertyNames(Kakao.Auth));
-          
-          // Use the authorize method to redirect to Kakao login
-          if (typeof Kakao.Auth.authorize === 'function') {
-            console.log('Using Kakao.Auth.authorize - redirecting to Kakao login...');
-            console.log('Redirect URI:', window.location.origin);
-            console.log('Current URL:', window.location.href);
-            
-            try {
-              // This will redirect the entire page to Kakao OAuth
-              var result = Kakao.Auth.authorize({
-                redirectUri: window.location.origin,
-                scope: 'profile_nickname,profile_image'
-              });
-              console.log('Authorize result:', result);
-            } catch (e) {
-              console.error('Authorize error:', e);
-              flutterKakaoError('Authorize failed: ' + e.message);
-              return;
-            }
-            
-            // This line won't execute if redirect works
-            setTimeout(function() {
-              console.log('Warning: Redirect did not occur after 1 second');
-              flutterKakaoError('Redirect failed - check Kakao Console redirect URI settings');
-            }, 1000);
-          } else if (typeof Kakao.Auth.login === 'function') {
-            console.log('Using Kakao.Auth.login method');
-            Kakao.Auth.login({
-              success: function(authObj) {
-                console.log('Kakao login success:', authObj);
-                flutterKakaoSuccess(authObj);
-              },
-              fail: function(err) {
-                console.log('Kakao login error:', err);
-                flutterKakaoError(err);
-              },
-              scope: 'profile_nickname,profile_image'
-            });
-          } else {
-            // Fallback: try direct OAuth redirect using proper client ID
-            console.log('Using direct OAuth redirect');
-            window.location.href = '$oauthUrl';
-          }
-        } catch (e) {
-          console.error('JavaScript error in Kakao login:', e);
-          flutterKakaoError('JavaScript error: ' + e.message);
-        }
-      })();
-    '''.toJS);
-      
-      // Wait for the result
-      return await completer.future.timeout(
-        const Duration(seconds: 60),
-        onTimeout: () => throw 'Kakao login timeout',
-      );
+        window.location.href = '$oauthUrl';
+      '''.toJS);
+
+      // Return null since redirect will handle the flow
+      return null;
     } catch (e) {
-      print('❌ Kakao login JavaScript call failed: $e');
+      print('❌ Kakao login redirect failed: $e');
       rethrow;
     }
   }

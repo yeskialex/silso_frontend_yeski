@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/authentication/auth_service.dart';
 import 'phone_confirm.dart';
-import '../login_silpet_select/mypet_select.dart';
 import 'after_signup_splash.dart';
 import 'id_password_signup.dart';
 import '../../utils/responsive_asset_manager.dart';
@@ -290,31 +289,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _signInAnonymously() async {
-    setState(() => _isLoading = true);
-
-    try {
-      await _authService.signInAnonymously();
-      if (mounted) {
-        // 익명 로그인 시에도 PhoneConfirmScreen으로 이동 (회원가입 플로우)
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const  MyPetSelect(),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('익명 로그인 중 문제가 발생했습니다')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
 
  Widget _buildCircularButton({
   required VoidCallback? onTap,

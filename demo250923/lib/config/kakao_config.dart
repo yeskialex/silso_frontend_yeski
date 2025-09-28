@@ -7,6 +7,13 @@ class AuthConfig {
   // Google Client ID
   static const String googleWebClientId = '337349884372-lg6d6u7bmf7pbvebrfhr4s2i5rffds0o.apps.googleusercontent.com';
 
+  // Google OAuth Scopes
+  static const List<String> googleScopes = [
+    'email',
+    'openid',
+    'https://www.googleapis.com/auth/userinfo.profile',
+  ];
+
   // Backend Server URL
   static const String backendUrl = 'https://api-3ezpz5haxq-uc.a.run.app';
 
