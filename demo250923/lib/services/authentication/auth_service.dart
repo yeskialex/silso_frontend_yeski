@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'korean_auth_service.dart';
 
 class AuthService {
@@ -295,6 +296,45 @@ class AuthService {
   // Check backend server health
   Future<bool> checkBackendHealth() async {
     return await _koreanAuth.checkBackendHealth();
+  }
+
+  // Apple Sign-In
+  Future<UserCredential?> signInWithApple() async {
+    // Check if Apple Sign-In is available on this platform
+    if (!await SignInWithApple.isAvailable()) {
+      throw 'Apple Sign-In is not available on this device';
+    }
+
+    // Additional platform check
+    if (!kIsWeb && defaultTargetPlatform != TargetPlatform.iOS) {
+      throw 'Apple Sign-In is only available on iOS devices and web';
+    }
+
+    try {
+      // Request Apple ID credential
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // Create OAuth credential for Firebase
+      final oauthCredential = OAuthProvider("apple.com").credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      // Sign in to Firebase with the Apple credential
+      final result = await _auth.signInWithCredential(oauthCredential);
+
+      // Exit guest mode on successful login
+      if (result.user != null) exitGuestMode();
+
+      return result;
+    } catch (e) {
+      throw 'Apple sign in failed: ${e.toString()}';
+    }
   }
 
   // Send password reset email

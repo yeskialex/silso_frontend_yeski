@@ -43,7 +43,10 @@ dependencies:
   
   # Google Sign-In
   google_sign_in: ^6.3.0
-  
+
+  # Apple Sign-In
+  sign_in_with_apple: ^6.1.1
+
   # Kakao Login SDK
   kakao_flutter_sdk: ^1.9.5
   kakao_flutter_sdk_user: ^1.9.5

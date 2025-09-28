@@ -24,8 +24,8 @@ import 'screens/login_silpet_select/mypet_select.dart';
 
 import 'court_prototype/silso_court_main.dart';
 
-import 'package:recaptcha_enterprise_flutter/recaptcha.dart';
 import 'package:flutter/foundation.dart';
+import 'package:recaptcha_enterprise_flutter/recaptcha.dart';
 
 class _NoTransitionPageTransitionsBuilder extends PageTransitionsBuilder {
   const _NoTransitionPageTransitionsBuilder();
@@ -57,24 +57,27 @@ void main() async {
     nativeAppKey: KakaoConfig.nativeAppKey, // Native app key for mobile
   );
 
-  // Platform-specific reCAPTCHA site keys
-  String siteKey;
-  if (kIsWeb) {
-    // Web reCAPTCHA site key
-    siteKey = "6Lf63pkrAAAAADGXf8InEQea5JaMAuF-VAnpPFb9";
-  } else if (defaultTargetPlatform == TargetPlatform.android) {
-    // Android reCAPTCHA site key
-    siteKey = "6Ldsy5krAAAAAJ8WA_yTis_appCYssKMc4Z9Fp5E";
-  } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-    // iOS reCAPTCHA site key
-    siteKey = "6Ld2MZkrAAAAANhGiZTCyJ4LB83DV-rWL7Eosw6v";
-  } else {
-    // Default fallback
-    siteKey = "6LewvNUrAAAAALwfV2QU4BTGRj6bwcUuQjchfJv0";
-  }
+  // Initialize reCAPTCHA only for mobile platforms (not web)
+  if (!kIsWeb) {
+    try {
+      // Platform-specific reCAPTCHA site keys for mobile only
+      String siteKey;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        siteKey = "6Ldsy5krAAAAAJ8WA_yTis_appCYssKMc4Z9Fp5E";
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        siteKey = "6Ld2MZkrAAAAANhGiZTCyJ4LB83DV-rWL7Eosw6v";
+      } else {
+        siteKey = "6LewvNUrAAAAALwfV2QU4BTGRj6bwcUuQjchfJv0";
+      }
 
-  // Initialize reCAPTCHA client for later use
-  await Recaptcha.fetchClient(siteKey);
+      await Recaptcha.fetchClient(siteKey);
+      print('✅ reCAPTCHA initialized for mobile platform');
+    } catch (e) {
+      print('⚠️ reCAPTCHA initialization failed: $e');
+    }
+  } else {
+    print('📱 Web platform: Firebase will handle reCAPTCHA automatically');
+  }
   
   runApp(const MyApp());
 }

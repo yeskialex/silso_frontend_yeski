@@ -549,11 +549,18 @@ Widget build(BuildContext context) {
                     backgroundColor: const Color(0xFFFFE600),
                     imagePath: 'assets/button/kakao_login_circular.png',
                   ),
-                  SizedBox(width: 40 * widthRatio),
+                  SizedBox(width: 32 * widthRatio),
                   _buildCircularButton(
                     onTap: _isLoading ? null : _handleGoogleSignInWithImage,
                     backgroundColor: Colors.white,
                     imagePath: 'assets/button/google_login_circular.png',
+                  ),
+                  SizedBox(width: 32 * widthRatio),
+                  _buildCircularButton(
+                    onTap: _isLoading ? null : _handleAppleSignInWithImage,
+                    backgroundColor: Colors.black,
+                    iconData: Icons.apple,
+                    iconColor: Colors.white,
                   ),
                 ],
               ),
@@ -725,6 +732,59 @@ Widget build(BuildContext context) {
       if (mounted && !_isUserCancellation(e.toString())) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('구글 로그인 중 문제가 발생했습니다')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleAppleSignInWithImage() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. Apple OAuth 로그인 실행
+      final userCredential = await _authService.signInWithApple();
+
+      if (userCredential?.user != null && mounted) {
+        // 2. Firebase Auth UID 가져오기
+        final String uid = userCredential!.user!.uid;
+        print('🔍 Apple Login - User UID: $uid');
+
+        // 3. Firestore에서 해당 UID로 사용자 문서 존재 확인
+        final bool isExistingUser = await _checkUserExists(uid);
+        print('🔍 Apple Login - Is existing user: $isExistingUser');
+
+        // 4. 기존 회원 여부에 따라 플로우 분기
+        if (isExistingUser) {
+          print('➡️ Apple Login - Routing to AfterSignupSplash (existing user)');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => AfterSignupSplash()),
+          );
+        } else {
+          print('➡️ Apple Login - Routing to IDPasswordSignUpScreen (new user)');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => IDPasswordSignUpScreen(isIdAndPasswordShortCut: false),
+            ),
+          );
+        }
+
+        // Mark social auth as completed for new users
+        if (!isExistingUser) {
+          await _markSocialAuthCompleted(uid);
+          print('✅ Apple Login - Social auth marked as completed for new user');
+        }
+      }
+    } catch (e) {
+      print('❌ Apple Login Error: ${e.toString()}');
+      // Don't show error popup for user cancellation or common user actions
+      if (mounted && !_isUserCancellation(e.toString())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('애플 로그인 중 문제가 발생했습니다')),
         );
       }
     } finally {
