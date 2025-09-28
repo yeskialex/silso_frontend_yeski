@@ -132,10 +132,8 @@ class AuthService {
     
     try {
       if (kIsWeb) {
-        // For web, use Firebase Auth popup directly to avoid deprecated signIn method
         return await _signInWithGoogleWeb();
       } else {
-        // For mobile platforms, use the standard GoogleSignIn flow
         return await _signInWithGoogleStandard();
       }
     } catch (e) {
@@ -145,7 +143,7 @@ class AuthService {
     }
   }
 
-  // Standard Google Sign-In flow (for mobile)
+  // Mobile Google Login
   Future<UserCredential?> _signInWithGoogleStandard() async {
     // Trigger the authentication flow
     final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -171,7 +169,7 @@ class AuthService {
     return result;
   }
 
-  // Web Google Sign-In flow with popup and redirect fallback
+  // Web Google Login
   Future<UserCredential?> _signInWithGoogleWeb() async {
     try {
       // Try popup first (works on desktop)
