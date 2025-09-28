@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'korean_auth_service.dart';
+import '../../config/kakao_config.dart';
 
 class AuthService {
   // Singleton pattern implementation
@@ -29,8 +30,7 @@ class AuthService {
   
   // Configure GoogleSignIn with web client ID
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    // For web, you need to provide the web client ID
-    clientId: kIsWeb ? '337349884372-lg6d6u7bmf7pbvebrfhr4s2i5rffds0o.apps.googleusercontent.com' : null,
+    clientId: kIsWeb ? AuthConfig.googleWebClientId : null,
     scopes: [
       'email',
       'openid',
@@ -276,27 +276,12 @@ class AuthService {
     }
   }
 
-  // Kakao demo login for testing
-  Future<UserCredential?> signInWithKakaoDemo() async {
-    try {
-      final result = await _koreanAuth.signInWithKakaoDemo();
-      // Exit guest mode on successful login
-      if (result != null) exitGuestMode();
-      return result;
-    } catch (e) {
-      throw 'Kakao demo sign in failed: ${e.toString()}';
-    }
-  }
 
   // Check if Kakao is signed in
   Future<bool> isKakaoSignedIn() async {
     return await _koreanAuth.isKakaoSignedIn();
   }
 
-  // Check backend server health
-  Future<bool> checkBackendHealth() async {
-    return await _koreanAuth.checkBackendHealth();
-  }
 
   // Apple Sign-In
   Future<UserCredential?> signInWithApple() async {

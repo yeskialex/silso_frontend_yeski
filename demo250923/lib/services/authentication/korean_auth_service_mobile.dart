@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import '../../config/kakao_config.dart';
 
 class KoreanAuthService {
   static final KoreanAuthService _instance = KoreanAuthService._internal();
@@ -13,26 +14,8 @@ class KoreanAuthService {
   
   bool _isSignInInProgress = false;
 
-  // Backend server URL - automatically configured for development and production
-  static String get _backendUrl {
-    // Force production Firebase Functions for now
-    // TODO: Implement proper environment detection later
-    return 'https://api-3ezpz5haxq-uc.a.run.app';
-    
-    // Development configuration (commented out)
-    // if (kDebugMode) {
-    //   // Development mode - use local backend
-    //   
-    //   // Option 1: Emulator (10.0.2.2 maps to localhost on host machine)
-    //   // return 'http://10.0.2.2:3001';
-    //   
-    //   // Option 2: Real device (your computer's IP on local network)
-    //   return 'http://172.17.204.251:3001';
-    // } else {
-    //   // Production mode - use Firebase Functions (mvp2025 project)
-    //   return 'https://api-3ezpz5haxq-uc.a.run.app';
-    // }
-  }
+  // Backend server URL
+  static const String _backendUrl = AuthConfig.backendUrl;
 
   // Initialize Kakao SDK
   static Future<void> initialize({
@@ -208,34 +191,6 @@ class KoreanAuthService {
     }
   }
 
-  // Demo/Test login method for development
-  Future<UserCredential?> signInWithKakaoDemo() async {
-    if (_isSignInInProgress) return null;
-    
-    _isSignInInProgress = true;
-
-    try {
-      print('🟡 Starting Kakao DEMO login...');
-      
-      // Simulate getting a test token (in real app, this comes from Kakao OAuth)
-      const String demoAccessToken = 'demo_kakao_access_token_for_testing';
-      
-      // Create custom token using backend server
-      String customToken = await _createCustomTokenForKakao(demoAccessToken);
-      print('✅ Firebase custom token created');
-      
-      // Sign in to Firebase with custom token
-      UserCredential credential = await _auth.signInWithCustomToken(customToken);
-      print('✅ Firebase authentication successful');
-      
-      return credential;
-    } catch (e) {
-      print('❌ Kakao demo login failed: $e');
-      throw 'Kakao demo login failed: ${e.toString()}';
-    } finally {
-      _isSignInInProgress = false;
-    }
-  }
 
   // Check if user is already signed in with Kakao
   Future<bool> isKakaoSignedIn() async {
@@ -257,25 +212,21 @@ class KoreanAuthService {
     }
   }
 
-  // Get stored Kakao access token
-  Future<String?> getStoredKakaoToken() async {
-    try {
-      // Try to get the current access token from Kakao SDK
-      final token = await TokenManagerProvider.instance.manager.getToken();
-      return token?.accessToken;
-    } catch (e) {
-      return null;
-    }
+
+  // Handle OAuth callback - not needed for mobile but required for interface
+  Future<UserCredential?> handleOAuthCallbackOnly() async {
+    // Not applicable for mobile - OAuth callbacks are handled differently
+    return null;
   }
 
   // Logout from Kakao services
   Future<void> signOutKakaoServices() async {
     try {
       print('🟡 Signing out from Kakao services...');
-      
+
       // Logout from Kakao SDK
       await UserApi.instance.logout();
-      
+
       print('✅ Kakao logout completed');
     } catch (e) {
       print('⚠️ Kakao services logout error: $e');
@@ -283,29 +234,5 @@ class KoreanAuthService {
     }
   }
 
-  // Handle OAuth callback - not needed for mobile
-  Future<UserCredential?> handleOAuthCallbackOnly() async {
-    // Not applicable for mobile - OAuth callbacks are handled differently
-    return null;
-  }
 
-  // Check backend server health
-  Future<bool> checkBackendHealth() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_backendUrl/health'),
-        headers: {'Accept': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print('✅ Backend server health check: ${data['status']}');
-        return data['status'] == 'OK';
-      }
-      return false;
-    } catch (e) {
-      print('❌ Backend health check failed: $e');
-      return false;
-    }
-  }
 }

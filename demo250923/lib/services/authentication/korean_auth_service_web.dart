@@ -18,8 +18,8 @@ class KoreanAuthService {
   String? _kakaoAppKey; // JavaScript key for web
   String? _nativeAppKey; // Native app key for mobile
 
-  // Backend server URL - update this with your actual backend URL
-  static const String _backendUrl = 'https://us-central1-mvp2025-d40f9.cloudfunctions.net/api';  // Firebase Functions
+  // Backend server URL
+  static const String _backendUrl = AuthConfig.backendUrl;
 
   // Initialize Kakao SDK
   static Future<void> initialize({
@@ -167,34 +167,6 @@ class KoreanAuthService {
     }
   }
 
-  // Demo/Test login method for development
-  Future<UserCredential?> signInWithKakaoDemo() async {
-    if (_isSignInInProgress) return null;
-    
-    _isSignInInProgress = true;
-
-    try {
-      print('🟡 Starting Kakao DEMO login...');
-      
-      // Simulate getting a test token (in real app, this comes from Kakao OAuth)
-      const String demoAccessToken = 'demo_kakao_access_token_for_testing';
-      
-      // Create custom token using backend server
-      String customToken = await _createCustomTokenForKakao(demoAccessToken);
-      print('✅ Firebase custom token created');
-      
-      // Sign in to Firebase with custom token
-      UserCredential credential = await _auth.signInWithCustomToken(customToken);
-      print('✅ Firebase authentication successful');
-      
-      return credential;
-    } catch (e) {
-      print('❌ Kakao demo login failed: $e');
-      throw 'Kakao demo login failed: ${e.toString()}';
-    } finally {
-      _isSignInInProgress = false;
-    }
-  }
 
   // Check if user is already signed in with Kakao
   Future<bool> isKakaoSignedIn() async {
@@ -207,15 +179,6 @@ class KoreanAuthService {
     }
   }
 
-  // Get stored Kakao access token
-  Future<String?> getStoredKakaoToken() async {
-    try {
-      // For demo, return null as we don't store tokens yet
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
 
   // Logout from Kakao services
   Future<void> signOutKakaoServices() async {
@@ -335,25 +298,6 @@ class KoreanAuthService {
     }
   }
 
-  // Check backend server health
-  Future<bool> checkBackendHealth() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_backendUrl/health'),
-        headers: {'Accept': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print('✅ Backend server health check: ${data['status']}');
-        return data['status'] == 'OK';
-      }
-      return false;
-    } catch (e) {
-      print('❌ Backend health check failed: $e');
-      return false;
-    }
-  }
 
   // JavaScript interop methods for web
   Future<void> _initializeKakaoSDK() async {
@@ -389,7 +333,7 @@ class KoreanAuthService {
       
       // Build OAuth URL with proper client ID from config
       final currentOrigin = (js.globalContext.getProperty('location'.toJS) as js.JSObject).getProperty('origin'.toJS).dartify() as String;
-      final oauthUrl = KakaoConfig.buildOAuthUrl(currentOrigin);
+      final oauthUrl = '${AuthConfig.kakaoAuthorizeUrl}?client_id=${AuthConfig.kakaoRestApiKey}&redirect_uri=${Uri.encodeComponent(currentOrigin)}&response_type=code&scope=${AuthConfig.kakaoScopes.join(',')}';
       
       // Define global callback functions (web only)
       js.globalContext.setProperty('flutterKakaoSuccess'.toJS, (js.JSAny authObj) {

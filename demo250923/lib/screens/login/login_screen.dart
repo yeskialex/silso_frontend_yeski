@@ -3,8 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/authentication/auth_service.dart';
 import 'phone_confirm.dart';
 import '../login_silpet_select/mypet_select.dart';
-import 'after_signup_splash.dart'; 
+import 'after_signup_splash.dart';
 import 'id_password_signup.dart';
+import '../../utils/responsive_asset_manager.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // for privacy password, using auth firebase
 
 class LoginScreen extends StatefulWidget {
@@ -547,13 +548,13 @@ Widget build(BuildContext context) {
                   _buildCircularButton(
                     onTap: _isLoading ? null : _handleKakaoSignInWithImage,
                     backgroundColor: const Color(0xFFFFE600),
-                    imagePath: 'assets/button/kakao_login_circular.png',
+                    imagePath: AppAssetProvider.getPath(context, AppAsset.kakaoSignin),
                   ),
                   SizedBox(width: 32 * widthRatio),
                   _buildCircularButton(
                     onTap: _isLoading ? null : _handleGoogleSignInWithImage,
                     backgroundColor: Colors.white,
-                    imagePath: 'assets/button/google_login_circular.png',
+                    imagePath: AppAssetProvider.getPath(context, AppAsset.googleSigninButton),
                   ),
                   SizedBox(width: 32 * widthRatio),
                   _buildCircularButton(

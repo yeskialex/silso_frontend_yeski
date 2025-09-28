@@ -53,8 +53,8 @@ void main() async {
   
   // Initialize Kakao SDK with correct keys for each platform
   await KoreanAuthService.initialize(
-    kakaoAppKey: KakaoConfig.javascriptKey, // JavaScript key for web
-    nativeAppKey: KakaoConfig.nativeAppKey, // Native app key for mobile
+    kakaoAppKey: AuthConfig.kakaoJavascriptKey, // JavaScript key for web
+    nativeAppKey: AuthConfig.kakaoNativeAppKey, // Native app key for mobile
   );
 
   // Initialize reCAPTCHA only for mobile platforms (not web)

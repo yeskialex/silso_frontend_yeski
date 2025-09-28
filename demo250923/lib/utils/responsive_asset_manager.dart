@@ -26,30 +26,17 @@ class AppAssetProvider {
     AppAsset asset, {
     bool useEnglish = false,
   }) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final density = MediaQuery.of(context).devicePixelRatio;
-
     switch (asset) {
       case AppAsset.kakaoSignin:
-        final suffix = useEnglish ? '_en' : '';
-        final size =
-            screenWidth >= _tabletBreakpoint ? 'large_wide' : 'medium_wide';
-        return '$_baseImagePath/kakao_signin/kakao_login_$size$suffix.png';
+        // Return the circular login button path currently used in login screen
+        return 'assets/button/kakao_login_circular.png';
 
       case AppAsset.googleSigninLogo:
         return '$_baseImagePath/google_signin/google_logo.png';
 
       case AppAsset.googleSigninButton:
-        // 화면 밀도(density)와 크기에 따라 가장 적절한 이미지 선택
-        if (density >= 3.0 && screenWidth >= _tabletBreakpoint) {
-          return '$_baseImagePath/google_signin/web_neutral_sq_ctn@4x.png';
-        } else if (density >= 2.0) {
-          return '$_baseImagePath/google_signin/web_neutral_sq_ctn@3x.png';
-        } else if (density >= 1.5) {
-          return '$_baseImagePath/google_signin/web_neutral_sq_ctn@2x.png';
-        } else {
-          return '$_baseImagePath/google_signin/web_neutral_sq_ctn@1x.png';
-        }
+        // Return the circular login button path currently used in login screen
+        return 'assets/button/google_login_circular.png';
 
       case AppAsset.silsoLogo:
         // SVG를 기본으로 반환하며, ResponsiveImage 위젯이 PNG로 자동 대체 처리합니다.

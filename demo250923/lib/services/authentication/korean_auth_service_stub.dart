@@ -17,15 +17,12 @@ class KoreanAuthService {
     throw UnsupportedError('Platform not supported');
   }
 
-  Future<UserCredential?> signInWithKakaoDemo() async {
-    throw UnsupportedError('Platform not supported');
-  }
 
   Future<bool> isKakaoSignedIn() async {
     return false;
   }
 
-  Future<String?> getStoredKakaoToken() async {
+  Future<UserCredential?> handleOAuthCallbackOnly() async {
     return null;
   }
 
@@ -33,11 +30,5 @@ class KoreanAuthService {
     // No-op for unsupported platforms
   }
 
-  Future<UserCredential?> handleOAuthCallbackOnly() async {
-    return null;
-  }
 
-  Future<bool> checkBackendHealth() async {
-    return false;
-  }
 }
