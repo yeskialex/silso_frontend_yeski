@@ -16,7 +16,6 @@ class KoreanAuthService {
     throw UnsupportedError('Kakao authentication not supported on this platform');
   }
 
-  Future<bool> isKakaoSignedIn() async => false;
 
   Future<UserCredential?> handleOAuthCallbackOnly() async => null;
 

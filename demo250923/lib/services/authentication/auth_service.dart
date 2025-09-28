@@ -60,8 +60,6 @@ class AuthService {
     print('❌ Exited guest mode');
   }
   
-  // Check if user has write permissions
-  bool get canWrite => !_isGuestMode && _auth.currentUser != null;
 
 
   // Get user display name
@@ -290,16 +288,6 @@ class AuthService {
     }
   }
 
-  // Send password reset email
-  Future<void> sendPasswordResetEmail({required String email}) async {
-    try {
-      await _auth.sendPasswordResetEmail(email: email.trim());
-    } on FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
-    } catch (e) {
-      throw 'Failed to send password reset email. Please try again.';
-    }
-  }
 
   // Change user password
   Future<void> changePassword({
@@ -333,26 +321,6 @@ class AuthService {
     }
   }
 
-  // Update user profile
-  Future<void> updateUserProfile({
-    String? displayName,
-    String? photoURL,
-  }) async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        await user.updateDisplayName(displayName);
-        if (photoURL != null) {
-          await user.updatePhotoURL(photoURL);
-        }
-        await user.reload();
-      }
-    } on FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
-    } catch (e) {
-      throw 'Failed to update profile. Please try again.';
-    }
-  }
 
   // Sign out
   Future<void> signOut() async {
@@ -381,42 +349,7 @@ class AuthService {
     }
   }
 
-  // Delete user account
-  Future<void> deleteAccount() async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        await user.delete();
-      }
-    } on FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
-    } catch (e) {
-      throw 'Failed to delete account. Please try again.';
-    }
-  }
 
-  // Convert anonymous account to permanent account
-  Future<UserCredential?> linkWithEmailAndPassword({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null && user.isAnonymous) {
-        final credential = EmailAuthProvider.credential(
-          email: email.trim(),
-          password: password,
-        );
-        UserCredential result = await user.linkWithCredential(credential);
-        return result;
-      }
-      throw 'No anonymous user to link.';
-    } on FirebaseAuthException catch (e) {
-      throw _handleFirebaseAuthException(e);
-    } catch (e) {
-      throw 'Failed to link account. Please try again.';
-    }
-  }
 
   // Handle Firebase Auth exceptions
   String _handleFirebaseAuthException(FirebaseAuthException e) {

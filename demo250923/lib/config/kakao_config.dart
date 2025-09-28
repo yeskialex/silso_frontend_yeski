@@ -29,17 +29,4 @@ class AuthConfig {
 
   // OAuth URLs
   static const String kakaoAuthorizeUrl = 'https://kauth.kakao.com/oauth/authorize';
-  static const String kakaoTokenUrl = 'https://kauth.kakao.com/oauth/token';
-  static const String kakaoUserInfoUrl = 'https://kapi.kakao.com/v2/user/me';
-}
-
-// Keep KakaoConfig for backward compatibility
-class KakaoConfig {
-  static const String restApiKey = AuthConfig.kakaoRestApiKey;
-  static const String javascriptKey = AuthConfig.kakaoJavascriptKey;
-  static const String nativeAppKey = AuthConfig.kakaoNativeAppKey;
-  static const List<String> defaultScopes = AuthConfig.kakaoScopes;
-  static const String authorizeUrl = AuthConfig.kakaoAuthorizeUrl;
-  static const String tokenUrl = AuthConfig.kakaoTokenUrl;
-  static const String userInfoUrl = AuthConfig.kakaoUserInfoUrl;
 }

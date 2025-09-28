@@ -192,25 +192,6 @@ class KoreanAuthService {
   }
 
 
-  // Check if user is already signed in with Kakao
-  Future<bool> isKakaoSignedIn() async {
-    try {
-      // Check both Firebase and Kakao SDK
-      final user = _auth.currentUser;
-      if (user == null) return false;
-      
-      // Check if Kakao token is still valid
-      try {
-        await UserApi.instance.accessTokenInfo();
-        return true;
-      } catch (e) {
-        // Kakao token expired or invalid
-        return false;
-      }
-    } catch (e) {
-      return false;
-    }
-  }
 
 
   // Handle OAuth callback - not needed for mobile but required for interface

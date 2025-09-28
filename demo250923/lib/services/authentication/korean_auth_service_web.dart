@@ -149,16 +149,6 @@ class KoreanAuthService {
   }
 
 
-  // Check if user is already signed in with Kakao
-  Future<bool> isKakaoSignedIn() async {
-    try {
-      // For demo, just check if Firebase user exists and has custom claims
-      final user = _auth.currentUser;
-      return user != null;
-    } catch (e) {
-      return false;
-    }
-  }
 
 
   // Logout from Kakao services

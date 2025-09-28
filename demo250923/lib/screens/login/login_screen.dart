@@ -5,6 +5,7 @@ import 'phone_confirm.dart';
 import 'after_signup_splash.dart';
 import 'id_password_signup.dart';
 import '../../utils/responsive_asset_manager.dart';
+import '../../utils/onboarding_utils.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // for privacy password, using auth firebase
 
 class LoginScreen extends StatefulWidget {
@@ -170,25 +171,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return allComplete;
   }
 
-  Future<void> _markSocialAuthCompleted(String uid) async {
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'uid': uid,
-        'onboardingProgress': {
-          'socialAuthCompleted': true,
-          'emailPasswordCompleted': false,
-          'phoneVerified': false,
-          'categorySelected': false,
-          'petSelected': false,
-          'onboardingComplete': false,
-        },
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      print('Error marking social auth completed: $e');
-    }
-  }
 
   @override
   void didChangeDependencies() {
@@ -643,7 +625,7 @@ Widget build(BuildContext context) {
         
         // Mark social auth as completed for new users
         if (!isExistingUser) {
-          await _markSocialAuthCompleted(uid);
+          await OnboardingUtils.markSocialAuthCompleted(uid);
           print('✅ Kakao Login - Social auth marked as completed for new user');
         }
       }
@@ -697,7 +679,7 @@ Widget build(BuildContext context) {
         
         // Mark social auth as completed for new users
         if (!isExistingUser) {
-          await _markSocialAuthCompleted(uid);
+          await OnboardingUtils.markSocialAuthCompleted(uid);
           print('✅ Google Login - Social auth marked as completed for new user');
         }
       }
@@ -750,7 +732,7 @@ Widget build(BuildContext context) {
 
         // Mark social auth as completed for new users
         if (!isExistingUser) {
-          await _markSocialAuthCompleted(uid);
+          await OnboardingUtils.markSocialAuthCompleted(uid);
           print('✅ Apple Login - Social auth marked as completed for new user');
         }
       }
